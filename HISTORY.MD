@@ -2,6 +2,9 @@
 
 ## Update 2022.03.24
 
+**Version v1.3.2**  
+1.Staff command: !editsr, !listsr  
+
 **Version: v1.3**  
 1.Staff command: !selfrole - To allow members to assign roles themselves.  
 
