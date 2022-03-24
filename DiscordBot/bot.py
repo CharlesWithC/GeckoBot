@@ -1,5 +1,5 @@
 # Global Trucking Discord Bot
-# Version: v1.0.2
+# Version: v1.3.3
 
 import os, asyncio, io
 import discord
@@ -32,7 +32,7 @@ FINANCE_LOG_CHANNEL = (955721720440975381, 956362780909375538)
 STAFF_CHANNEL = (823779955305480212, 857931794379833354)
 RADIO_CHANNEL = [(955721720440975381, 955721720990425161), (823779955305480212, 954689640076558407)]
 
-FINANCE_CHANNEL = [-1]
+FINANCE_CHANNEL = [956567340106018838]
 FINANCE_CHECKIN_BASE_REWARD = 200
 RANK_EMOJI = ["", ":first_place:", ":second_place:", ":third_place:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":nine:", ":ten:"]
 
@@ -246,6 +246,45 @@ async def GenerateBanner(ctx, name):
             await ctx.send(file=discord.File(fp=image_binary, filename='banner.png'))
             await log("Staff", f"{ctx.message.author.name} created a banner for {name}")
 
+@bot.command(name="announce")
+async def Announce(ctx):
+    isAdmin = False
+    if ctx.message.author.id in ADMIN_USER_ID:
+        isAdmin = True
+    for role in ctx.message.author.roles:
+        if role.id in ADMIN_ROLE_ID:
+            isAdmin = True
+    guildid = ctx.guild.id
+    
+    if not isAdmin:
+        await log("Staff", f"{ctx.message.author.name} is unauthorized to execute !selfrole command")
+        return
+
+    async with ctx.typing():
+        msg = ctx.message.content + " "
+        if msg.find("<#") == -1 or msg.find("description:") == -1 or msg.find("title:") == -1:
+            sample = "!announce {#channel} title: {title} description: {description} <imgurl: {imgurl}>"
+            await ctx.reply(f"{ctx.message.author.name}, this is an invalid command!\nThis command works like:\n`{sample}`\nYou only need to change content in {{}}.\nYou can add line breaks or use \\n for line breaking.")
+            return
+
+        channelid = int(msg[msg.find("<#") + 2 : msg.find(">")])
+        title = msg[msg.find("title:") + len("title:") : msg.find("description:")]
+        description = msg[msg.find("description:") + len("description:") : msg.find("imgurl:")]
+        imgurl = ""
+        if msg.find("imgurl:") != -1:
+            imgurl = msg[msg.find("imgurl:") + len("imgurl:"): ]
+        embed = discord.Embed(title=title, description=description)
+        embed.set_thumbnail(url=imgurl)
+
+        try:
+            channel = bot.get_channel(channelid)
+            await channel.send(embed = embed)
+            await log("Staff", f"[guild {ctx.guild} ({ctx.guild.id})] {ctx.message.author.name} made an announcement at {channel} ({channelid})")
+
+        except Exception as e:
+            await ctx.message.reply(f"{ctx.message.author.name}, it seems I cannot send message at <#{channelid}>. Make sure the channel exist and I have access to it!")
+            await log("Staff", f"[guild {ctx.guild} ({ctx.guild.id})] !announce command executed by {ctx.message.author.name} failed due to {str(e)}")
+
 @bot.command(name="selfrole")
 async def SelfRole(ctx):
     # This is a complex function
@@ -270,7 +309,7 @@ async def SelfRole(ctx):
     async with ctx.typing():
         msg = ctx.message.content
         if msg.find("<#") == -1 or msg.find("description:") == -1 or msg.find("rolebind:") == -1:
-            sample = "!selfrole {#channel} title: {title} description: {description} imgurl: {imgurl} rolebind: {@role1} {emoji1} {@role2} {emoji2} ..."
+            sample = "!selfrole {#channel} title: {title} description: {description} <imgurl: {imgurl}> rolebind: {@role1} {emoji1} {@role2} {emoji2} ..."
             await ctx.reply(f"{ctx.message.author.name}, this is an invalid command!\nThis command works like:\n`{sample}`\nYou only need to change content in {{}}.\nYou can add line breaks or use \\n for line breaking.")
             return
 
@@ -321,13 +360,13 @@ async def SelfRole(ctx):
                 cur.execute(f"INSERT INTO rolebind VALUES ({guildid}, {channelid}, {msgid}, {data[0]}, '{b64encode(data[1].encode()).decode()}')")
             conn.commit()
 
-            await log("Staff", f"[server {ctx.guild} ({ctx.guild.id})] {ctx.message.author.name} created a self-role post at <#{channelid}> ({channelid}), with role-binding: {rolebindtxt}")
+            await log("Staff", f"[guild {ctx.guild} ({ctx.guild.id})] {ctx.message.author.name} created a self-role post at {channel} ({channelid}), with role-binding: {rolebindtxt}")
         except Exception as e:
             import traceback
             traceback.print_exc()
             await ctx.reply(f"{ctx.message.author.name}, it seems I cannot send message at <#{channelid}>. Make sure the channel exist and I have access to it!")
 
-            await log("Staff", f"server {ctx.guild} ({ctx.guild.id}) !selfrole command executed by {ctx.message.author.name} failed due to {str(e)}")
+            await log("Staff", f"[guild {ctx.guild} ({ctx.guild.id})] !selfrole command executed by {ctx.message.author.name} failed due to {str(e)}")
 
 @bot.command(name="editsr")
 async def EditSelfRole(ctx):
@@ -644,7 +683,6 @@ async def FinanceRichest(ctx):
         cur.execute(f"SELECT userid, balance FROM finance ORDER BY balance DESC")
         t = cur.fetchall()
 
-        msg = "**Top 10 richest Global Trucking members**\n\n"
         rank = 0
         for tt in t:
             rank += 1
@@ -653,7 +691,7 @@ async def FinanceRichest(ctx):
             
             msg += f"**{RANK_EMOJI[rank]} {bot.get_user(tt[0]).name}**\n:coin: {tt[1]}\n\n"
         
-        embed = discord.Embed(description=msg, color=0x0000DD)
+        embed = discord.Embed(title="**Top 10 richest members**", description=msg, color=0x0000DD)
         await ctx.send(embed=embed)
 
 bot.loop.create_task(LoopedTask())
