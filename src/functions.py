@@ -26,3 +26,25 @@ async def log(func, text):
         await channel.send(f"```{text}```")
     except:
         pass
+
+def validateStrftime(s):
+    try:
+        strftime(s, gmtime())
+        return True
+    except:
+        return False
+
+def betterStrftime(s):
+    t = gmtime()
+    day = strftime('%-d', t)
+    if day == "1" or day == "21" or day == "31":
+        day = "st"
+    elif day == "2" or day == "22":
+        day = "nd"
+    elif day == "3" or day == "23":
+        day = "rd"
+    else:
+        day = "th"
+    s = s.replace("%-d", "%-d" + day)
+    ret = strftime(s, t)
+    return ret

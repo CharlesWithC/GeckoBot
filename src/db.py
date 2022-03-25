@@ -16,6 +16,8 @@ if not DATABASE_EXIST:
     cur.execute(f"CREATE TABLE selfrole (guildid INT, channelid INT, msgid INT, title TEXT, description TEXT, imgurl TEXT)")
     cur.execute(f"CREATE TABLE rolebind (guildid INT, channelid INT, msgid INT, role INT, emoji VARCHAR(64))")
     cur.execute(f"CREATE TABLE userrole (guildid INT, channelid INT, msgid INT, userid INT, roleid INT)")
+    cur.execute(f"CREATE TABLE serverstats (guildid INT, categoryid INT)")
+    cur.execute(f"CREATE TABLE statsconfig (guildid INT, categoryid INT, channelid INT, conf TEXT)")
 del cur
 
 def newconn():

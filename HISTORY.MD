@@ -2,6 +2,9 @@
 
 ## Update 2022.03.25
 
+**Version v1.5**  
+Added Server Stats function
+
 **Version v1.4**  
 Rebrand to GeckoBot to work for multiple VTCs.
 

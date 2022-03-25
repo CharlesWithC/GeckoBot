@@ -4,6 +4,8 @@
 
 # General Functions of Gecko Bot
 
-import general.looptask
-import general.staff
+import general.radio
 import general.funhouse
+import general.staff.announce
+import general.staff.selfrole
+import general.staff.stats
