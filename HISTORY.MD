@@ -1,4 +1,9 @@
-# Global Trucking Bot Update History
+# Gecko Bot Update History
+
+## Update 2022.03.25
+
+**Version v1.4**  
+Rebrand to GeckoBot to work for multiple VTCs.
 
 ## Update 2022.03.24
 
