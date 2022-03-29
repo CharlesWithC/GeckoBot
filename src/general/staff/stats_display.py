@@ -6,6 +6,8 @@
 
 import os, asyncio
 import discord
+from discord.commands import CommandPermission, SlashCommandGroup
+from discord.ext import commands
 from base64 import b64encode, b64decode
 from time import strftime, gmtime
 
@@ -21,23 +23,26 @@ from db import newconn
 # {@role}
 # {@role online}
         
-@bot.command(name="create_stats_channels")
-async def CreateStatsChannel(ctx):
-    conn = newconn()
-    cur = conn.cursor()
-    isAdmin = False
-    if ctx.message.author.id in ADMIN_USER_ID:
-        isAdmin = True
-    for role in ctx.message.author.roles:
-        if role.id in ADMIN_ROLE_ID:
-            isAdmin = True
-    guildid = ctx.guild.id
+class ManageStatsDisplay(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
     
-    if not isAdmin:
-        await log("Staff", f"{ctx.message.author.name} is unauthorized to execute !create_stats_channels command")
-        return
+    manage = SlashCommandGroup("stats_display", "Manage Server Statistics Display")
     
-    async with ctx.typing():
+    @manage.command(name = "setup", description = "Staff - Set everything up automatically and configure it using a template.")
+    async def setup(self, ctx):
+        if ctx.guild is None:
+            await ctx.respond("You can only use this command in guilds, not in DMs.")
+            return
+        guildid = ctx.guild.id
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
+        conn = newconn()
+        cur = conn.cursor()
+            
+        await ctx.trigger_typing()
         try:
             guild = ctx.guild
 
@@ -48,12 +53,10 @@ async def CreateStatsChannel(ctx):
                     categoryid = t[0][0]
                     category = bot.get_channel(categoryid)
                     if not category is None:
-                        await ctx.message.reply(f"{ctx.message.author.name}, the server stats category already exists and you cannot create again.")
+                        await ctx.respond(f"{ctx.author.name}, it has already been set up before.", ephemeral = True)
                         return
                 except:
-                    import traceback
-                    traceback.print_exc()
-                    await ctx.message.reply(f"{ctx.message.author.name}, the server stats category already exists and you cannot create again.")
+                    await ctx.respond(f"{ctx.author.name}, it has already been set up before.", ephemeral = True)
                     return
 
                 cur.execute(f"DELETE FROM serverstats WHERE guildid = {guild.id}")
@@ -72,16 +75,17 @@ async def CreateStatsChannel(ctx):
             
             try:
                 me = bot.get_user(BOTID)
-                dev = bot.get_user(OWNER)
                 await category.set_permissions(me, manage_channels = True, manage_roles = True, connect = True)
-                await category.set_permissions(dev, manage_channels = True, manage_roles = True, connect = True)
+                try:
+                    dev = bot.get_user(BOTOWNER)
+                    await category.set_permissions(dev, manage_channels = True, manage_roles = True, connect = True)
+                except:
+                    pass
                 await category.set_permissions(ctx.guild.default_role, connect = False)
             except:
-                import traceback
-                traceback.print_exc()
                 pass
 
-            await ctx.message.reply(f"{ctx.message.author.name}, server stats category and channels have been created. You can edit the category name, move channel & category order as you wish.")
+            await ctx.respond(f"{ctx.author.name}, stats display have been enabled. You can edit the category name, move channel & category order as you wish.")
 
             cur.execute(f"INSERT INTO serverstats VALUES ({guildid}, {category.id})")
             conf1 = b64encode(b"{time: %A, %b %-d}").decode()
@@ -89,57 +93,50 @@ async def CreateStatsChannel(ctx):
             conf2 = b64encode(b"{online} / {members} Online").decode()
             cur.execute(f"INSERT INTO statsconfig VALUES ({guildid}, {category.id}, {channel2.id}, '{conf2}')")
             conn.commit()
-            await log("ServerStats", f"[guild {ctx.guild} ({ctx.guild.id})] {ctx.message.author.name} created server stats category and channels.")
-            await log("ServerStats", f"[guild {ctx.guild} ({ctx.guild.id})] {ctx.message.author.name} added stats channel with configuration {b64decode(conf1.encode()).decode()}.")
-            await log("ServerStats", f"[guild {ctx.guild} ({ctx.guild.id})] {ctx.message.author.name} added stats channel with configuration {b64decode(conf2.encode()).decode()}.")
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} created stats display category and channels.", ctx.guild.id)
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} added stats channel with configuration {b64decode(conf1.encode()).decode()}.", ctx.guild.id)
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} added stats channel with configuration {b64decode(conf2.encode()).decode()}.", ctx.guild.id)
 
         except Exception as e:
-            await ctx.message.reply(f"{ctx.message.author.name}, I either cannot create category / channel, or cannot change channel permissions. Make sure I have Manage Channels and Manage Roles permission.")
-            await log("ServerStats", f"[guild {ctx.guild} ({ctx.guild.id})] !create_stats_channels executed by {ctx.message.author.name} failed due to {str(e)}")
+            await ctx.respond(f"{ctx.author.name}, I either cannot create category / channel, or cannot change channel permissions. Make sure I have Manage Channels and Manage Roles permission.")
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] !create_stats_channels executed by {ctx.author.name} failed due to {str(e)}", ctx.guild.id)
 
-@bot.command(name="add_stats_channel")
-async def AddStatsChannel(ctx):
-    conn = newconn()
-    cur = conn.cursor()
-    isAdmin = False
-    if ctx.message.author.id in ADMIN_USER_ID:
-        isAdmin = True
-    for role in ctx.message.author.roles:
-        if role.id in ADMIN_ROLE_ID:
-            isAdmin = True
-    guildid = ctx.guild.id
-    
-    if not isAdmin:
-        await log("Staff", f"{ctx.message.author.name} is unauthorized to execute !add_stats_channel command")
-        return
-    
-    async with ctx.typing():
+    @manage.command(name = "create", description = "Staff - Create a new stats channel and configure it by yourself.")
+    async def create(self, ctx, 
+        config: discord.Option(str, "Variables: {time: [strftime]} {members} {online} {@role} {@role online}", required = True)):
+        
+        if ctx.guild is None:
+            await ctx.respond("You can only use this command in guilds, not in DMs.")
+            return
+        guildid = ctx.guild.id
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
+        conn = newconn()
+        cur = conn.cursor()
+            
+        await ctx.trigger_typing()
         try:
             guild = ctx.guild
             category = None
             cur.execute(f"SELECT categoryid FROM serverstats WHERE guildid = {guild.id}")
             t = cur.fetchall()
             if len(t) == 0:
-                await ctx.message.reply(f"{ctx.message.author.name}, server stats display isn't enabled for this server.\nUse `!create_stats_channels` to start out.")
+                await ctx.respond(f"{ctx.author.name}, stats display isn't enabled.\nUse `/stats_display setup` to start.", ephemeral = True)
                 return
             else:
                 try:
                     categoryid = t[0][0]
                     category = bot.get_channel(categoryid)
                     if category is None:
-                        await ctx.message.reply(f"{ctx.message.author.name}, server stats display isn't enabled for this server.\nUse `!create_stats_channels` to start out.")
+                        await ctx.respond(f"{ctx.author.name}, stats display isn't enabled.\nUse `/stats_display setup` to start.", ephemeral = True)
                         return
                 except:
-                    import traceback
-                    traceback.print_exc()
-                    await ctx.message.reply(f"{ctx.message.author.name}, server stats display isn't enabled for this server.\nUse `!create_stats_channels` to start out.")
+                    await ctx.respond(f"{ctx.author.name}, stats display isn't enabled.\nUse `/stats_display setup` to start.", ephemeral = True)
                     return
             
-            if len(ctx.message.content.split(" ")) == 1:
-                await ctx.message.reply(f"!add_stats_channel {{configuration}}\n`{{time: strftime format}}` `{{members}}` `{{online}}` `{{@role}}` `{{@role online}}` are accepted variables in configuration.")
-                return
-            
-            conf = " ".join(ctx.message.content.split(" ")[1:])
+            conf = config
             vrf = conf
             while vrf.find("{") != -1:
                 var = vrf[vrf.find("{")+1 : vrf.find("}")]
@@ -150,14 +147,14 @@ async def AddStatsChannel(ctx):
 
                 if var.startswith("time:"):
                     if not validateStrftime(var):
-                        await ctx.message.reply(f"{ctx.message.author.name}, invalid strftime format: {var.repalce('time:','')}")
+                        await ctx.respond(f"{ctx.author.name}, invalid strftime format: {var.repalce('time:','')}", ephemeral = True)
                         return
 
                 if not var.startswith("time:") and var != "members" and var != "online":
                     var = var.split()
                     role = var[0]
                     if not role.startswith("<@&") or not role.endswith(">") or len(var) == 2 and var[1] != "online" or len(var) > 2:
-                        await ctx.message.reply(f"{ctx.message.author.name}, invalid variable {{{var}}}.\nOnly `{{time: strftime format}}` `{{members}}` `{{online}}` `{{@role}}` `{{@role online}}` are accepted.")
+                        await ctx.respond(f"{ctx.author.name}, invalid variable {{{var}}}.\nOnly `{{time: strftime format}}` `{{members}}` `{{online}}` `{{@role}}` `{{@role online}}` are accepted.", ephemeral = True)
                         return
 
             online = 0
@@ -197,77 +194,70 @@ async def AddStatsChannel(ctx):
             
             channel = await category.create_voice_channel(chnname)
 
-            await ctx.message.reply(f"{ctx.message.author.name}, server stats channel has been created for configuration `{conf}`.")
+            await ctx.respond(f"{ctx.author.name}, stats display channel has been created with configuration `{conf}`.")
 
             conf = b64encode(conf.encode()).decode()
             cur.execute(f"INSERT INTO statsconfig VALUES ({guildid}, {category.id}, {channel.id}, '{conf}')")
             conn.commit()
-            await log("ServerStats", f"[guild {ctx.guild} ({ctx.guild.id})] {ctx.message.author.name} added stats channel with configuration {b64decode(conf.encode()).decode()}.")
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} added stats channel with configuration {b64decode(conf.encode()).decode()}.", ctx.guild.id)
         
         except Exception as e:
-            await ctx.message.reply(f"{ctx.message.author.name}, I either cannot create category / channel, or cannot change channel permissions. Make sure I have Manage Channels and Manage Roles permission.")
-            await log("ServerStats", f"[guild {ctx.guild} ({ctx.guild.id})] !add_stats_channels executed by {ctx.message.author.name} failed due to {str(e)}")
+            await ctx.respond(f"{ctx.author.name}, I either cannot create category / channel, or cannot change channel permissions. Make sure I have Manage Channels and Manage Roles permission.")
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] '/stats_display create' executed by {ctx.author.name} failed due to {str(e)}", ctx.guild.id)
 
-@bot.command(name="edit_stats_channel")
-async def EditStatsChannel(ctx):
-    conn = newconn()
-    cur = conn.cursor()
-    isAdmin = False
-    if ctx.message.author.id in ADMIN_USER_ID:
-        isAdmin = True
-    for role in ctx.message.author.roles:
-        if role.id in ADMIN_ROLE_ID:
-            isAdmin = True
-    guildid = ctx.guild.id
-    
-    if not isAdmin:
-        await log("Staff", f"{ctx.message.author.name} is unauthorized to execute !edit_stats_channel command")
-        return
-    
-    async with ctx.typing():
+    @manage.command(name = "edit", description = "Staff - Edit an existing stats channel.")
+    async def edit(self, ctx, 
+        channelid: discord.Option(str, "Channel ID of the stats channel to edit. You can enable Developer Mode to see it.", required = True),
+        config: discord.Option(str, "Variables: {time: [strftime]} {members} {online} {@role} {@role online}", required = True)):
+
+        if ctx.guild is None:
+            await ctx.respond("You can only use this command in guilds, not in DMs.")
+            return
+        guildid = ctx.guild.id
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
+        conn = newconn()
+        cur = conn.cursor()
+            
+        await ctx.trigger_typing()
         try:
             guild = ctx.guild
             category = None
             cur.execute(f"SELECT categoryid FROM serverstats WHERE guildid = {guild.id}")
             t = cur.fetchall()
             if len(t) == 0:
-                await ctx.message.reply(f"{ctx.message.author.name}, server stats display isn't enabled for this server.\nUse `!create_stats_channels` to start out.")
+                await ctx.respond(f"{ctx.author.name}, stats display isn't enabled.\nUse `/stats_display setup` to start.", ephemeral = True)
                 return
             else:
                 try:
                     categoryid = t[0][0]
                     category = bot.get_channel(categoryid)
                     if category is None:
-                        await ctx.message.reply(f"{ctx.message.author.name}, server stats display isn't enabled for this server.\nUse `!create_stats_channels` to start out.")
+                        await ctx.respond(f"{ctx.author.name}, stats display isn't enabled.\nUse `/stats_display setup` to start.", ephemeral = True)
                         return
                 except:
-                    import traceback
-                    traceback.print_exc()
-                    await ctx.message.reply(f"{ctx.message.author.name}, server stats display isn't enabled for this server.\nUse `!create_stats_channels` to start out.")
+                    await ctx.respond(f"{ctx.author.name}, stats display isn't enabled.\nUse `/stats_display setup` to start.", ephemeral = True)
                     return
             
-            if len(ctx.message.content.split()) < 3:
-                await ctx.message.reply(f"{ctx.message.author.name}, invalid command!\nUsage: !edit_stats_channel {{channel id}} {{new configuration}}\nEnable developer mode then you can copy channel id.")
-                return
-            
-            channelid = int(ctx.message.content.split()[1])
             try:
+                channelid = int(channelid)
                 channel = bot.get_channel(channelid)
                 if channel is None:
-                    await ctx.message.reply(f"{ctx.message.author.name}, cannot fetch channel #{channelid} (`{channelid}`)")
+                    await ctx.respond(f"{ctx.author.name}, cannot fetch channel `{channelid}`", ephemeral = True)
                     return
             except:
-                await ctx.message.reply(f"{ctx.message.author.name}, cannot fetch channel #{channelid} (`{channelid}`)")
+                await ctx.respond(f"{ctx.author.name}, cannot fetch channel `{channelid}`", ephemeral = True)
                 return
 
             cur.execute(f"SELECT * FROM statsconfig WHERE guildid = {guild.id} AND categoryid = {category.id} AND channelid = {channelid}")
             t = cur.fetchall()
             if len(t) == 0:
-                await ctx.message.reply(f"{ctx.message.author.name}, channel #{channelid} (`{channelid}`) not bound to a server config.")
+                await ctx.respond(f"{ctx.author.name}, channel `{channelid}` is not a stats channel.", ephemeral = True)
                 return
 
-            conf = " ".join(ctx.message.content.split(" ")[2:])
-
+            conf = config
             online = 0
             for member in guild.members:
                 if member.status != discord.Status.offline:
@@ -286,14 +276,14 @@ async def EditStatsChannel(ctx):
 
                 if var.startswith("time:"):
                     if not validateStrftime(var):
-                        await ctx.message.reply(f"{ctx.message.author.name}, invalid strftime format: {var.repalce('time:','')}")
+                        await ctx.respond(f"{ctx.author.name}, invalid strftime format: {var.repalce('time:','')}", ephemeral = True)
                         return
 
                 if not var.startswith("time:") or var != "members" and var != "online":
                     var = var.split()
                     role = var[0]
                     if not role.startswith("<@&") or not role.endswith(">") or len(var) == 2 and var[1] != "online" or len(var) > 2:
-                        await ctx.message.reply(f"{ctx.message.author.name}, invalid variable {{{var}}}.\nOnly `{{time: strftime format}}` `{{members}}` `{{online}}` `{{@role}}` `{{@role online}}` are accepted.")
+                        await ctx.respond(f"{ctx.author.name}, invalid variable {{{var}}}.\nOnly `{{time: strftime format}}` `{{members}}` `{{online}}` `{{@role}}` `{{@role online}}` are accepted.", ephemeral = True)
                         return
 
             tmp = chnname
@@ -308,7 +298,7 @@ async def EditStatsChannel(ctx):
                 if var.startswith("time:"):
                     var = var.replace("time: ","").replace("time:", "")
                     if not validateStrftime(var):
-                        await ctx.message.reply(f"{ctx.message.author.name}, invalid strftime format: {var.repalce('time:','')}")
+                        await ctx.respond(f"{ctx.author.name}, invalid strftime format: {var.repalce('time:','')}", ephemeral = True)
                         return
                     chnname = chnname.replace(f"{{{orgvar}}}", betterStrftime(var))
                 elif var.startswith("<@&"):
@@ -328,80 +318,73 @@ async def EditStatsChannel(ctx):
             
             cur.execute(f"UPDATE statsconfig SET conf = '{b64encode(conf.encode()).decode()}' WHERE guildid = {guildid} AND channelid = {channelid}")
             conn.commit()
-            await log("ServerStats", f"[guild {ctx.guild} ({ctx.guild.id})] {ctx.message.author.name} updated stats channel {channel} ({channelid}) configuration to {b64decode(conf.encode()).decode()}.")
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} updated stats channel {channelid} configuration to {conf}.", ctx.guild.id)
 
             await channel.edit(name = chnname)
 
-            await ctx.message.reply(f"{ctx.message.author.name}, server stats channel <#{channelid}> (`{channelid}`) configuration has been updated to `{conf}`.")
+            await ctx.respond(f"{ctx.author.name}, stats display channel {channelid} configuration has been updated to `{conf}`.")
             
         except Exception as e:
-            await log("ServerStats", f"Unknown exception: {str(e)}")
+            await log("ServerStats", f"Unknown exception: {str(e)}", ctx.guild.id)
 
-@bot.command(name="delete_stats_channel")
-async def DeleteStatsChannel(ctx):
-    conn = newconn()
-    cur = conn.cursor()
-    isAdmin = False
-    if ctx.message.author.id in ADMIN_USER_ID:
-        isAdmin = True
-    for role in ctx.message.author.roles:
-        if role.id in ADMIN_ROLE_ID:
-            isAdmin = True
-    guildid = ctx.guild.id
-    
-    if not isAdmin:
-        await log("Staff", f"{ctx.message.author.name} is unauthorized to execute !delete_stats_channel command")
-        return
-    
-    async with ctx.typing():
+    @manage.command(name = "remove", description = "Staff - Remove a stats channel.")
+    async def remove(self, ctx,
+        channelid: discord.Option(str, "Channel ID of the stats channel to edit. You can enable Developer Mode to see it.", required = True)):
+        
+        if ctx.guild is None:
+            await ctx.respond("You can only use this command in guilds, not in DMs.")
+            return
+        guildid = ctx.guild.id
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
+        conn = newconn()
+        cur = conn.cursor()
+            
+        await ctx.trigger_typing()
         try:
             guild = ctx.guild
             category = None
             cur.execute(f"SELECT categoryid FROM serverstats WHERE guildid = {guild.id}")
             t = cur.fetchall()
             if len(t) == 0:
-                await ctx.message.reply(f"{ctx.message.author.name}, server stats display isn't enabled for this server.\nUse `!create_stats_channels` to start out.")
+                await ctx.respond(f"{ctx.author.name}, stats display isn't enabled.\nUse `/stats_display setup` to start.", ephemeral = True)
                 return
             else:
                 try:
                     categoryid = t[0][0]
                     category = bot.get_channel(categoryid)
                     if category is None:
-                        await ctx.message.reply(f"{ctx.message.author.name}, the server stats category doesn't exist and you cannot delete it")
+                        await ctx.respond(f"{ctx.author.name}, the stats display channel does not exist and you cannot delete it", ephemeral = True)
                         return
                 except:
-                    import traceback
-                    traceback.print_exc()
                     if category is None:
-                        await ctx.message.reply(f"{ctx.message.author.name}, the server stats category doesn't exist and you cannot delete it")
+                        await ctx.respond(f"{ctx.author.name}, the stats display channel does not exist and you cannot delete it", ephemeral = True)
                         return
                     return
             
-            if len(ctx.message.content.split()) != 2:
-                await ctx.message.reply(f"{ctx.message.author.name}, invalid command!\nUsage: !delete_stats_channels {{channel id}}\nEnable developer mode then you can copy channel id.")
-                return
-            
-            channelid = int(ctx.message.content.split()[1])
             try:
+                channelid = int(channelid)
                 channel = bot.get_channel(channelid)
                 if channel is None:
-                    await ctx.message.reply(f"{ctx.message.author.name}, cannot fetch channel #{channelid} (`{channelid}`)")
+                    await ctx.respond(f"{ctx.author.name}, cannot fetch channel `{channelid}`", ephemeral = True)
                     return
             except:
-                await ctx.message.reply(f"{ctx.message.author.name}, cannot fetch channel #{channelid} (`{channelid}`)")
+                await ctx.respond(f"{ctx.author.name}, cannot fetch channel `{channelid}`", ephemeral = True)
                 return
 
             cur.execute(f"SELECT * FROM statsconfig WHERE guildid = {guild.id} AND categoryid = {category.id} AND channelid = {channelid}")
             t = cur.fetchall()
             if len(t) == 0:
-                await ctx.message.reply(f"{ctx.message.author.name}, channel #{channelid} (`{channelid}`) not bound to a server config.")
+                await ctx.respond(f"{ctx.author.name}, channel `{channelid}` is not a stats channel.", ephemeral = True)
                 return
 
             cur.execute(f"DELETE FROM statsconfig WHERE guildid = {guild.id} AND categoryid = {category.id} AND channelid = {channelid}")
             conn.commit()
             await channel.delete()
-            await ctx.message.reply(f"{ctx.message.author.name}, channel #{channelid} (`{channelid}`) deleted.")
-            await log("ServerStats", f"[guild {ctx.guild} ({ctx.guild.id})] {ctx.message.author.name} deleted stats channel {channel} ({channelid})")
+            await ctx.respond(f"{ctx.author.name}, stats display channel {channelid} deleted.")
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} deleted stats channel {channelid}", ctx.guild.id)
 
             cur.execute(f"SELECT * FROM statsconfig WHERE guildid = {guild.id}")
             if len(cur.fetchall()) == 0:
@@ -409,37 +392,35 @@ async def DeleteStatsChannel(ctx):
                 conn.commit()
                 try:
                     await category.delete()
-                    await ctx.message.reply(f"{ctx.message.author.name}, no server stats channel is left. Server stats category is deleted automatically.")
-                    await log("ServerStats", f"[guild {ctx.guild} ({ctx.guild.id})] Server stats category deleted automatically as no stats channel is left.")
+                    await ctx.respond(f"{ctx.author.name}, no stats display channel is left. Server stats category is deleted automatically.")
+                    await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] Server stats category deleted automatically as no stats channel is left.", ctx.guild.id)
                 except:
                     pass
 
         except Exception as e:
-            await log("ServerStats", f"Unknown exception: {str(e)}")
+            await log("ServerStats", f"Unknown exception: {str(e)}", ctx.guild.id)
 
-@bot.command(name="delete_all_stats_channels")
-async def DeleteAllStatsChannels(ctx):
-    conn = newconn()
-    cur = conn.cursor()
-    isAdmin = False
-    if ctx.message.author.id in ADMIN_USER_ID:
-        isAdmin = True
-    for role in ctx.message.author.roles:
-        if role.id in ADMIN_ROLE_ID:
-            isAdmin = True
-    guildid = ctx.guild.id
-    
-    if not isAdmin:
-        await log("Staff", f"{ctx.message.author.name} is unauthorized to execute !delete_all_stats_channels command")
-        return
-    
-    async with ctx.typing():
+    @manage.command(name = "destroy", description = "Staff - Disable stats display for this server and delete bound category and channels.")
+    async def destroy(self, ctx):
+        if ctx.guild is None:
+            await ctx.respond("You can only use this command in guilds, not in DMs.")
+            return
+        guildid = ctx.guild.id
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
+        conn = newconn()
+        cur = conn.cursor()
+            
+        await ctx.trigger_typing()
         try:
             guild = ctx.guild
+            category = None
             cur.execute(f"SELECT categoryid FROM serverstats WHERE guildid = {guild.id}")
             t = cur.fetchall()
             if len(t) == 0:
-                await ctx.message.reply(f"{ctx.message.author.name}, server stats display isn't enabled for this server.\nUse `!create_stats_channels` to start out.")
+                await ctx.respond(f"{ctx.author.name}, stats display isn't enabled.\nUse `/stats_display setup` to start.", ephemeral = True)
                 return
             categoryid = t[0][0]
 
@@ -450,29 +431,27 @@ async def DeleteAllStatsChannels(ctx):
                     channel = bot.get_channel(tt[0])
                     await channel.delete()
                 except:
-                    import traceback
-                    traceback.print_exc()
                     pass
             try:
                 category = bot.get_channel(categoryid)
                 await category.delete()
             except:
-                import traceback
-                traceback.print_exc()
                 pass
 
             cur.execute(f"DELETE FROM statsconfig WHERE guildid = {guild.id}")
             cur.execute(f"DELETE FROM serverstats WHERE guildid = {guild.id}")
             conn.commit()
 
-            await ctx.message.reply(f"{ctx.message.author.name}, all server stats channels and category as been deleted.")
-            await log("ServerStats", f"[guild {ctx.guild} ({ctx.guild.id})] {ctx.message.author.name} deleted all server stats channel and category")
+            await ctx.respond(f"{ctx.author.name}, stats display disabled and bound category and channels have been deleted.")
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} disabled stats display function and deleted bound category and channels.", ctx.guild.id)
         
         except Exception as e:
-            await log("ServerStats", f"Unknown exception: {str(e)}")
+            await log("ServerStats", f"Unknown exception: {str(e)}", ctx.guild.id)
+
+bot.add_cog(ManageStatsDisplay(bot))
 
 ss_get_channel_fail = []
-async def ServerStats():
+async def StatsDisplayUpdate():
     conn = newconn()
     cur = conn.cursor()
     await bot.wait_until_ready()
@@ -492,7 +471,7 @@ async def ServerStats():
                 cur.execute(f"DELETE FROM statsconfig WHERE guildid = {guildid}")
                 conn.commit()
             
-                await log("ServerStats", f"[{guild} ({guildid})] Server stats function for this server is closed as bot cannot access the server.")
+                await log("ServerStats", f"[{guild} ({guildid})] Server stats function for this server is closed as bot cannot access the server.", ctx.guild.id)
                 continue
 
             guild = None
@@ -517,13 +496,16 @@ async def ServerStats():
                     cur.execute(f"DELETE FROM statsconfig WHERE guildid = {guildid} AND categoryid = {categoryid} AND channelid = {channelid}")
                     conn.commit()
 
+                    await log("ServerStats", f"[{guild} ({guildid})] Server stats channel {channelid} expired as bot cannot access the channel.", ctx.guild.id)  
                     try:
-                        await log("ServerStats", f"[{guild} ({guildid})] Server stats channel {channelid} expired as bot cannot access the channel.")
-                        adminchn = bot.get_channel(STAFF_CHANNEL[1])
-                        embed = discord.Embed(title=f"Staff Notice", description=f"Server stats channel <#{channelid}> (`{channelid}`) has expired as I cannot access it. Stats will no longer be updated.", url=f"https://discord.com/channels/{guildid}/{channelid}", color=0x0000DD)
-                        await adminchn.send(embed=embed)
+                        cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'error'")
+                        t = cur.fetchall()
+                        if len(t) != 0:
+                            errchannelid = t[0][0]
+                            errchannel = bot.get_channel(errchannelid)
+                            embed = discord.Embed(title=f"Staff Notice", description=f"Server stats channel `{channelid}` has expired as I cannot access it. Stats will no longer be updated.", color=0x0000DD)
+                            await errchannel.send(embed=embed)
                     except Exception as e:
-                        await log("ServerStats", f"[{guild} ({guildid})] Server stats channel {channelid} expired as bot cannot access the channel. {str(e)}")
                         pass
                     continue
 
@@ -577,4 +559,4 @@ async def ServerStats():
 
         await asyncio.sleep(60)
 
-bot.loop.create_task(ServerStats())
+bot.loop.create_task(StatsDisplayUpdate())

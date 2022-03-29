@@ -5,6 +5,9 @@
 # General Functions of Gecko Bot
 
 from time import time, gmtime, strftime
+from settings import *
+from db import newconn
+from bot import bot
 
 def TimeDelta(timestamp): # returns human-readable delta
     delta = abs(time() - timestamp)
@@ -18,13 +21,24 @@ def TimeDelta(timestamp): # returns human-readable delta
         else:
             return f"{int(delta/60)} minutes"    
 
-async def log(func, text):
+async def log(func, text, guildid = None):
     text = f"[{strftime('%Y-%m-%d %H:%M:%S', gmtime())}] [{func}] {text}"
     print(text)
     try:
         channel = bot.get_channel(LOG_CHANNEL[1])
         await channel.send(f"```{text}```")
+        if not guildid is None:
+            conn = newconn()
+            cur = conn.cursor()
+            cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'log'")
+            t = cur.fetchall()
+            if len(t) > 0:
+                chn = t[0][0]
+                channel = bot.get_channel(chn)
+                await channel.send(f"```{text}```")
     except:
+        import traceback
+        traceback.print_exc()
         pass
 
 def validateStrftime(s):
@@ -48,3 +62,26 @@ def betterStrftime(s):
     s = s.replace("%-d", "%-d" + day)
     ret = strftime(s, t)
     return ret
+
+def isStaff(guild, user):
+    if guild.owner.id == user.id:
+        return True
+        
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT roleid FROM staffrole WHERE guildid = {guild.id}")
+    staffroleids = cur.fetchall()
+    for staffroleid in staffroleids:
+        for role in user.roles:
+            if role.id == staffroleid[0]:
+                return True
+    
+    cur.execute(f"SELECT * FROM staffuser WHERE guildid = {guild.id} AND userid = {user.id}")
+    t = cur.fetchall()
+    if len(t) > 0:
+        return True
+
+    if user.id == BOTOWNER:
+        return True
+        
+    return False

@@ -18,7 +18,7 @@ async def Radio():
     cur = conn.cursor()
     await bot.wait_until_ready()
     await asyncio.sleep(5)
-    await bot.change_presence(activity=discord.Streaming(name = "with Charles", url = "https://www.charles14.xyz/"))
+    await bot.change_presence(activity=discord.Game(name = "with Charles"))
     while not bot.is_closed():
         # Play radio
         for sid in RADIO_CHANNEL:

@@ -12,4 +12,8 @@ from settings import *
 import general.main
 import globaltrucking.main
 
+@bot.event
+async def on_ready():
+    print(f"Logged in as {bot.user} (ID: {bot.user.id})")
+    
 bot.run(TOKEN)

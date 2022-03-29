@@ -9,4 +9,4 @@ from discord.ext import commands,tasks
 
 intents = discord.Intents().all()
 client = discord.Client(intents=intents)
-bot = commands.Bot(command_prefix='!',intents=intents)
+bot = commands.Bot(command_prefix='/',intents=intents)

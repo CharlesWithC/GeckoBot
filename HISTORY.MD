@@ -1,5 +1,13 @@
 # Gecko Bot Update History
 
+## Update 2022.03.29
+
+**Version v1.6**  
+1.Added Staff function  
+2.Made more functions general and able to work for all servers  
+3.Switched to slash command, all commands support interaction!  
+  And meanwhile improved a lot of functions using interaction.
+
 ## Update 2022.03.25
 
 **Version v1.5**  
