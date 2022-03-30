@@ -8,6 +8,7 @@
 
 from bot import bot
 from settings import *
+import json
 
 import general.main
 import globaltrucking.main
@@ -16,4 +17,6 @@ import globaltrucking.main
 async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
     
-bot.run(TOKEN)
+config_txt = open("./bot.conf","r").read()
+config = json.loads(config_txt)
+bot.run(config["token"])

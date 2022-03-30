@@ -7,13 +7,13 @@
 import os, json
 import MySQLdb
 
-config_txt = open("./db.conf","r").read()
+config_txt = open("./bot.conf","r").read()
 config = json.loads(config_txt)
 
-host = config["host"]
-user = config["user"]
-passwd = config["passwd"]
-dbname = config["dbname"]
+host = config["database"]["host"]
+user = config["database"]["user"]
+passwd = config["database"]["passwd"]
+dbname = config["database"]["dbname"]
 
 conn = MySQLdb.connect(host = host, user = user, passwd = passwd, db = dbname)
 cur = conn.cursor()

@@ -536,177 +536,188 @@ async def MusicLoop():
         cur.execute(f"SELECT guildid, channelid FROM vcbind")
         t = cur.fetchall()
         for tt in t:
-            guildid = tt[0]
-            channelid = tt[1]
+            try:
+                guildid = tt[0]
+                channelid = tt[1]
 
-            guild = bot.get_guild(guildid)
-            voice_client = guild.voice_client
+                guild = bot.get_guild(guildid)
+                voice_client = guild.voice_client
 
-            if voice_client is None or voice_client.channel is None:
-                # bot is disconnected - then play current / previous song
-                cur.execute(f"SELECT channelid FROM vcbind WHERE guildid = {guildid}")
-                p = cur.fetchall()
-                if len(p) > 0:
-                    channelid = p[0][0]
-                    channel = bot.get_channel(channelid)
-                    try:
-                        await channel.connect(timeout = 5)
-                        user = guild.get_member(BOTID)
-                        await user.edit(mute = True)
-                    except:
-                        # failed to connect, try again next loop
-                        continue
-        
-                cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
-                p = cur.fetchall()
-                if len(p) > 0:
-                    guild = bot.get_guild(guildid)
-                    voice_client = guild.voice_client
-
-                    url = ""
-                    if p[0][0] != -1:
+                if voice_client is None or voice_client.channel is None:
+                    # bot is disconnected - then play current / previous song
+                    cur.execute(f"SELECT channelid FROM vcbind WHERE guildid = {guildid}")
+                    p = cur.fetchall()
+                    if len(p) > 0:
+                        channelid = p[0][0]
+                        channel = bot.get_channel(channelid)
                         try:
-                            ydl = search(b64d(p[0][1]))
-                            url = ydl['formats'][0]['url']
+                            await channel.connect(timeout = 5)
+                            user = guild.get_member(BOTID)
+                            await user.edit(mute = True)
                         except:
                             # failed to connect, try again next loop
                             continue
+            
+                    cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
+                    p = cur.fetchall()
+                    if len(p) > 0:
+                        guild = bot.get_guild(guildid)
+                        voice_client = guild.voice_client
+
+                        url = ""
+                        if p[0][0] != -1:
+                            try:
+                                ydl = search(b64d(p[0][1]))
+                                url = ydl['formats'][0]['url']
+                            except:
+                                # failed to connect, try again next loop
+                                continue
+                        else:
+                            title = p[0][1].split("-")[1]
+                            url = p[0][1].split("-")[2]
+                        
+                        try:
+                            user = guild.get_member(BOTID)
+                            await user.edit(mute = False)
+                            player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
+                            voice_client.play(player)
+                        except:
+                            # failed to play, try again next loop
+                            continue
+                        
+                    continue
+
+                textchn = None
+                cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'music'")
+                t = cur.fetchall()
+                if len(t) > 0:
+                    textchnid = t[0][0]
+                    try:
+                        textchn = bot.get_channel(textchnid)
+                    except:
+                        pass
+
+                if len(voice_client.channel.members) == 1: # only bot in channel
+                    user = guild.get_member(BOTID)
+                    await user.edit(deafen = True)
+                    cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid = -1")
+                    o = cur.fetchall()
+                    if len(o) > 0:
+                        voice_client.stop()
                     else:
-                        title = p[0][1].split("-")[1]
-                        url = p[0][1].split("-")[2]
-                    
+                        voice_client.pause()
+                    continue
+                else:
+                    cur.execute(f"SELECT title FROM playlist WHERE guildid = {guildid} AND userid = -1")
+                    o = cur.fetchall()
+                    if len(o) > 0:
+                        radio = o[0][0].split("-")
+                        link = radio[2]
+                        try:
+                            player = discord.FFmpegPCMAudio(source = link, before_options = FFMPEG_OPTIONS)
+                            voice_client.play(player)
+                        except:
+                            pass
+                    else:
+                        voice_client.resume()
+                
+                user = guild.get_member(BOTID)
+                await user.edit(deafen = False)
+                
+                # play only if the previous music has ended
+                if not voice_client.is_playing() and not voice_client.is_paused():
+                    if not onloop(guildid):
+                        cur.execute(f"DELETE FROM playlist WHERE userid < 0 AND guildid = {guildid}")
+                    else:
+                        cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
+                        q = cur.fetchall()
+                        if len(q) > 0:
+                            cur.execute(f"INSERT INTO playlist VALUES ({guildid}, {-q[0][0]}, '{q[0][1]}')")
+                        cur.execute(f"DELETE FROM playlist WHERE userid < 0 AND guildid = {guildid}")
+                    conn.commit()
+
+                    cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid > 0")
+                    d = cur.fetchall()
+                    if len(d) == 0:
+                        user = guild.get_member(BOTID)
+                        await user.edit(mute = True)
+                        if not guildid in emptynotice:
+                            emptynotice.append(guildid)
+                            embed = discord.Embed(title=f"Playlist is empty", description="Use /queue to fill it!")
+                            embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
+                            embed.set_thumbnail(url=BOT_ICON)
+                            if textchn != None:
+                                await textchn.send(embed = embed)
+                        continue
+                    if guildid in emptynotice:
+                        emptynotice.remove(guildid)
+                    dd = d[0]
+                    userid = dd[0]
+                    title = dd[1]
+
+                    url = ""
+
+                    if userid != -1:                
+                        try:
+                            ydl = search(b64d(title))
+                            url = ydl['formats'][0]['url']
+                            title = ydl['title']
+                        except:
+                            if textchn != None:
+                                await textchn.send(f"I cannot find the song **{title}**. This might be a temporary issue.")
+                            continue
+                    else:
+                        data = title
+                        title = data.split("-")[1]
+                        url = data.split("-")[2]
+
+                    username = "Unknown user"
+                    avatar = ""
+                    try:
+                        user = guild.get_member(userid)
+                        username = user.name
+                        avatar = user.avatar.url
+                    except:
+                        pass
+
                     try:
                         user = guild.get_member(BOTID)
                         await user.edit(mute = False)
                         player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
+                        if voice_client.is_playing():
+                            continue
                         voice_client.play(player)
                     except:
-                        # failed to play, try again next loop
+                        if textchn != None:
+                            await textchn.send(f"Something went wrong.")
                         continue
-                    
-                continue
 
-            textchn = None
-            cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'music'")
-            t = cur.fetchall()
-            if len(t) > 0:
-                textchnid = t[0][0]
-                try:
-                    textchn = bot.get_channel(textchnid)
-                except:
-                    pass
+                    cur.execute(f"UPDATE playlist SET userid = -userid WHERE guildid = {guildid} AND userid = {userid} AND title = '{b64e(title)}'")
+                    conn.commit()
+                    if textchn != None:
+                        title = ydl['title']
 
-            if len(voice_client.channel.members) == 1: # only bot in channel
-                user = guild.get_member(BOTID)
-                await user.edit(deafen = True)
-                voice_client.pause()
-                continue
-            else:
-                voice_client.resume()
-            
-            user = guild.get_member(BOTID)
-            await user.edit(deafen = False)
-            
-            # play only if the previous music has ended
-            if not voice_client.is_playing() and not voice_client.is_paused():
-                if not onloop(guildid):
-                    cur.execute(f"DELETE FROM playlist WHERE userid < 0 AND guildid = {guildid}")
-                else:
-                    cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
-                    q = cur.fetchall()
-                    if len(q) > 0:
-                        cur.execute(f"INSERT INTO playlist VALUES ({guildid}, {-q[0][0]}, '{q[0][1]}')")
-                    cur.execute(f"DELETE FROM playlist WHERE userid < 0 AND guildid = {guildid}")
-                conn.commit()
+                        username = "Unknown user"
+                        avatar = ""
 
-                cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid > 0")
-                d = cur.fetchall()
-                if len(d) == 0:
-                    user = guild.get_member(BOTID)
-                    await user.edit(mute = True)
-                    if not guildid in emptynotice:
-                        emptynotice.append(guildid)
-                        embed = discord.Embed(title=f"Playlist is empty", description="Use /queue to fill it!")
+                        try:
+                            user = guild.get_member(userid)
+                            username = user.name
+                            avatar = user.avatar.url
+                        except:
+                            pass
+
+                        embed = discord.Embed(title=f"Now playing", description=title)
                         embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
                         embed.set_thumbnail(url=BOT_ICON)
-                        if textchn != None:
-                            await textchn.send(embed = embed)
-                    continue
-                if guildid in emptynotice:
-                    emptynotice.remove(guildid)
-                dd = d[0]
-                userid = dd[0]
-                title = dd[1]
-
-                url = ""
-
-                if userid != -1:                
-                    try:
-                        ydl = search(b64d(title))
-                        url = ydl['formats'][0]['url']
-                        title = ydl['title']
-                    except:
-                        if textchn != None:
-                            await textchn.send(f"I cannot find the song **{title}**. This might be a temporary issue.")
-                        continue
-                else:
-                    data = title
-                    title = data.split("-")[1]
-                    url = data.split("-")[2]
-
-                username = "Unknown user"
-                avatar = ""
-                try:
-                    user = guild.get_member(userid)
-                    username = user.name
-                    avatar = user.avatar.url
-                except:
-                    pass
-
-                try:
-                    user = guild.get_member(BOTID)
-                    await user.edit(mute = False)
-                    player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
-                    if voice_client.is_playing():
-                        continue
-                    voice_client.play(player)
-                except:
-                    if textchn != None:
-                        await textchn.send(f"Something went wrong.")
-                    continue
-
-                cur.execute(f"UPDATE playlist SET userid = -userid WHERE guildid = {guildid} AND userid = {userid} AND title = '{b64e(title)}'")
-                conn.commit()
-                if textchn != None:
-                    title = ydl['title']
-
-                    current = "No song is being played at the moment."
-                    cur.execute(f"SELECT title FROM playlist WHERE guildid = {guildid} AND userid < 0")
-                    q = cur.fetchall()
-                    if len(q) > 0:
-                        current = b64d(q[0][0])
-                    msg = f"**Current song**:\n {current}\n\n"
-
-                    msg += f"**Next Up**\n"
-
-                    cur.execute(f"SELECT title FROM playlist WHERE guildid = {guildid} AND userid > 0")
-                    q = cur.fetchall()
-                    i = 0
-                    for qq in q:
-                        i += 1
-                        msg += f"**{i}.** {b64d(qq[0])}\n"
-                    if i == 0:
-                        msg += f"No song in queue.\n"
-                    else:
-                        msg += "\n\n*You can remove a song from playlist by using /dequeue [queue position].*"
-                    
-                    embed = discord.Embed(title=f"Playlist", description=msg)
-                    embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-                    embed.set_thumbnail(url=BOT_ICON)
-                    if onloop(guildid):
-                        embed.set_footer(text=f"Loop playback enbled.")
-                    await textchn.send(embed = embed)
-    
+                        embed.set_footer(text=f"Requested by {username}", icon_url = avatar)
+                        await textchn.send(embed=embed)
+                        
+            except:
+                import traceback
+                traceback.print_exc()
+                pass
+            
         await asyncio.sleep(3)
 
 bot.loop.create_task(MusicLoop())
