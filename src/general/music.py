@@ -7,6 +7,7 @@
 import os, asyncio
 import discord
 from base64 import b64encode, b64decode
+from time import time
 
 from general.radiolist import radiolist, radioname, radiolink, SearchRadio
 
@@ -398,6 +399,8 @@ async def PlayList(ctx):
     if ctx.guild is None:
         await ctx.respond(f"Music can only be played in voice channels in guilds!")
         return
+    
+    await ctx.defer()
 
     conn = newconn()
     cur = conn.cursor()
@@ -405,10 +408,22 @@ async def PlayList(ctx):
     guildid = ctx.guild.id
 
     current = "No song is being played at the moment."
-    cur.execute(f"SELECT title FROM playlist WHERE guildid = {guildid} AND userid < 0")
+    cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
     t = cur.fetchall()
     if len(t) > 0:
-        current = b64d(t[0][0])
+        userid = t[0][0]
+        title = t[0][1]
+        current = b64d(t[0][1])
+
+        if userid == -1:
+            link = title.split("-")[2]
+            
+            radiosong = GetCurrentSong(link)
+            if radiosong != -1:
+                current = f"{radiosong} (**{title.split('-')[1]}**)"           
+            else:
+                current = title.split('-')[1]
+
     msg = f"**Current song**:\n {current}\n\n"
 
     msg += f"**Next Up**\n"
@@ -438,6 +453,7 @@ async def CurrentSong(ctx):
         return
     guildid = ctx.guild.id
 
+    await ctx.defer()
     conn = newconn()
     cur = conn.cursor()
     cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
@@ -457,12 +473,31 @@ async def CurrentSong(ctx):
         avatar = user.avatar.url
     except:
         pass
-
-    embed = discord.Embed(title=f"Now playing", description=title)
-    embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-    embed.set_thumbnail(url=BOT_ICON)
-    embed.set_footer(text=f"Requested by {username}", icon_url = avatar)
-    await ctx.respond(embed = embed)
+    
+    if userid == 1:
+        title = t[0][1]
+        link = title.split("-")[2]
+        
+        radiosong = GetCurrentSong(link)
+        if radiosong != -1:
+            embed = discord.Embed(title=f"Now playing", description=radiosong)
+            embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
+            embed.set_thumbnail(url=BOT_ICON)
+            embed.set_footer(text="Radio: "+title.split("-")[1])
+            await ctx.respond(embed = embed)
+        
+        else:
+            embed = discord.Embed(title=f"Now playing", description=title.split("-")[1])
+            embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
+            embed.set_thumbnail(url=BOT_ICON)
+            embed.set_footer(text=f"Radio: "+title.split("-")[1], icon_url = avatar)
+            await ctx.respond(embed = embed)
+    else:
+        embed = discord.Embed(title=f"Now playing", description=title)
+        embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
+        embed.set_thumbnail(url=BOT_ICON)
+        embed.set_footer(text=f"Requested by {username}", icon_url = avatar)
+        await ctx.respond(embed = embed)
 
 ##### RADIO STREAM
 @bot.slash_command(name="radio", description="Staff - Music - Play radio.")
@@ -531,6 +566,7 @@ async def MusicLoop():
     await asyncio.sleep(5)
 
     emptynotice = []
+    cursong = {} # cursong[url] = {song name, last update}
 
     while not bot.is_closed():
         cur.execute(f"SELECT guildid, channelid FROM vcbind")
@@ -597,21 +633,39 @@ async def MusicLoop():
                     except:
                         pass
 
+                cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid = -1")
+                o = cur.fetchall()
+                if len(o) > 0:
+                    title = o[0][1]
+                    link = title.split("-")[2]
+                    if link in cursong.keys() and time() - cursong[link][1] <= 15:
+                        continue
+                    else:
+                        postupdate = False
+                        radiosong = GetCurrentSong(link)
+                        if not link in cursong.keys() or cursong[link][0] != radiosong:
+                            postupdate = True
+                        if radiosong != -1:
+                            cursong[link] = (radiosong, int(time()))
+                            
+                            if postupdate:
+                                embed = discord.Embed(title=f"Now playing", description=radiosong)
+                                embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
+                                embed.set_thumbnail(url=BOT_ICON)
+                                embed.set_footer(text="Radio: "+title.split("-")[1])
+                                await textchn.send(embed=embed)
+
                 if len(voice_client.channel.members) == 1: # only bot in channel
                     user = guild.get_member(BOTID)
                     await user.edit(deafen = True)
-                    cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid = -1")
-                    o = cur.fetchall()
                     if len(o) > 0:
                         voice_client.stop()
                     else:
                         voice_client.pause()
                     continue
                 else:
-                    cur.execute(f"SELECT title FROM playlist WHERE guildid = {guildid} AND userid = -1")
-                    o = cur.fetchall()
                     if len(o) > 0:
-                        radio = o[0][0].split("-")
+                        radio = o[0][1].split("-")
                         link = radio[2]
                         try:
                             player = discord.FFmpegPCMAudio(source = link, before_options = FFMPEG_OPTIONS)

@@ -9,6 +9,11 @@ from settings import *
 from db import newconn
 from bot import bot
 from base64 import b64encode, b64decode
+import struct
+import sys
+import urllib.request
+import re
+import ssl
 
 def TimeDelta(timestamp): # returns human-readable delta
     delta = abs(time() - timestamp)
@@ -101,3 +106,27 @@ def isStaff(guild, user):
         return True
         
     return False
+
+def GetCurrentSong(url):
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+
+    encoding = 'latin1' # default: iso-8859-1 for mp3 and utf-8 for ogg streams
+    request = urllib.request.Request(url, headers={'Icy-MetaData': 1})  # request metadata
+    
+    with urllib.request.urlopen(request, context=ctx) as response:
+        metaint = int(response.headers['icy-metaint'])
+        for _ in range(10): # # title may be empty initially, try several times
+            response.read(metaint)  # skip to metadata
+            metadata_length = struct.unpack('B', response.read(1))[0] * 16  # length byte
+            metadata = response.read(metadata_length).rstrip(b'\0')
+            
+            # extract title from the metadata
+            m = re.search(br"StreamTitle='([^']*)';", metadata)
+            if m:
+                title = m.group(1)
+                if title:
+                    return title.decode()
+        else: 
+            return -1
