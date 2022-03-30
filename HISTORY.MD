@@ -1,5 +1,10 @@
 # Gecko Bot Update History
 
+## Update 2022.03.30
+
+**Version v1.7**  
+Added music function
+
 ## Update 2022.03.29
 
 **Version v1.6**  

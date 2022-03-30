@@ -37,7 +37,7 @@ async def FinanceBalance(ctx):
         cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'finance'")
         t = cur.fetchall()
         if len(t) == 0:
-            await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `!set_finance_channel {{#channel}}` to set it up!", ephemeral = True)
+            await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!", ephemeral = True)
             return
         if t[0][0] != ctx.channel.id:
             await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
@@ -75,7 +75,7 @@ async def FinanceCheckIn(ctx):
         cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'finance'")
         t = cur.fetchall()
         if len(t) == 0:
-            await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `!set_finance_channel {{#channel}}` to set it up!", ephemeral = True)
+            await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!", ephemeral = True)
             return
         if t[0][0] != ctx.channel.id:
             await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
@@ -138,7 +138,7 @@ async def FinanceWork(ctx):
         cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'finance'")
         t = cur.fetchall()
         if len(t) == 0:
-            await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `!set_finance_channel {{#channel}}` to set it up!", ephemeral = True)
+            await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!", ephemeral = True)
             return
         if t[0][0] != ctx.channel.id:
             await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
@@ -212,7 +212,7 @@ async def FinanceClaim(ctx):
         cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'finance'")
         t = cur.fetchall()
         if len(t) == 0:
-            await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `!set_finance_channel {{#channel}}` to set it up!", ephemeral = True)
+            await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!", ephemeral = True)
             return
         if t[0][0] != ctx.channel.id:
             await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
@@ -261,7 +261,7 @@ async def FinanceRichest(ctx):
         cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'finance'")
         t = cur.fetchall()
         if len(t) == 0:
-            await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `!set_finance_channel {{#channel}}` to set it up!", ephemeral = True)
+            await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!", ephemeral = True)
             return
         if t[0][0] != ctx.channel.id:
             await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
