@@ -8,6 +8,8 @@ import os, asyncio
 import discord
 from base64 import b64encode, b64decode
 
+from general.radiolist import radiolist, radioname, radiolink, SearchRadio
+
 from requests import get
 from youtube_dl import YoutubeDL
 
@@ -65,7 +67,7 @@ async def JoinVC(ctx):
     conn.commit()
 
     user = ctx.guild.get_member(BOTID)
-    await user.edit(mute = True, deafen = True)
+    await user.edit(mute = True)
     
     await ctx.respond(f"I've joined the voice channel.")
 
@@ -126,6 +128,8 @@ async def ResumeMusic(ctx):
 
     voice_client.resume()
     await ctx.respond(f"Music resumed!")
+
+##### YOUTUBE MUSIC
 
 @bot.slash_command(name="clear", description="Staff - Music - Clear playlist.")
 async def ResumeMusic(ctx): 
@@ -202,14 +206,16 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtub
         voice_client.stop()
     try:
         user = ctx.guild.get_member(BOTID)
-        await user.edit(mute = False, deafen = True)
+        await user.edit(mute = False)
         player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
         voice_client.play(player)
     except:
         await ctx.respond(f"It looks like I'm blocked by youtube. Please try again later.")
         return
     
-    if not onloop(guildid):
+    cur.execute(f"SELECT userid FROM playlist WHERE guildid = {guildid} AND userid < 0")
+    t = cur.fetchall()    
+    if not onloop(guildid) or len(t) > 0 and t[0][0] == -1:
         cur.execute(f"DELETE FROM playlist WHERE userid < 0 AND guildid = {guildid}")
     else:
         cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
@@ -218,11 +224,11 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtub
             cur.execute(f"INSERT INTO playlist VALUES ({guildid}, {-q[0][0]}, '{q[0][1]}')")
         cur.execute(f"DELETE FROM playlist WHERE userid < 0 AND guildid = {guildid}")
     
-    cur.execute(f"SELECT * FROM playlist WHERE guildid = {guildid} AND title = '{b64encode(title.encode()).decode()}'")
+    cur.execute(f"SELECT * FROM playlist WHERE guildid = {guildid} AND title = '{b64e(title)}'")
     t = cur.fetchall()
     if len(t) > 0:
-        cur.execute(f"DELETE FROM playlist WHERE guildid = {guildid} AND title = '{b64encode(title.encode()).decode()}'")
-    cur.execute(f"INSERT INTO playlist VALUES ({guildid}, -{ctx.author.id}, '{b64encode(title.encode()).decode()}')")
+        cur.execute(f"DELETE FROM playlist WHERE guildid = {guildid} AND title = '{b64e(title)}'")
+    cur.execute(f"INSERT INTO playlist VALUES ({guildid}, -{ctx.author.id}, '{b64e(title)}')")
     conn.commit()
 
     embed = discord.Embed(title=f"Now playing", description=title)
@@ -242,9 +248,15 @@ async def NextSong(ctx):
     if voice_client is None or voice_client.channel is None:
         await ctx.respond(f"I'm not in a voice channel. Tell staff to use /join command to join me in.", ephemeral = True)
         return
-
+    
     conn = newconn()
     cur = conn.cursor()
+    cur.execute(f"SELECT * FROM playlist WHERE guildid = {guildid} AND userid = -1")
+    t = cur.fetchall()
+    if len(t) != 0:
+        await ctx.respond(f"A radio stream is being played and you cannot override it. Only staff are allowed to run this command during radio streams.", ephemeral = True)
+        return
+
     guildid = ctx.guild.id
     cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid > 0 LIMIT 1")
     t = cur.fetchall()
@@ -258,7 +270,7 @@ async def NextSong(ctx):
 
     url = ""
     try:
-        ydl = search(b64decode(title.encode()).decode())
+        ydl = search(b64d(title))
         url = ydl['formats'][0]['url']
     except:
         await ctx.respond(f"Something went wrong. Try again later.")
@@ -266,7 +278,7 @@ async def NextSong(ctx):
 
     try:
         user = ctx.guild.get_member(BOTID)
-        await user.edit(mute = False, deafen = True)
+        await user.edit(mute = False)
         player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
         if voice_client.is_playing():
             voice_client.stop()
@@ -283,8 +295,10 @@ async def NextSong(ctx):
         avatar = user.avatar.url
     except:
         pass
-    
-    if not onloop(guildid):
+
+    cur.execute(f"SELECT userid FROM playlist WHERE guildid = {guildid} AND userid < 0")
+    t = cur.fetchall()    
+    if not onloop(guildid) or len(t) > 0 and t[0][0] == -1:
         cur.execute(f"DELETE FROM playlist WHERE userid < 0 AND guildid = {guildid}")
     else:
         cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
@@ -296,7 +310,7 @@ async def NextSong(ctx):
     cur.execute(f"UPDATE playlist SET userid = -userid WHERE guildid = {guildid} AND userid = {userid} AND title = '{title}'") # title already encoded
     conn.commit()
 
-    embed = discord.Embed(title=f"Now playing", description=b64decode(title.encode()).decode())
+    embed = discord.Embed(title=f"Now playing", description=b64d(title))
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
     embed.set_thumbnail(url=BOT_ICON)
     embed.set_footer(text=f"Requested by {username}", icon_url = avatar)
@@ -338,12 +352,12 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtub
         await ctx.respond(f"I cannot find that song. This might be a temporary issue.")
         return
 
-    cur.execute(f"SELECT * FROM playlist WHERE guildid = {guildid} AND title = '{b64encode(title.encode()).decode()}'")
+    cur.execute(f"SELECT * FROM playlist WHERE guildid = {guildid} AND title = '{b64e(title)}'")
     t = cur.fetchall()
     if len(t) > 0:
         await ctx.respond(f"The song is already in the playlist.", ephemeral = True)
         return
-    cur.execute(f"INSERT INTO playlist VALUES ({guildid}, {ctx.author.id}, '{b64encode(title.encode()).decode()}')")
+    cur.execute(f"INSERT INTO playlist VALUES ({guildid}, {ctx.author.id}, '{b64e(title)}')")
     conn.commit()
 
     embed = discord.Embed(title=f"Added to queue", description=title)
@@ -376,7 +390,7 @@ async def UnqueueMusic(ctx, songid: discord.Option(int, "Song id (the number in 
                 return
             cur.execute(f"DELETE FROM playlist WHERE guildid = {guildid} AND title = '{dd[0]}' AND userid = {dd[1]}")
             conn.commit()
-            await ctx.respond(f"**{songid}.** **{b64decode(dd[0].encode()).decode()}** removed from queue.")
+            await ctx.respond(f"**{songid}.** **{b64d(dd[0])}** removed from queue.")
 
 @bot.slash_command(name="playlist", description="Music - See the queued play list.")
 async def PlayList(ctx): 
@@ -394,7 +408,7 @@ async def PlayList(ctx):
     cur.execute(f"SELECT title FROM playlist WHERE guildid = {guildid} AND userid < 0")
     t = cur.fetchall()
     if len(t) > 0:
-        current = b64decode(t[0][0].encode()).decode()
+        current = b64d(t[0][0])
     msg = f"**Current song**:\n {current}\n\n"
 
     msg += f"**Next Up**\n"
@@ -404,7 +418,7 @@ async def PlayList(ctx):
     i = 0
     for dd in d:
         i += 1
-        msg += f"**{i}.** {b64decode(dd[0].encode()).decode()}\n"
+        msg += f"**{i}.** {b64d(dd[0])}\n"
     if i == 0:
         msg += f"No song in queue.\n"
     else:
@@ -432,7 +446,7 @@ async def CurrentSong(ctx):
         await ctx.respond(f"No song is being played at the moment! Use /queue to start.")
         return
     userid = -t[0][0]
-    title = b64decode(t[0][1].encode()).decode()
+    title = b64d(t[0][1])
 
     username = "Unknown user"
     avatar = ""
@@ -449,6 +463,65 @@ async def CurrentSong(ctx):
     embed.set_thumbnail(url=BOT_ICON)
     embed.set_footer(text=f"Requested by {username}", icon_url = avatar)
     await ctx.respond(embed = embed)
+
+##### RADIO STREAM
+@bot.slash_command(name="radio", description="Staff - Music - Play radio.")
+async def Radio(ctx, station: discord.Option(str, "Radio station (274 stations available)", required = True)):
+    if ctx.guild is None:
+        await ctx.respond("You can only run this command in guilds!")
+        return
+
+    if not isStaff(ctx.guild, ctx.author):
+        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+        return
+
+    station = SearchRadio(station)
+    idx = radioname.index(station)
+    link = radiolist[idx].split("|")[0]
+
+    conn = newconn()
+    cur = conn.cursor()
+
+    guildid = ctx.guild.id
+    guild = ctx.guild
+
+    cur.execute(f"SELECT userid FROM playlist WHERE guildid = {guildid} AND userid < 0")
+    t = cur.fetchall()    
+    if not onloop(guildid) or len(t) > 0 and t[0][0] == -1:
+        cur.execute(f"DELETE FROM playlist WHERE userid < 0 AND guildid = {guildid}")
+    else:
+        cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
+        q = cur.fetchall()
+        if len(q) > 0:
+            cur.execute(f"INSERT INTO playlist VALUES ({guildid}, {-q[0][0]}, '{q[0][1]}')")
+        cur.execute(f"DELETE FROM playlist WHERE userid < 0 AND guildid = {guildid}")
+    cur.execute(f"INSERT INTO playlist VALUES ({guildid}, -1, 'radio-{station}-{link}')")
+    conn.commit()
+
+    voice_client = guild.voice_client
+    voice_client.stop()
+    user = guild.get_member(BOTID)
+    await user.edit(mute = False)
+    player = discord.FFmpegPCMAudio(source = link, before_options = FFMPEG_OPTIONS)
+    voice_client.play(player)
+
+    await ctx.respond(f"Current song has been overwritten to radio station **{station}**.\nThe playlist has been **saved**, use `/next` to go back playing songs.\nRadio streams have **no end**, so Gecko will not stop playing automatically.")
+
+@bot.slash_command(name="radiolist", description="Music - Available radio station list.")
+async def RadioList(ctx):
+    msg = ""
+    for name in radioname:
+        msg += name + "\n"
+        if len(msg) > 2000:
+            embed = discord.Embed(title=f"Radio station list", description=msg)
+            embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
+            embed.set_thumbnail(url=BOT_ICON)
+            await ctx.respond(embed = embed, ephemeral = True)
+            msg = ""
+    embed = discord.Embed(title=f"Radio station list", description=msg)
+    embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
+    embed.set_thumbnail(url=BOT_ICON)
+    await ctx.respond(embed = embed, ephemeral = True)
 
 async def MusicLoop():
     conn = newconn()
@@ -479,7 +552,7 @@ async def MusicLoop():
                     try:
                         await channel.connect(timeout = 5)
                         user = guild.get_member(BOTID)
-                        await user.edit(mute = True, deafen = True)
+                        await user.edit(mute = True)
                     except:
                         # failed to connect, try again next loop
                         continue
@@ -491,16 +564,20 @@ async def MusicLoop():
                     voice_client = guild.voice_client
 
                     url = ""
-                    try:
-                        ydl = search(b64decode(p[0][1].encode()).decode())
-                        url = ydl['formats'][0]['url']
-                    except:
-                        # failed to connect, try again next loop
-                        continue
+                    if p[0][0] != -1:
+                        try:
+                            ydl = search(b64d(p[0][1]))
+                            url = ydl['formats'][0]['url']
+                        except:
+                            # failed to connect, try again next loop
+                            continue
+                    else:
+                        title = p[0][1].split("-")[1]
+                        url = p[0][1].split("-")[2]
                     
                     try:
                         user = guild.get_member(BOTID)
-                        await user.edit(mute = False, deafen = True)
+                        await user.edit(mute = False)
                         player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
                         voice_client.play(player)
                     except:
@@ -508,7 +585,7 @@ async def MusicLoop():
                         continue
                     
                 continue
-            
+
             textchn = None
             cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'music'")
             t = cur.fetchall()
@@ -518,6 +595,17 @@ async def MusicLoop():
                     textchn = bot.get_channel(textchnid)
                 except:
                     pass
+
+            if len(voice_client.channel.members) == 1: # only bot in channel
+                user = guild.get_member(BOTID)
+                await user.edit(deafen = True)
+                voice_client.pause()
+                continue
+            else:
+                voice_client.resume()
+            
+            user = guild.get_member(BOTID)
+            await user.edit(deafen = False)
             
             # play only if the previous music has ended
             if not voice_client.is_playing() and not voice_client.is_paused():
@@ -535,7 +623,7 @@ async def MusicLoop():
                 d = cur.fetchall()
                 if len(d) == 0:
                     user = guild.get_member(BOTID)
-                    await user.edit(mute = True, deafen = True)
+                    await user.edit(mute = True)
                     if not guildid in emptynotice:
                         emptynotice.append(guildid)
                         embed = discord.Embed(title=f"Playlist is empty", description="Use /queue to fill it!")
@@ -551,15 +639,20 @@ async def MusicLoop():
                 title = dd[1]
 
                 url = ""
-                
-                try:
-                    ydl = search(b64decode(title.encode()).decode())
-                    url = ydl['formats'][0]['url']
-                    title = ydl['title']
-                except:
-                    if textchn != None:
-                        await textchn.send(f"I cannot find the song **{title}**. This might be a temporary issue.")
-                    continue
+
+                if userid != -1:                
+                    try:
+                        ydl = search(b64d(title))
+                        url = ydl['formats'][0]['url']
+                        title = ydl['title']
+                    except:
+                        if textchn != None:
+                            await textchn.send(f"I cannot find the song **{title}**. This might be a temporary issue.")
+                        continue
+                else:
+                    data = title
+                    title = data.split("-")[1]
+                    url = data.split("-")[2]
 
                 username = "Unknown user"
                 avatar = ""
@@ -572,7 +665,7 @@ async def MusicLoop():
 
                 try:
                     user = guild.get_member(BOTID)
-                    await user.edit(mute = False, deafen = True)
+                    await user.edit(mute = False)
                     player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
                     if voice_client.is_playing():
                         continue
@@ -582,7 +675,7 @@ async def MusicLoop():
                         await textchn.send(f"Something went wrong.")
                     continue
 
-                cur.execute(f"UPDATE playlist SET userid = -userid WHERE guildid = {guildid} AND userid = {userid} AND title = '{b64encode(title.encode()).decode()}'")
+                cur.execute(f"UPDATE playlist SET userid = -userid WHERE guildid = {guildid} AND userid = {userid} AND title = '{b64e(title)}'")
                 conn.commit()
                 if textchn != None:
                     title = ydl['title']
@@ -591,7 +684,7 @@ async def MusicLoop():
                     cur.execute(f"SELECT title FROM playlist WHERE guildid = {guildid} AND userid < 0")
                     q = cur.fetchall()
                     if len(q) > 0:
-                        current = b64decode(q[0][0].encode()).decode()
+                        current = b64d(q[0][0])
                     msg = f"**Current song**:\n {current}\n\n"
 
                     msg += f"**Next Up**\n"
@@ -601,7 +694,7 @@ async def MusicLoop():
                     i = 0
                     for qq in q:
                         i += 1
-                        msg += f"**{i}.** {b64decode(qq[0].encode()).decode()}\n"
+                        msg += f"**{i}.** {b64d(qq[0])}\n"
                     if i == 0:
                         msg += f"No song in queue.\n"
                     else:

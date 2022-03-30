@@ -88,14 +88,14 @@ class ManageStatsDisplay(commands.Cog):
             await ctx.respond(f"{ctx.author.name}, stats display have been enabled. You can edit the category name, move channel & category order as you wish.")
 
             cur.execute(f"INSERT INTO serverstats VALUES ({guildid}, {category.id})")
-            conf1 = b64encode(b"{time: %A, %b %-d}").decode()
+            conf1 = b64e("{time: %A, %b %-d}")
             cur.execute(f"INSERT INTO statsconfig VALUES ({guildid}, {category.id}, {channel1.id}, '{conf1}')")
-            conf2 = b64encode(b"{online} / {members} Online").decode()
+            conf2 = b64e("{online} / {members} Online")
             cur.execute(f"INSERT INTO statsconfig VALUES ({guildid}, {category.id}, {channel2.id}, '{conf2}')")
             conn.commit()
             await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} created stats display category and channels.", ctx.guild.id)
-            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} added stats channel with configuration {b64decode(conf1.encode()).decode()}.", ctx.guild.id)
-            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} added stats channel with configuration {b64decode(conf2.encode()).decode()}.", ctx.guild.id)
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} added stats channel with configuration {b64d(conf1)}.", ctx.guild.id)
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} added stats channel with configuration {b64d(conf2)}.", ctx.guild.id)
 
         except Exception as e:
             await ctx.respond(f"{ctx.author.name}, I either cannot create category / channel, or cannot change channel permissions. Make sure I have Manage Channels and Manage Roles permission.")
@@ -196,10 +196,10 @@ class ManageStatsDisplay(commands.Cog):
 
             await ctx.respond(f"{ctx.author.name}, stats display channel has been created with configuration `{conf}`.")
 
-            conf = b64encode(conf.encode()).decode()
+            conf = b64e(conf)
             cur.execute(f"INSERT INTO statsconfig VALUES ({guildid}, {category.id}, {channel.id}, '{conf}')")
             conn.commit()
-            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} added stats channel with configuration {b64decode(conf.encode()).decode()}.", ctx.guild.id)
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} added stats channel with configuration {b64d(conf)}.", ctx.guild.id)
         
         except Exception as e:
             await ctx.respond(f"{ctx.author.name}, I either cannot create category / channel, or cannot change channel permissions. Make sure I have Manage Channels and Manage Roles permission.")
@@ -316,7 +316,7 @@ class ManageStatsDisplay(commands.Cog):
                                     cnt += 1
                     chnname = chnname.replace(f"{{{orgvar}}}", str(cnt))
             
-            cur.execute(f"UPDATE statsconfig SET conf = '{b64encode(conf.encode()).decode()}' WHERE guildid = {guildid} AND channelid = {channelid}")
+            cur.execute(f"UPDATE statsconfig SET conf = '{b64e(conf)}' WHERE guildid = {guildid} AND channelid = {channelid}")
             conn.commit()
             await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} updated stats channel {channelid} configuration to {conf}.", ctx.guild.id)
 
@@ -488,7 +488,7 @@ async def StatsDisplayUpdate():
             t = cur.fetchall()
             for tt in t:
                 channelid = tt[0]
-                conf = b64decode(tt[1].encode()).decode()
+                conf = b64d(tt[1])
 
                 if ss_get_channel_fail.count((guildid, channelid)) > 10:
                     while ss_get_channel_fail.count((guildid, channelid)) > 0:

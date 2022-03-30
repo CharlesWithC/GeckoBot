@@ -2,6 +2,9 @@
 
 ## Update 2022.03.30
 
+**Version v1.7.2**  
+Added radio function
+
 **Version v1.7**  
 Added music function
 

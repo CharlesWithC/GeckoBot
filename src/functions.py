@@ -8,6 +8,7 @@ from time import time, gmtime, strftime
 from settings import *
 from db import newconn
 from bot import bot
+from base64 import b64encode, b64decode
 
 def TimeDelta(timestamp): # returns human-readable delta
     delta = abs(time() - timestamp)
@@ -40,6 +41,21 @@ async def log(func, text, guildid = None):
         import traceback
         traceback.print_exc()
         pass
+
+def b64e(s):
+    try:
+        return b64encode(s.encode()).decode()
+    except:
+        return s
+    
+def b64d(s):
+    if s.startswith("radio-"):
+        t=s.split("-")
+        return t[1]
+    try:
+        return b64decode(s.encode()).decode()
+    except:
+        return s
 
 def validateStrftime(s):
     try:

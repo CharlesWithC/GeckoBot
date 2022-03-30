@@ -57,7 +57,7 @@ class ReactionRole(commands.Cog):
                 cur.execute(f"SELECT emoji FROM rolebind WHERE guildid = {guildid} AND role = {r}")
                 t = cur.fetchall()
                 if len(t) != 0:
-                    emoji = b64decode(t[0][0].encode()).decode()
+                    emoji = b64d(t[0][0])
                     await ctx.respond(f"{ctx.author.name}, role <@&{r}> already bound to {emoji} in another post.", ephemeral = True)
                     return
 
@@ -80,7 +80,7 @@ class ReactionRole(commands.Cog):
             msgid = message.id
             cur.execute(f"INSERT INTO reactionrole VALUES ({guildid}, {channelid}, {msgid})")
             for data in rolebind:
-                cur.execute(f"INSERT INTO rolebind VALUES ({guildid}, {channelid}, {msgid}, {data[0]}, '{b64encode(data[1].encode()).decode()}')")
+                cur.execute(f"INSERT INTO rolebind VALUES ({guildid}, {channelid}, {msgid}, {data[0]}, '{b64e(data[1])}')")
             conn.commit()
 
             await log("Staff", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} created a reaction-role post at {channel} ({channelid}), with role-binding: {rolebindtxt}", ctx.guild.id)
@@ -156,7 +156,7 @@ class ReactionRole(commands.Cog):
                 updates += f"Added role {roleid} => {emoji}.\n"
                 updateslog += f"Added role {roleid} => {emoji}. "
                 await message.add_reaction(emoji)
-                emoji = b64encode(emoji.encode()).decode()
+                emoji = b64e(emoji)
                 cur.execute(f"INSERT INTO rolebind VALUES ({guildid}, {channelid}, {msgid}, {roleid}, '{emoji}')")
                 conn.commit()
             else:
@@ -216,7 +216,7 @@ async def ReactionRoleUpdate():
                 rolebind = []
                 for dd in d:
                     rolebind.append((dd[0], dd[1]))
-                    rolebindtxt = f"<@&{dd[0]}> => {b64decode(dd[1].encode()).decode()} "
+                    rolebindtxt = f"<@&{dd[0]}> => {b64d(dd[1])} "
 
                 if reactionrole_fail.count((channelid, msgid)) > 10:
                     while reactionrole_fail.count((channelid, msgid)) > 0:
@@ -261,7 +261,7 @@ async def ReactionRoleUpdate():
                 reactions = message.reactions
                 existing_emojis = []
                 for reaction in reactions:
-                    emoji = b64encode(str(reaction.emoji).encode()).decode()
+                    emoji = b64e(str(reaction.emoji))
                     existing_emojis.append(emoji)
                     roleid = rolebind[emoji]
                     role = discord.utils.get(guild.roles, id=roleid)
