@@ -2,6 +2,9 @@
 
 ## Update 2022.03.31
 
+**Version v1.8.1**  
+Added log for form function  
+
 **Version v1.8**  
 1.Added customizable form function  
 2.Allowed staff to disable music "now playing" update

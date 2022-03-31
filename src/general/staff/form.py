@@ -89,6 +89,7 @@ class FormEditModal(Modal):
             cur.execute(f"UPDATE form SET btn = '{btn}', data = '{data}' WHERE formid = {formid}")
             conn.commit()
             await interaction.response.send_message(f"Form #{formid} updated.", ephemeral = False)
+            await log(f"Form", f"[Guild {interaction.guild} {guildid}] {interaction.user} ({interaction.user.id}) updated form #{formid}", guildid)
         else:
             cur.execute(f"SELECT COUNT(*) FROM form")
             t = cur.fetchall()
@@ -98,6 +99,7 @@ class FormEditModal(Modal):
             cur.execute(f"INSERT INTO form VALUES ({formid}, {guildid}, '{btn}', '{data}')")
             conn.commit()
             await interaction.response.send_message(f"Form created. Form ID: `{formid}`", ephemeral = False)
+            await log(f"Form", f"[Guild {interaction.guild} {guildid}] {interaction.user} ({interaction.user.id}) created form #{formid}", guildid)
 
 class FormModal(Modal):
     def __init__(self, formid, fields, *args, **kwargs) -> None:
@@ -149,7 +151,8 @@ class FormModal(Modal):
         conn.commit()
 
         await interaction.response.send_message(f"Form submitted. You can view your submission by using command `/form entry {formid}` (*it also works in DM*)", ephemeral = True)
-        
+        await log(f"Form", f"[Guild {interaction.guild} {guildid}] {user} ({userid}) submitted form #{formid}", guildid)
+
         cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'form'")
         t = cur.fetchall()
         if len(t) > 0:
@@ -323,6 +326,7 @@ class ManageForm(commands.Cog):
         conn.commit()
 
         await ctx.respond(f"Form #{formid} and entries are deleted.")
+        await log(f"Form", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) deleted form #{formid}", ctx.guild.id)
 
     @manage.command(name="send", description="Staff - Send form submit button.")
     async def send(self, ctx, channel: discord.Option(str, "Channel to send the button", required = True),
@@ -376,6 +380,8 @@ class ManageForm(commands.Cog):
             message = await channel.send(view = view)
 
             await ctx.respond(f"Form submit button sent at <#{channelid}>.", ephemeral = True)
+            await log(f"Form", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) posted form #{formid} at {channel} ({channelid})", ctx.guild.id)
+
         except:
             import traceback
             traceback.print_exc()
@@ -442,6 +448,8 @@ class ManageForm(commands.Cog):
             message = await channel.send(view = view)
 
             await ctx.respond(f"Form submit buttons sent at <#{channelid}>.", ephemeral = True)
+            await log(f"Form", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) posted multiple forms at {channel} ({channelid})", ctx.guild.id)
+
         except:
             import traceback
             traceback.print_exc()
@@ -545,10 +553,13 @@ class ManageForm(commands.Cog):
             cur.execute(f"UPDATE form SET data = '{data[8:]}' WHERE formid = {formid}")
             conn.commit()
             await ctx.respond(f"Form #{formid} is now accepting new entries.")
+            await log(f"Form", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) stopped form #{formid}", ctx.guild.id)
+
         else:
             cur.execute(f"UPDATE form SET data = 'stopped-{data}' WHERE formid = {formid}")
             conn.commit()
             await ctx.respond(f"Form #{formid} is no longer accepting new entries.")
+            await log(f"Form", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) started form #{formid}", ctx.guild.id)
 
     @manage.command(name="entry", description="View your entry.")
     async def entry(self, ctx, formid: discord.Option(str, "Form ID", required = True),
@@ -682,6 +693,7 @@ class ManageForm(commands.Cog):
             await channel.send(f"Here is the file for all entries of form #{formid}\nThe file is in Markdown format and will look great if you have a Markdown viewer.")
             await channel.send(file=discord.File(fp=f, filename='Entries.MD'))
             await ctx.respond(f"I've sent you the entries in DM.", ephemeral = True)
+            await log(f"Form", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) downloaded all entries of form #{formid}", ctx.guild.id)
         except:
             import traceback
             traceback.print_exc()
