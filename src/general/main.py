@@ -9,6 +9,7 @@ import discord
 import general.music
 import general.funhouse.finance
 import general.staff.embed
+import general.staff.form
 import general.staff.staff
 import general.staff.stats_display
 import general.staff.reaction_role
@@ -22,6 +23,7 @@ SETUP_MSG = """Gecko is a developing bot that can help you make your community b
 I'm ready to use slash commands and you type / to see a list of my commands.
 
 You should set up dedicated channels for specific functions, tell me by using `/setchannel`.
+Form    - Where notifications will be sent when a user submit an entry.
 Finance - Where players will play finance games.
 Music   - Where players will request for songs. If you don't set this up, only staff will be allowed to play music.
           If you want the bot to stick to a radio station and not being interrupted, then do not set it.
@@ -58,7 +60,7 @@ async def BotSetup(ctx):
         await ctx.respond(f"Hi, {ctx.author.name}\n" + SETUP_MSG)
 
 @bot.slash_command(name="setchannel", description="Staff - Set default channels where specific messages will be dealt with.")
-async def SetChannel(ctx, category: discord.Option(str, "The category of message.", required = True, choices = ["finance", "music", "log", "error"]),
+async def SetChannel(ctx, category: discord.Option(str, "The category of message.", required = True, choices = ["form", "finance", "music", "log", "error"]),
     channel: discord.Option(str, "Any channel you wish, to which I have access", required = True)):
     
     guild = ctx.guild
@@ -75,7 +77,7 @@ async def SetChannel(ctx, category: discord.Option(str, "The category of message
     if not channel.startswith("<#") or not channel.endswith(">"):
         await ctx.respond(f"{channel} is not a valid channel.", ephemeral = True)
         return
-    if not category in ["error", "log", "finance", "music"]:
+    if not category in ["form", "finance", "music", "error", "log"]:
         await ctx.respond(f"{category} is not a valid category.", ephemeral = True)
         return
 

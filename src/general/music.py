@@ -130,6 +130,35 @@ async def ResumeMusic(ctx):
     voice_client.resume()
     await ctx.respond(f"Music resumed!")
 
+@bot.slash_command(name="toggle_music_update", description="Staff - Music - Toggle 'Now Playing' auto post, whether Gecko should send it or not.")
+async def ToggleMusicUpdate(ctx): 
+    if ctx.guild is None:
+        await ctx.respond(f"Music can only be played in voice channels in guilds!")
+        return
+
+    if not isStaff(ctx.guild, ctx.author):
+        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+        return
+
+    conn = newconn()
+    cur = conn.cursor()
+
+    cur.execute(f"SELECT sval FROM settings WHERE guildid = {ctx.guild.id} AND skey = 'music_update_post'")
+    t = cur.fetchall()
+    if len(t) == 0:
+        cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 'music_update_post', 0)")
+        conn.commit()
+        await ctx.respond(f"'Now Playing' will no longer be posted automatically.\nUse /current to get the current song.")
+        return
+    if t[0][0] == 1:
+        cur.execute(f"UPDATE settings SET sval = '0' WHERE guildid = {ctx.guild.id} AND skey = 'music_update_post'")
+        conn.commit()
+        await ctx.respond(f"'Now Playing' will no longer be posted automatically.\nUse /current to get the current song.")
+    else:
+        cur.execute(f"UPDATE settings SET sval = '1' WHERE guildid = {ctx.guild.id} AND skey = 'music_update_post'")
+        conn.commit()
+        await ctx.respond(f"'Now Playing' will be posted automatically from now on.")
+
 ##### YOUTUBE MUSIC
 
 @bot.slash_command(name="clear", description="Staff - Music - Clear playlist.")
@@ -574,6 +603,16 @@ async def RadioList(ctx):
     embed.set_thumbnail(url=BOT_ICON)
     await ctx.respond(embed = embed, ephemeral = True)
 
+def postupdate(guildid):
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT sval FROM settings WHERE guildid = {guildid} AND skey = 'music_update_post'")
+    t = cur.fetchall()
+    if len(t) == 0 or t[0][0] == "1":
+        return True
+    elif t[0][0] == "0":
+        return False
+
 async def MusicLoop():
     conn = newconn()
     cur = conn.cursor()
@@ -660,11 +699,13 @@ async def MusicLoop():
                     if link in cursong.keys() and guildsong[guildid] != cursong[link][0]:
                         guildsong[guildid] = cursong[link][0]
                         radiosong = cursong[link][0]
-                        embed = discord.Embed(title=f"Now playing", description=radiosong, color = GECKOCLR)
-                        embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-                        embed.set_thumbnail(url=BOT_ICON)
-                        embed.set_footer(text="Radio: "+title.split("-")[1])
-                        await textchn.send(embed=embed)
+                        if postupdate(guildid):
+                            embed = discord.Embed(title=f"Now playing", description=radiosong, color = GECKOCLR)
+                            embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
+                            embed.set_thumbnail(url=BOT_ICON)
+                            embed.set_footer(text="Radio: "+title.split("-")[1])
+                            if not textchn is None:
+                                await textchn.send(embed=embed)
                         
                     if link in cursong.keys() and time() - cursong[link][1] <= 15:
                         continue
@@ -766,7 +807,7 @@ async def MusicLoop():
 
                     cur.execute(f"UPDATE playlist SET userid = -userid WHERE guildid = {guildid} AND userid = {userid} AND title = '{b64e(title)}'")
                     conn.commit()
-                    if textchn != None:
+                    if textchn != None and postupdate(guildid):
                         title = ydl['title']
 
                         username = "Unknown user"
@@ -778,17 +819,18 @@ async def MusicLoop():
                             avatar = user.avatar.url
                         except:
                             pass
-
+                        
                         embed = discord.Embed(title=f"Now playing", description=title, color = GECKOCLR)
                         embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
                         embed.set_thumbnail(url=BOT_ICON)
                         embed.set_footer(text=f"Requested by {username}", icon_url = avatar)
                         await textchn.send(embed=embed)
                         
-            except:
-                import traceback
-                traceback.print_exc()
-                pass
+            except Exception as e:
+                try:
+                    await log("ERROR",f"Music error: {str(e)}")
+                except:
+                    pass
             
         await asyncio.sleep(3)
 

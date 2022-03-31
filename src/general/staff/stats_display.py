@@ -460,102 +460,109 @@ async def StatsDisplayUpdate():
         cur.execute(f"SELECT guildid, categoryid FROM serverstats")
         d = cur.fetchall()
         for dd in d:
-            guildid = dd[0]
-            categoryid = dd[1]
-
-            if ss_get_channel_fail.count((guildid, 0)) > 10:
-                while ss_get_channel_fail.count((guildid, 0)) > 0:
-                    ss_get_channel_fail.remove((guildid, 0))
-
-                cur.execute(f"DELETE FROM serverstats WHERE guildid = {guildid}")
-                cur.execute(f"DELETE FROM statsconfig WHERE guildid = {guildid}")
-                conn.commit()
-            
-                await log("ServerStats", f"[{guild} ({guildid})] Server stats function for this server is closed as bot cannot access the server.", ctx.guild.id)
-                continue
-
-            guild = None
             try:
-                guild = bot.get_guild(guildid)
-                if guild is None:
-                    ss_get_channel_fail.append((guildid, 0))
-                    continue
-            except:
-                ss_get_channel_fail.append((guildid, 0))
-                continue
+                guildid = dd[0]
+                categoryid = dd[1]
 
-            cur.execute(f"SELECT channelid, conf FROM statsconfig WHERE guildid = {guildid} AND categoryid = {categoryid}")
-            t = cur.fetchall()
-            for tt in t:
-                channelid = tt[0]
-                conf = b64d(tt[1])
+                if ss_get_channel_fail.count((guildid, 0)) > 10:
+                    while ss_get_channel_fail.count((guildid, 0)) > 0:
+                        ss_get_channel_fail.remove((guildid, 0))
 
-                if ss_get_channel_fail.count((guildid, channelid)) > 10:
-                    while ss_get_channel_fail.count((guildid, channelid)) > 0:
-                        ss_get_channel_fail.remove((guildid, channelid))
-                    cur.execute(f"DELETE FROM statsconfig WHERE guildid = {guildid} AND categoryid = {categoryid} AND channelid = {channelid}")
+                    cur.execute(f"DELETE FROM serverstats WHERE guildid = {guildid}")
+                    cur.execute(f"DELETE FROM statsconfig WHERE guildid = {guildid}")
                     conn.commit()
-
-                    await log("ServerStats", f"[{guild} ({guildid})] Server stats channel {channelid} expired as bot cannot access the channel.", ctx.guild.id)  
-                    try:
-                        cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'error'")
-                        t = cur.fetchall()
-                        if len(t) != 0:
-                            errchannelid = t[0][0]
-                            errchannel = bot.get_channel(errchannelid)
-                            embed = discord.Embed(title=f"Staff Notice", description=f"Server stats channel `{channelid}` has expired as I cannot access it. Stats will no longer be updated.", color=0x0000DD)
-                            await errchannel.send(embed=embed)
-                    except Exception as e:
-                        pass
+                
+                    await log("ServerStats", f"[{guild} ({guildid})] Server stats function for this server is closed as bot cannot access the server.", ctx.guild.id)
                     continue
 
-                channel = None
-
+                guild = None
                 try:
-                    channel = bot.get_channel(channelid)
-                    if channel is None:
-                        ss_get_channel_fail.append((guildid, channelid))
+                    guild = bot.get_guild(guildid)
+                    if guild is None:
+                        ss_get_channel_fail.append((guildid, 0))
                         continue
                 except:
-                    ss_get_channel_fail.append((guildid, channelid))
+                    ss_get_channel_fail.append((guildid, 0))
                     continue
+
+                cur.execute(f"SELECT channelid, conf FROM statsconfig WHERE guildid = {guildid} AND categoryid = {categoryid}")
+                t = cur.fetchall()
+                for tt in t:
+                    channelid = tt[0]
+                    conf = b64d(tt[1])
+
+                    if ss_get_channel_fail.count((guildid, channelid)) > 10:
+                        while ss_get_channel_fail.count((guildid, channelid)) > 0:
+                            ss_get_channel_fail.remove((guildid, channelid))
+                        cur.execute(f"DELETE FROM statsconfig WHERE guildid = {guildid} AND categoryid = {categoryid} AND channelid = {channelid}")
+                        conn.commit()
+
+                        await log("ServerStats", f"[{guild} ({guildid})] Server stats channel {channelid} expired as bot cannot access the channel.", ctx.guild.id)  
+                        try:
+                            cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'error'")
+                            t = cur.fetchall()
+                            if len(t) != 0:
+                                errchannelid = t[0][0]
+                                errchannel = bot.get_channel(errchannelid)
+                                embed = discord.Embed(title=f"Staff Notice", description=f"Server stats channel `{channelid}` has expired as I cannot access it. Stats will no longer be updated.", color=0x0000DD)
+                                await errchannel.send(embed=embed)
+                        except Exception as e:
+                            pass
+                        continue
+
+                    channel = None
+
+                    try:
+                        channel = bot.get_channel(channelid)
+                        if channel is None:
+                            ss_get_channel_fail.append((guildid, channelid))
+                            continue
+                    except:
+                        ss_get_channel_fail.append((guildid, channelid))
+                        continue
+                    
+                    online = 0
+                    for member in guild.members:
+                        if member.status != discord.Status.offline:
+                            online += 1
+                    chnname = conf
+                    chnname = chnname.replace("{members}", str(len(guild.members)))
+                    chnname = chnname.replace("{online}", str(online))
+                    tmp = chnname
+                    while tmp.find("{") != -1:
+                        var = tmp[tmp.find("{")+1 : tmp.find("}")]
+                        orgvar = var
+                        tmp = tmp[tmp.find("}")+1:]
+                        while var.startswith(" "):
+                            var = var[1:]
+                        if var.startswith("time:"):
+                            var = var.replace("time: ","").replace("time:", "")
+                            chnname = chnname.replace(f"{{{orgvar}}}", betterStrftime(var))
+                        elif var.startswith("<@&"):
+                            cnt = 0
+                            role = int(var[var.find("<@&") + 3 : var.find(">")])
+                            mustonline = False
+                            if var.find("online") != -1:
+                                mustonline = True
+                            for member in guild.members:
+                                for r in member.roles:
+                                    if r.id == role:
+                                        if mustonline and member.status != discord.Status.offline:
+                                            cnt += 1
+                                        elif not mustonline:
+                                            cnt += 1
+                            chnname = chnname.replace(f"{{{orgvar}}}", str(cnt))
+                    
+                    if chnname != channel.name:
+                        channel = await channel.edit(name = chnname)
                 
-                online = 0
-                for member in guild.members:
-                    if member.status != discord.Status.offline:
-                        online += 1
-                chnname = conf
-                chnname = chnname.replace("{members}", str(len(guild.members)))
-                chnname = chnname.replace("{online}", str(online))
-                tmp = chnname
-                while tmp.find("{") != -1:
-                    var = tmp[tmp.find("{")+1 : tmp.find("}")]
-                    orgvar = var
-                    tmp = tmp[tmp.find("}")+1:]
-                    while var.startswith(" "):
-                        var = var[1:]
-                    if var.startswith("time:"):
-                        var = var.replace("time: ","").replace("time:", "")
-                        chnname = chnname.replace(f"{{{orgvar}}}", betterStrftime(var))
-                    elif var.startswith("<@&"):
-                        cnt = 0
-                        role = int(var[var.find("<@&") + 3 : var.find(">")])
-                        mustonline = False
-                        if var.find("online") != -1:
-                            mustonline = True
-                        for member in guild.members:
-                            for r in member.roles:
-                                if r.id == role:
-                                    if mustonline and member.status != discord.Status.offline:
-                                        cnt += 1
-                                    elif not mustonline:
-                                        cnt += 1
-                        chnname = chnname.replace(f"{{{orgvar}}}", str(cnt))
-                
-                if chnname != channel.name:
-                    channel = await channel.edit(name = chnname)
+                    await asyncio.sleep(0.5)
             
-                await asyncio.sleep(0.5)
+            except Exception as e:
+                try:
+                    await log("ERROR",f"Server Stats update error: {str(e)}")
+                except:
+                    pass
 
         await asyncio.sleep(60)
 

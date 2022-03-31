@@ -54,9 +54,6 @@ def b64e(s):
         return s
     
 def b64d(s):
-    if s.startswith("radio-"):
-        t=s.split("-")
-        return t[1]
     try:
         return b64decode(s.encode()).decode()
     except:
@@ -115,7 +112,7 @@ def GetCurrentSong(url):
     encoding = 'latin1' # default: iso-8859-1 for mp3 and utf-8 for ogg streams
     request = urllib.request.Request(url, headers={'Icy-MetaData': 1})  # request metadata
     
-    with urllib.request.urlopen(request, context=ctx) as response:
+    with urllib.request.urlopen(request, context=ctx, timeout = 3) as response:
         metaint = int(response.headers['icy-metaint'])
         for _ in range(10): # # title may be empty initially, try several times
             response.read(metaint)  # skip to metadata

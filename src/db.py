@@ -18,7 +18,7 @@ dbname = config["database"]["dbname"]
 conn = MySQLdb.connect(host = host, user = user, passwd = passwd, db = dbname)
 cur = conn.cursor()
 cur.execute(f"SHOW TABLES")
-if len(cur.fetchall()) != 13:
+if len(cur.fetchall()) != 17:
     # STAFF MANAGEMENT
     # administrative staff
     cur.execute(f"CREATE TABLE staffrole (guildid BIGINT, roleid BIGINT)")
@@ -37,6 +37,11 @@ if len(cur.fetchall()) != 13:
     cur.execute(f"CREATE TABLE rolebind (guildid BIGINT, channelid BIGINT, msgid BIGINT, role BIGINT, emoji VARCHAR(64))")
     cur.execute(f"CREATE TABLE userrole (guildid BIGINT, channelid BIGINT, msgid BIGINT, userid BIGINT, roleid BIGINT)")
 
+    # FORM
+    cur.execute(f"CREATE TABLE form (formid BIGINT, guildid BIGINT, btn TEXT, data TEXT)")
+    cur.execute(f"CREATE TABLE formentry (formid BIGINT, userid BIGINT, data TEXT)") # record all forms user submitted
+    cur.execute(f"CREATE TABLE formview (formid BIGINT, customid TEXT)")
+
     # MUSIC
     cur.execute(f"CREATE TABLE playlist (guildid BIGINT, userid BIGINT, title TEXT)")
     cur.execute(f"CREATE TABLE vcbind (guildid BIGINT, channelid BIGINT)")
@@ -44,6 +49,9 @@ if len(cur.fetchall()) != 13:
     # FUN HOUSE
     cur.execute(f"CREATE TABLE finance (guildid BIGINT, userid BIGINT, last_checkin BIGINT, checkin_continuity BIGINT, \
         work_claim_time BIGINT, work_reward BIGINT, balance BIGINT)")
+    
+    # GENERAL SETTINGS
+    cur.exeucte(f"CREATE TABLE settings (guildid BIGINT, skey TEXT, sval TEXT)")
 del cur
 
 def newconn():

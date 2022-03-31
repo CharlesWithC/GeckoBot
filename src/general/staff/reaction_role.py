@@ -303,9 +303,10 @@ async def ReactionRoleUpdate():
                     conn.commit()
                     
         except Exception as e:
-            import traceback
-            traceback.print_exc()
-            await log("ReactionRole", f"Unknown error {str(e)}")
+            try:
+                await log("ERROR", f"Reaction role error {str(e)}")
+            except:
+                pass
 
         await asyncio.sleep(60)
         

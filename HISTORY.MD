@@ -1,5 +1,11 @@
 # Gecko Bot Update History
 
+## Update 2022.03.31
+
+**Version v1.8**  
+1.Added customizable form function  
+2.Allowed staff to disable music "now playing" update
+
 ## Update 2022.03.30
 
 **Version v1.7.6**  
