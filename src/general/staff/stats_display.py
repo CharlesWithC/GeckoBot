@@ -63,15 +63,15 @@ class ManageStatsDisplay(commands.Cog):
                 cur.execute(f"DELETE FROM statsconfig WHERE guildid = {guild.id}")
                 conn.commit()
 
-            category = await guild.create_category("Server Stats")
+            category = await guild.create_category("Server Stats", reason = "Gecko Server Stats")
             await category.move(beginning = True)
 
-            channel1 = await category.create_voice_channel(betterStrftime('%A, %b %-d'))
+            channel1 = await category.create_voice_channel(betterStrftime('%A, %b %-d'), reason = "Gecko Server Stats")
             online = 0
             for member in guild.members:
                 if member.status != discord.Status.offline:
                     online += 1
-            channel2 = await category.create_voice_channel(f"{online} / {len(guild.members)} Online")
+            channel2 = await category.create_voice_channel(f"{online} / {len(guild.members)} Online", reason = "Gecko Server Stats")
             
             try:
                 me = bot.get_user(BOTID)
@@ -192,7 +192,7 @@ class ManageStatsDisplay(commands.Cog):
                                     cnt += 1
                     chnname = chnname.replace(f"{{{orgvar}}}", str(cnt))
             
-            channel = await category.create_voice_channel(chnname)
+            channel = await category.create_voice_channel(chnname, reason = "Gecko Server Stats")
 
             await ctx.respond(f"{ctx.author.name}, stats display channel has been created with configuration `{conf}`.")
 
@@ -320,7 +320,7 @@ class ManageStatsDisplay(commands.Cog):
             conn.commit()
             await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} updated stats channel {channelid} configuration to {conf}.", ctx.guild.id)
 
-            await channel.edit(name = chnname)
+            await channel.edit(name = chnname, reason = "Gecko Server Stats")
 
             await ctx.respond(f"{ctx.author.name}, stats display channel {channelid} configuration has been updated to `{conf}`.")
             
@@ -382,7 +382,7 @@ class ManageStatsDisplay(commands.Cog):
 
             cur.execute(f"DELETE FROM statsconfig WHERE guildid = {guild.id} AND categoryid = {category.id} AND channelid = {channelid}")
             conn.commit()
-            await channel.delete()
+            await channel.delete(reason = "Gecko Server Stats")
             await ctx.respond(f"{ctx.author.name}, stats display channel {channelid} deleted.")
             await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} deleted stats channel {channelid}", ctx.guild.id)
 
@@ -429,7 +429,7 @@ class ManageStatsDisplay(commands.Cog):
             for tt in t:
                 try:
                     channel = bot.get_channel(tt[0])
-                    await channel.delete()
+                    await channel.delete(reason = "Gecko Server Stats")
                 except:
                     pass
             try:
@@ -554,7 +554,7 @@ async def StatsDisplayUpdate():
                             chnname = chnname.replace(f"{{{orgvar}}}", str(cnt))
                     
                     if chnname != channel.name:
-                        channel = await channel.edit(name = chnname)
+                        channel = await channel.edit(name = chnname, reason = "Gecko Server Stats")
                 
                     await asyncio.sleep(0.5)
             

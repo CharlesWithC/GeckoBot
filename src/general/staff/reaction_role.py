@@ -275,7 +275,7 @@ async def ReactionRoleUpdate():
                                     break
                             if not found:
                                 try:
-                                    await user.add_roles(role)
+                                    await user.add_roles(role, reason = "Gecko Reaction Role")
                                 except: # cannot assign role to user (maybe user has left server)
                                     await log("ReactionRole", f"[{guild} ({guildid})] Cannot assign {role} ({roleid}) for {user} ({user.id}), user reaction removed.", guildid)
                                     await message.remove_reaction(reaction.emoji, user)
@@ -296,7 +296,7 @@ async def ReactionRoleUpdate():
                             try:
                                 role = discord.utils.get(guild.roles, id=roleid)
                                 user = discord.utils.get(guild.members, id=preuser)
-                                await user.remove_roles(role)
+                                await user.remove_roles(role, reason = "Gecko Reaction Role")
                                 await log("ReactionRole", f"[{guild} ({guildid})] Removed {role} ({roleid}) role from user {user} ({user.id}).", guildid)
                             except:
                                 pass

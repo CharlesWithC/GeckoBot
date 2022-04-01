@@ -6,6 +6,8 @@
 
 import os, asyncio
 import discord
+from discord.commands import CommandPermission, SlashCommandGroup
+from discord.ext import commands
 from base64 import b64encode, b64decode
 from time import time
 
@@ -39,168 +41,172 @@ def onloop(guildid):
         return True
     return False
 
-@bot.slash_command(name="join", description = "Staff - Music - Join the voice channel you are in.")
-async def JoinVC(ctx):
-    if ctx.guild is None:
-        await ctx.respond("You can only run this command in guilds!")
-        return
-
-    if not isStaff(ctx.guild, ctx.author):
-        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
-        return
+class ManageMusic(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
     
-    voice_client = ctx.guild.voice_client
-    if not voice_client is None and voice_client.is_connected():
-        await voice_client.disconnect()
-    try:
-        channel = ctx.author.voice.channel
-        await channel.connect(timeout = 5)
-    except:
-        await ctx.respond(f"I cannot join the voice channel you are in. Maybe I don't have access or I'm rate limited. Please try again later.", ephemeral = True)
-        return
+    manage = SlashCommandGroup("music", "Manage music")
 
-    conn = newconn()
-    cur = conn.cursor()
-    guildid = ctx.guild.id
-    voice_client = ctx.guild.voice_client
-    cur.execute(f"DELETE FROM vcbind WHERE guildid = {guildid}")
-    cur.execute(f"INSERT INTO vcbind VALUES ({guildid}, {voice_client.channel.id})")
-    conn.commit()
+    @manage.command(name="join", description = "Staff - Music - Join the voice channel you are in.")
+    async def join(self, ctx):
+        if ctx.guild is None:
+            await ctx.respond("You can only run this command in guilds!")
+            return
 
-    user = ctx.guild.get_member(BOTID)
-    await user.edit(mute = True)
-    
-    await ctx.respond(f"I've joined the voice channel.")
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+        
+        voice_client = ctx.guild.voice_client
+        if not voice_client is None and voice_client.is_connected():
+            await voice_client.disconnect()
+        try:
+            channel = ctx.author.voice.channel
+            await channel.connect(timeout = 5)
+        except:
+            await ctx.respond(f"I cannot join the voice channel you are in. Maybe I don't have access or I'm rate limited. Please try again later.", ephemeral = True)
+            return
 
-@bot.slash_command(name="leave", description = "Staff - Music - Join the voice channel you are in.")
-async def LeaveVC(ctx):
-    if ctx.guild is None:
-        await ctx.respond("You can only run this command in guilds!")
-        return
-
-    if not isStaff(ctx.guild, ctx.author):
-        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
-        return
-    
-    voice_client = ctx.guild.voice_client
-    if not voice_client is None and voice_client.is_connected():
-        await voice_client.disconnect()
         conn = newconn()
         cur = conn.cursor()
         guildid = ctx.guild.id
+        voice_client = ctx.guild.voice_client
         cur.execute(f"DELETE FROM vcbind WHERE guildid = {guildid}")
+        cur.execute(f"INSERT INTO vcbind VALUES ({guildid}, {voice_client.channel.id})")
         conn.commit()
-        await ctx.respond(f"I've left the voice channel.")
-    else:
-        await ctx.respond(f"I'm not connected to a voice channel.", ephemeral = True)
 
-@bot.slash_command(name="pause", description="Staff - Music - Pause music.")
-async def PauseMusic(ctx):  
-    if ctx.guild is None:
-        await ctx.respond(f"Music can only be played in voice channels in guilds!")
-        return
+        user = ctx.guild.get_member(BOTID)
+        await user.edit(mute = True)
+        
+        await ctx.respond(f"I've joined the voice channel.")
 
-    if not isStaff(ctx.guild, ctx.author):
-        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
-        return
+    @manage.command(name="leave", description = "Staff - Music - Join the voice channel you are in.")
+    async def leave(self, ctx):
+        if ctx.guild is None:
+            await ctx.respond("You can only run this command in guilds!")
+            return
 
-    voice_client = ctx.guild.voice_client
-    if voice_client is None or not voice_client.is_playing():
-        await ctx.respond(f"Music hasn't even started!", ephemeral = True)
-        return
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+        
+        voice_client = ctx.guild.voice_client
+        if not voice_client is None and voice_client.is_connected():
+            await voice_client.disconnect()
+            conn = newconn()
+            cur = conn.cursor()
+            guildid = ctx.guild.id
+            cur.execute(f"DELETE FROM vcbind WHERE guildid = {guildid}")
+            conn.commit()
+            await ctx.respond(f"I've left the voice channel.")
+        else:
+            await ctx.respond(f"I'm not connected to a voice channel.", ephemeral = True)
 
-    voice_client.pause()
-    await ctx.respond(f"Music paused! You can use /resume to restart from where it paused.")
+    @manage.command(name="pause", description="Staff - Music - Pause music.")
+    async def pause(self, ctx):  
+        if ctx.guild is None:
+            await ctx.respond(f"Music can only be played in voice channels in guilds!")
+            return
 
-@bot.slash_command(name="resume", description="Staff - Music - Resume music.")
-async def ResumeMusic(ctx): 
-    if ctx.guild is None:
-        await ctx.respond(f"Music can only be played in voice channels in guilds!")
-        return
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
 
-    if not isStaff(ctx.guild, ctx.author):
-        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
-        return
+        voice_client = ctx.guild.voice_client
+        if voice_client is None or not voice_client.is_playing():
+            await ctx.respond(f"Music hasn't even started!", ephemeral = True)
+            return
 
-    voice_client = ctx.guild.voice_client
-    if voice_client.is_playing():
-        await ctx.respond(f"Music is already playing.", ephemeral = True)
-        return
+        voice_client.pause()
+        await ctx.respond(f"Music paused! You can use /resume to restart from where it paused.")
 
-    voice_client.resume()
-    await ctx.respond(f"Music resumed!")
+    @manage.command(name="resume", description="Staff - Music - Resume music.")
+    async def resume(self, ctx): 
+        if ctx.guild is None:
+            await ctx.respond(f"Music can only be played in voice channels in guilds!")
+            return
 
-@bot.slash_command(name="toggle_music_update", description="Staff - Music - Toggle 'Now Playing' auto post, whether Gecko should send it or not.")
-async def ToggleMusicUpdate(ctx): 
-    if ctx.guild is None:
-        await ctx.respond(f"Music can only be played in voice channels in guilds!")
-        return
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
 
-    if not isStaff(ctx.guild, ctx.author):
-        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
-        return
+        voice_client = ctx.guild.voice_client
+        if voice_client.is_playing():
+            await ctx.respond(f"Music is already playing.", ephemeral = True)
+            return
 
-    conn = newconn()
-    cur = conn.cursor()
+        voice_client.resume()
+        await ctx.respond(f"Music resumed!")
 
-    cur.execute(f"SELECT sval FROM settings WHERE guildid = {ctx.guild.id} AND skey = 'music_update_post'")
-    t = cur.fetchall()
-    if len(t) == 0:
-        cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 'music_update_post', 0)")
+    @manage.command(name="toggle", description="Staff - Music - Toggle 'Now Playing' auto post, whether Gecko should send it or not.")
+    async def toggle(self, ctx): 
+        if ctx.guild is None:
+            await ctx.respond(f"Music can only be played in voice channels in guilds!")
+            return
+
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
+        conn = newconn()
+        cur = conn.cursor()
+
+        cur.execute(f"SELECT sval FROM settings WHERE guildid = {ctx.guild.id} AND skey = 'music_update_post'")
+        t = cur.fetchall()
+        if len(t) == 0:
+            cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 'music_update_post', 0)")
+            conn.commit()
+            await ctx.respond(f"'Now Playing' will no longer be posted automatically.\nUse /current to get the current song.")
+            return
+        if t[0][0] == 1:
+            cur.execute(f"UPDATE settings SET sval = '0' WHERE guildid = {ctx.guild.id} AND skey = 'music_update_post'")
+            conn.commit()
+            await ctx.respond(f"'Now Playing' will no longer be posted automatically.\nUse /current to get the current song.")
+        else:
+            cur.execute(f"UPDATE settings SET sval = '1' WHERE guildid = {ctx.guild.id} AND skey = 'music_update_post'")
+            conn.commit()
+            await ctx.respond(f"'Now Playing' will be posted automatically from now on.")
+
+    @manage.command(name="clear", description="Staff - Music - Clear playlist.")
+    async def clear(self, ctx): 
+        if ctx.guild is None:
+            await ctx.respond(f"Music can only be played in voice channels in guilds!")
+            return
+
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
+        conn = newconn()
+        cur = conn.cursor()
+        cur.execute(f"DELETE FROM playlist WHERE userid > 0")
         conn.commit()
-        await ctx.respond(f"'Now Playing' will no longer be posted automatically.\nUse /current to get the current song.")
-        return
-    if t[0][0] == 1:
-        cur.execute(f"UPDATE settings SET sval = '0' WHERE guildid = {ctx.guild.id} AND skey = 'music_update_post'")
-        conn.commit()
-        await ctx.respond(f"'Now Playing' will no longer be posted automatically.\nUse /current to get the current song.")
-    else:
-        cur.execute(f"UPDATE settings SET sval = '1' WHERE guildid = {ctx.guild.id} AND skey = 'music_update_post'")
-        conn.commit()
-        await ctx.respond(f"'Now Playing' will be posted automatically from now on.")
+        
+        await ctx.respond(f"Playlist cleared!")
 
-##### YOUTUBE MUSIC
+    @manage.command(name="loop", description="Staff - Music - Toggle loop playback of the playlist.")
+    async def loop(self, ctx): 
+        if ctx.guild is None:
+            await ctx.respond(f"Music can only be played in voice channels in guilds!")
+            return
 
-@bot.slash_command(name="clear", description="Staff - Music - Clear playlist.")
-async def ResumeMusic(ctx): 
-    if ctx.guild is None:
-        await ctx.respond(f"Music can only be played in voice channels in guilds!")
-        return
-
-    if not isStaff(ctx.guild, ctx.author):
-        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
-        return
-
-    conn = newconn()
-    cur = conn.cursor()
-    cur.execute(f"DELETE FROM playlist WHERE userid > 0")
-    conn.commit()
-    
-    await ctx.respond(f"Playlist cleared!")
-
-@bot.slash_command(name="loop", description="Staff - Music - Toggle loop playback of the playlist.")
-async def LoopMusic(ctx): 
-    if ctx.guild is None:
-        await ctx.respond(f"Music can only be played in voice channels in guilds!")
-        return
-
-    if not isStaff(ctx.guild, ctx.author):
-        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
-        return
-    
-    conn = newconn()
-    cur = conn.cursor()
-    guildid = ctx.guild.id
-    cur.execute(f"SELECT * FROM playlist WHERE guildid = {guildid} AND title = 'loop' AND userid = 0")
-    t = cur.fetchall()
-    if len(t) == 0:
-        cur.execute(f"INSERT INTO playlist VALUES ({guildid}, 0, 'loop')")
-        conn.commit()
-        await ctx.respond(f"Loop playback enabled for playlist!")
-    else:
-        cur.execute(f"DELETE FROM playlist WHERE guildid = {guildid} AND title = 'loop' AND userid = 0")
-        conn.commit()
-        await ctx.respond(f"Loop playback disabled for playlist!")
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+        
+        conn = newconn()
+        cur = conn.cursor()
+        guildid = ctx.guild.id
+        cur.execute(f"SELECT * FROM playlist WHERE guildid = {guildid} AND title = 'loop' AND userid = 0")
+        t = cur.fetchall()
+        if len(t) == 0:
+            cur.execute(f"INSERT INTO playlist VALUES ({guildid}, 0, 'loop')")
+            conn.commit()
+            await ctx.respond(f"Loop playback enabled for playlist!")
+        else:
+            cur.execute(f"DELETE FROM playlist WHERE guildid = {guildid} AND title = 'loop' AND userid = 0")
+            conn.commit()
+            await ctx.respond(f"Loop playback disabled for playlist!")
 
 @bot.slash_command(name="play", description="Staff - Music - Play a song.")
 async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtube", required = True)):    
@@ -539,7 +545,6 @@ async def CurrentSong(ctx):
         embed.set_footer(text=f"Requested by {username}", icon_url = avatar)
         await ctx.respond(embed = embed)
 
-##### RADIO STREAM
 @bot.slash_command(name="radio", description="Staff - Music - Play radio.")
 async def Radio(ctx, station: discord.Option(str, "Radio station (274 stations available)", required = True)):
     if ctx.guild is None:
@@ -835,3 +840,4 @@ async def MusicLoop():
         await asyncio.sleep(3)
 
 bot.loop.create_task(MusicLoop())
+bot.add_cog(ManageMusic(bot))

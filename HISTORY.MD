@@ -1,5 +1,11 @@
 # Gecko Bot Update History
 
+## Update 2022.04.01
+
+**Version v1.8.2**  
+1.Added audit reason for server stats and reaction role  
+2.Grouped part of music staff commands  
+
 ## Update 2022.03.31
 
 **Version v1.8.1**  
