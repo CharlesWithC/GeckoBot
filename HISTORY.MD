@@ -2,6 +2,10 @@
 
 ## Update 2022.04.01
 
+**Version v1.9.1**  
+1.Improved chat action keyword detection mechanism  
+2.Made `/chat list` results more human-readable  
+
 **Version v1.9**  
 1.Added chat action function (timeout / kick / ban / emoji reaction when a keyword in message is detected)  
 2.Allowed dev to see guilds bot is in, and change bot activity status  

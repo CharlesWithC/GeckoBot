@@ -23,7 +23,7 @@ class ManageChat(commands.Cog):
     manage = SlashCommandGroup("chat", "Manage chat action")
     
     @manage.command(name = "add", description = "Staff - Add Gecko's action when detected keyword in message.")
-    async def add(self, ctx, keywords: discord.Option(str, "Keywords, split with ','"),
+    async def add(self, ctx, keywords: discord.Option(str, "Keywords, split with ','. Phrases with space separating words are accepted."),
         action: discord.Option(str, "Gecko's action, if set to react, the reaction emoji will be needed", choices = ["timeout", "kick", "ban", "react"]),
         emoji: discord.Option(str, "Reaction emoji, needed only when action is 'react'", required = False)):
 
@@ -128,9 +128,27 @@ class ManageChat(commands.Cog):
         t  = cur.fetchall()
         if len(t) == 0 or t[0][0] == "":
             await ctx.respond(f"No keyword found.", ephemeral = True)
+            return
 
-        existing = t[0][0]
-        await ctx.respond(f"Chat action {action} - Keywords:\n{b64d(existing)}")
+        msg = ""
+        if action in ["timeout", "kick", "ban"]:
+            msg = "When keywords below are found in messages: \n```"
+            msg += b64d(t[0][0]).replace(",",", ")
+            msg += f"```Gecko will **{action}** the author."
+        else:
+            d = {}
+            t = b64d(t[0][0]).split(",")
+            for tt in t:
+                kw = tt.split("|")[0]
+                emoji = tt.split("|")[1]
+                if not emoji in d.keys():
+                    d[emoji] = [kw]
+                else:
+                    d[emoji].append(kw)
+            msg = "Gecko will react those emojis when those keywords are found in messages:\n\n"
+            for t in d.keys():
+                msg += f"{t}: `{', '.join(d[t])}`\n"
+        await ctx.respond(msg)
 
     @manage.command(name = "remove", description = "Staff - Remove Gecko's action when detected keyword in message.")
     async def remove(self, ctx, keywords: discord.Option(str, "Keywords, split with ','"),
@@ -181,14 +199,8 @@ async def on_message(message):
         conn = newconn()
         cur = conn.cursor()
     user = message.author
-    tmsg = message.content.lower()
-    msg = ""
-    for e in tmsg:
-        if e.isalnum():
-            msg += e
-        else:
-            msg += " "
-    msg = msg.split(" ")
+    msg = message.content
+    msg = " "+msg.lower()+" "
     if user.id == BOTID or message.guild is None:
         return
     cur.execute(f"SELECT keywords, action FROM chataction WHERE guildid = {message.guild.id}")
@@ -198,19 +210,21 @@ async def on_message(message):
         while keywords.count("") > 0:
             keywords.remove("")
         action = tt[1]
-        for msgg in msg:
-            for keyword in keywords:
-                if keyword.split("|")[0] == msgg:
-                    try:
-                        if action == "timeout":
-                            await user.timeout(datetime(9999,1,1), reason = "Gecko Chat Action")
-                        elif action == "kick":
-                            await user.kick(reason = "Gecko Chat Action")
-                        elif action == "ban":
-                            await user.ban(reason = "Gecko Chat Action")
-                        elif action == "react":
-                            await message.add_reaction(keyword.split("|")[1])
-                    except Exception as e:
-                        await log("ChatAction", f"[Guild {message.guild} ({message.guild.id})] Unknown error occurred on {action} {user}: {str(e)}", message.guild.id)
+        for keyword in keywords:
+            if msg.find(keyword.split("|")[0]) == -1:
+                continue
+            idx = msg.index(keyword.split("|")[0])
+            if not msg[idx-1].isalnum() and not msg[idx+len(keyword.split("|")[0])].isalnum():
+                try:
+                    if action == "timeout":
+                        await user.timeout(datetime(9999,1,1), reason = "Gecko Chat Action")
+                    elif action == "kick":
+                        await user.kick(reason = "Gecko Chat Action")
+                    elif action == "ban":
+                        await user.ban(reason = "Gecko Chat Action")
+                    elif action == "react":
+                        await message.add_reaction(keyword.split("|")[1])
+                except Exception as e:
+                    await log("ChatAction", f"[Guild {message.guild} ({message.guild.id})] Unknown error occurred on {action} {user}: {str(e)}", message.guild.id)
 
 bot.add_cog(ManageChat(bot))

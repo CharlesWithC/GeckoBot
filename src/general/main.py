@@ -98,7 +98,6 @@ async def UpdateBotStatus():
     conn = newconn()
     cur = conn.cursor()
     await bot.wait_until_ready()
-    await asyncio.sleep(5)
     while 1:
         cur.execute(f"SELECT sval FROM settings WHERE skey = 'status' AND guildid = 0")
         t = cur.fetchall()
