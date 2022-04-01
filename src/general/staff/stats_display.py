@@ -93,13 +93,13 @@ class ManageStatsDisplay(commands.Cog):
             conf2 = b64e("{online} / {members} Online")
             cur.execute(f"INSERT INTO statsconfig VALUES ({guildid}, {category.id}, {channel2.id}, '{conf2}')")
             conn.commit()
-            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} created stats display category and channels.", ctx.guild.id)
-            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} added stats channel with configuration {b64d(conf1)}.", ctx.guild.id)
-            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} added stats channel with configuration {b64d(conf2)}.", ctx.guild.id)
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author} created stats display category and channels.", ctx.guild.id)
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author} added stats channel with configuration {b64d(conf1)}.", ctx.guild.id)
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author} added stats channel with configuration {b64d(conf2)}.", ctx.guild.id)
 
         except Exception as e:
             await ctx.respond(f"{ctx.author.name}, I either cannot create category / channel, or cannot change channel permissions. Make sure I have Manage Channels and Manage Roles permission.")
-            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] !create_stats_channels executed by {ctx.author.name} failed due to {str(e)}", ctx.guild.id)
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] !create_stats_channels executed by {ctx.author} failed due to {str(e)}", ctx.guild.id)
 
     @manage.command(name = "create", description = "Staff - Create a new stats channel and configure it by yourself.")
     async def create(self, ctx, 
@@ -199,11 +199,11 @@ class ManageStatsDisplay(commands.Cog):
             conf = b64e(conf)
             cur.execute(f"INSERT INTO statsconfig VALUES ({guildid}, {category.id}, {channel.id}, '{conf}')")
             conn.commit()
-            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} added stats channel with configuration {b64d(conf)}.", ctx.guild.id)
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author} added stats channel with configuration {b64d(conf)}.", ctx.guild.id)
         
         except Exception as e:
             await ctx.respond(f"{ctx.author.name}, I either cannot create category / channel, or cannot change channel permissions. Make sure I have Manage Channels and Manage Roles permission.")
-            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] '/stats_display create' executed by {ctx.author.name} failed due to {str(e)}", ctx.guild.id)
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] '/stats_display create' executed by {ctx.author} failed due to {str(e)}", ctx.guild.id)
 
     @manage.command(name = "edit", description = "Staff - Edit an existing stats channel.")
     async def edit(self, ctx, 
@@ -318,7 +318,7 @@ class ManageStatsDisplay(commands.Cog):
             
             cur.execute(f"UPDATE statsconfig SET conf = '{b64e(conf)}' WHERE guildid = {guildid} AND channelid = {channelid}")
             conn.commit()
-            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} updated stats channel {channelid} configuration to {conf}.", ctx.guild.id)
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author} updated stats channel {channelid} configuration to {conf}.", ctx.guild.id)
 
             await channel.edit(name = chnname, reason = "Gecko Server Stats")
 
@@ -384,7 +384,7 @@ class ManageStatsDisplay(commands.Cog):
             conn.commit()
             await channel.delete(reason = "Gecko Server Stats")
             await ctx.respond(f"{ctx.author.name}, stats display channel {channelid} deleted.")
-            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} deleted stats channel {channelid}", ctx.guild.id)
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author} deleted stats channel {channelid}", ctx.guild.id)
 
             cur.execute(f"SELECT * FROM statsconfig WHERE guildid = {guild.id}")
             if len(cur.fetchall()) == 0:
@@ -443,7 +443,7 @@ class ManageStatsDisplay(commands.Cog):
             conn.commit()
 
             await ctx.respond(f"{ctx.author.name}, stats display disabled and bound category and channels have been deleted.")
-            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} disabled stats display function and deleted bound category and channels.", ctx.guild.id)
+            await log("ServerStats", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author} disabled stats display function and deleted bound category and channels.", ctx.guild.id)
         
         except Exception as e:
             await log("ServerStats", f"Unknown exception: {str(e)}", ctx.guild.id)

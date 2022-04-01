@@ -18,7 +18,7 @@ dbname = config["database"]["dbname"]
 conn = MySQLdb.connect(host = host, user = user, passwd = passwd, db = dbname)
 cur = conn.cursor()
 cur.execute(f"SHOW TABLES")
-if len(cur.fetchall()) != 17:
+if len(cur.fetchall()) != 18:
     # STAFF MANAGEMENT
     # administrative staff
     cur.execute(f"CREATE TABLE staffrole (guildid BIGINT, roleid BIGINT)")
@@ -36,6 +36,9 @@ if len(cur.fetchall()) != 17:
     cur.execute(f"CREATE TABLE reactionrole (guildid BIGINT, channelid BIGINT, msgid BIGINT)")
     cur.execute(f"CREATE TABLE rolebind (guildid BIGINT, channelid BIGINT, msgid BIGINT, role BIGINT, emoji VARCHAR(64))")
     cur.execute(f"CREATE TABLE userrole (guildid BIGINT, channelid BIGINT, msgid BIGINT, userid BIGINT, roleid BIGINT)")
+
+    # CHAT
+    cur.execute(f"CREATE TABLE chataction (guildid BIGINT, keywords TEXT, action VARCHAR(64))")
 
     # FORM
     cur.execute(f"CREATE TABLE form (formid BIGINT, guildid BIGINT, btn TEXT, data TEXT)")

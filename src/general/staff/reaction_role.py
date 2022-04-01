@@ -83,11 +83,11 @@ class ReactionRole(commands.Cog):
                 cur.execute(f"INSERT INTO rolebind VALUES ({guildid}, {channelid}, {msgid}, {data[0]}, '{b64e(data[1])}')")
             conn.commit()
 
-            await log("Staff", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} created a reaction-role post at {channel} ({channelid}), with role-binding: {rolebindtxt}", ctx.guild.id)
+            await log("Staff", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author} created a reaction-role post at {channel} ({channelid}), with role-binding: {rolebindtxt}", ctx.guild.id)
         except Exception as e:
             await ctx.respond(f"{ctx.author.name}, it seems I cannot send message at <#{channelid}>. Make sure the channel exist and I have access to it!", ephemeral = True)
 
-            await log("Staff", f"[Guild {ctx.guild} ({ctx.guild.id})] '/reaction_role create' command executed by {ctx.author.name} failed due to {str(e)}", ctx.guild.id)
+            await log("Staff", f"[Guild {ctx.guild} ({ctx.guild.id})] '/reaction_role create' command executed by {ctx.author} failed due to {str(e)}", ctx.guild.id)
 
     @rr.command(name = "append", description = "Staff - Add more selection of roles. (You cannot remove existing roles)")
     async def append(self, ctx, 
@@ -163,7 +163,7 @@ class ReactionRole(commands.Cog):
                 updates += f"<@&{roleid}> already bound, you cannot the emoji representing it.\n"
             
         await ctx.respond(f"{ctx.author.name}, reaction-role post updated!\n`{updates}`")
-        await log("Staff", f"{ctx.author.name} updated reaction-role post {msglink} rolebind. {updateslog}", ctx.guild.id)
+        await log("Staff", f"{ctx.author} updated reaction-role post {msglink} rolebind. {updateslog}", ctx.guild.id)
 
     @rr.command(name = "list", description = "Staff - List all reaction role posts in this guild.")
     async def show(self, ctx):

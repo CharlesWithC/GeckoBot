@@ -120,11 +120,11 @@ async def FinanceCheckIn(ctx):
         if bonus == 0:
             embed = discord.Embed(description=f"{ctx.author.name}, you earned **{reward}** :coin:!", color=0x00DD00)
             await ctx.respond(embed=embed)
-            await finance_log(f"{ctx.author.name} ({ctx.author.id}) earned {reward} coins for checking in, current balance {balance}.")
+            await finance_log(f"{ctx.author} ({ctx.author.id}) earned {reward} coins for checking in, current balance {balance}.")
         else:
             embed = discord.Embed(description=f"{ctx.author.name}, **{checkin_continuity + 1} days in a row!** You earned {reward} :coin:!", color=0x00DD00)
             await ctx.respond(embed=embed)
-            await finance_log(f"{ctx.author.name} ({ctx.author.id}) earned {reward} coins for checking in {checkin_continuity + 1} days in a row, current balance {balance}.")
+            await finance_log(f"{ctx.author} ({ctx.author.id}) earned {reward} coins for checking in {checkin_continuity + 1} days in a row, current balance {balance}.")
 
 @bot.slash_command(name="work", description="Finance Game - Work to earn coins.")
 async def FinanceWork(ctx):
@@ -177,7 +177,7 @@ async def FinanceWork(ctx):
 
             embed = discord.Embed(description=f"{ctx.author.name}, you finished your delivery and earned **{work_reward}** :coin:. However you are too tired and need to have a rest. Come back after 30 minutes!", color=0x00DD00)
             await ctx.respond(embed=embed)
-            await finance_log(f"{ctx.author.name} ({ctx.author.id}) earned {work_reward} coins from working, current balance {balance}.")
+            await finance_log(f"{ctx.author} ({ctx.author.id}) earned {work_reward} coins from working, current balance {balance}.")
 
         else: # new work
             last_reward = work_reward
@@ -194,7 +194,7 @@ async def FinanceWork(ctx):
             if last_reward != 0:
                 embed = discord.Embed(description=f"{ctx.author.name}, you earned **{last_reward}** :coin: from your last job. And you started working again, this job will finish in **{length} minutes** and you will earn **{work_reward}** :coin:.", color=0x00DD00)
                 await ctx.respond(embed=embed)
-                await finance_log(f"{ctx.author.name} ({ctx.author.id}) earned {last_reward} coins from working, current balance {balance}.")
+                await finance_log(f"{ctx.author} ({ctx.author.id}) earned {last_reward} coins from working, current balance {balance}.")
 
             else:
                 embed = discord.Embed(description=f"{ctx.author.name}, you started working, the job will finish in **{length} minutes** and you will earn **{work_reward}** :coin:.", color=0x00DD00)
@@ -247,7 +247,7 @@ async def FinanceClaim(ctx):
 
         embed = discord.Embed(description=f"{ctx.author.name}, you earned **{last_reward}** :coin: from your last job!", color=0x00DD00)
         await ctx.respond(embed=embed)
-        await finance_log(f"{ctx.author.name} ({ctx.author.id}) earned {last_reward} coins from working, current balance {balance}.")
+        await finance_log(f"{ctx.author} ({ctx.author.id}) earned {last_reward} coins from working, current balance {balance}.")
 
 @bot.slash_command(name="richest", description="Finance Game - Get the richest players in this guild.")
 async def FinanceRichest(ctx):

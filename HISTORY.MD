@@ -2,6 +2,10 @@
 
 ## Update 2022.04.01
 
+**Version v1.9**  
+1.Added chat action function (timeout / kick / ban / emoji reaction when a keyword in message is detected)  
+2.Allowed dev to see guilds bot is in, and change bot activity status  
+
 **Version v1.8.2**  
 1.Added audit reason for server stats and reaction role  
 2.Grouped part of music staff commands  

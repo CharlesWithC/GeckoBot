@@ -17,7 +17,6 @@ from functions import *
 from db import newconn
 
 GTGUILD = 823779955305480212
-DEVGUILD = 955721720440975381
 GTLOGO = "./globaltrucking/logo.png"
 BANNER_BG = "#520000"
 BANNER_Y = 700 # pixel
@@ -43,4 +42,4 @@ async def GenerateBanner(ctx, name: discord.Option(str, "Driver's name", require
         img.save(image_binary, 'PNG')
         image_binary.seek(0)
         await ctx.respond(file=discord.File(fp=image_binary, filename='banner.png'))
-        await log("Staff", f"{ctx.author.name} created a banner for {name}", ctx.guild.id)
+        await log("Staff", f"{ctx.author} created a banner for {name}", ctx.guild.id)

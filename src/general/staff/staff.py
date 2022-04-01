@@ -194,7 +194,7 @@ class ManageStaff(commands.Cog):
                 await ctx.respond(f"{ctx.author.name}, {resprefix}staff {target}s {' '.join(obj)} added!")
             else:
                 await ctx.respond(f"{ctx.author.name}, {resprefix}staff {target} {' '.join(obj)} added!")
-            await log("Staff", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} added {resprefix}staff {target}s {obj}", ctx.guild.id)
+            await log("Staff", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author} added {resprefix}staff {target}s {obj}", ctx.guild.id)
         
         elif operation == "remove":
             for dd in d:
@@ -205,6 +205,6 @@ class ManageStaff(commands.Cog):
                 await ctx.respond(f"{ctx.author.name}, {resprefix}staff {target}s {' '.join(obj)} removed!")
             else:
                 await ctx.respond(f"{ctx.author.name}, {resprefix}staff {target} {' '.join(obj)} removed!")
-            await log("Staff", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author.name} removed {resprefix}staff {target}s {obj}", ctx.guild.id)
+            await log("Staff", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author} removed {resprefix}staff {target}s {obj}", ctx.guild.id)
 
 bot.add_cog(ManageStaff(bot))

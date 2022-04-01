@@ -76,7 +76,7 @@ class ManageMusic(commands.Cog):
         conn.commit()
 
         user = ctx.guild.get_member(BOTID)
-        await user.edit(mute = True)
+        await user.edit(mute = True, reason = "Gecko Join Voice Channel Self-Mute")
         
         await ctx.respond(f"I've joined the voice channel.")
 
@@ -158,7 +158,7 @@ class ManageMusic(commands.Cog):
             conn.commit()
             await ctx.respond(f"'Now Playing' will no longer be posted automatically.\nUse /current to get the current song.")
             return
-        if t[0][0] == 1:
+        if t[0][0] == "1":
             cur.execute(f"UPDATE settings SET sval = '0' WHERE guildid = {ctx.guild.id} AND skey = 'music_update_post'")
             conn.commit()
             await ctx.respond(f"'Now Playing' will no longer be posted automatically.\nUse /current to get the current song.")
@@ -242,7 +242,7 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtub
         voice_client.stop()
     try:
         user = ctx.guild.get_member(BOTID)
-        await user.edit(mute = False)
+        await user.edit(mute = False, reason = "Gecko Play Music Self-Unmute")
         player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
         voice_client.play(player)
     except:
@@ -315,7 +315,7 @@ async def NextSong(ctx):
 
     try:
         user = ctx.guild.get_member(BOTID)
-        await user.edit(mute = False)
+        await user.edit(mute = False, reason = "Gecko Play Music Self-Unmute")
         player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
         if voice_client.is_playing():
             voice_client.stop()
@@ -586,7 +586,7 @@ async def Radio(ctx, station: discord.Option(str, "Radio station (274 stations a
     voice_client = guild.voice_client
     voice_client.stop()
     user = guild.get_member(BOTID)
-    await user.edit(mute = False)
+    await user.edit(mute = False, reason = "Gecko Play Radio Self-Unmute")
     player = discord.FFmpegPCMAudio(source = link, before_options = FFMPEG_OPTIONS)
     voice_client.play(player)
 
@@ -622,7 +622,6 @@ async def MusicLoop():
     conn = newconn()
     cur = conn.cursor()
     await bot.wait_until_ready()
-    await bot.change_presence(activity=discord.Game(name = "with Charles"))
     await asyncio.sleep(5)
 
     emptynotice = []
@@ -652,7 +651,7 @@ async def MusicLoop():
                         try:
                             await channel.connect(timeout = 5)
                             user = guild.get_member(BOTID)
-                            await user.edit(mute = True)
+                            await user.edit(mute = True, reason = "Gecko Join Voice Channel Self-Mute")
                         except:
                             # failed to connect, try again next loop
                             continue
@@ -677,7 +676,7 @@ async def MusicLoop():
                         
                         try:
                             user = guild.get_member(BOTID)
-                            await user.edit(mute = False)
+                            await user.edit(mute = False, reason = "Gecko Music Replay Last Song On Quit Self-Unmute")
                             player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
                             voice_client.play(player)
                         except:
@@ -721,7 +720,7 @@ async def MusicLoop():
 
                 if len(voice_client.channel.members) == 1: # only bot in channel
                     user = guild.get_member(BOTID)
-                    await user.edit(deafen = True)
+                    await user.edit(deafen = True, reason = "Gecko Music Nobody Listening")
                     if len(o) > 0:
                         voice_client.stop()
                     else:
@@ -740,7 +739,7 @@ async def MusicLoop():
                         voice_client.resume()
                 
                 user = guild.get_member(BOTID)
-                await user.edit(deafen = False)
+                await user.edit(deafen = False, reason = "Gecko Music Somebody Listening")
                 
                 # play only if the previous music has ended
                 if not voice_client.is_playing() and not voice_client.is_paused():
@@ -758,7 +757,7 @@ async def MusicLoop():
                     d = cur.fetchall()
                     if len(d) == 0:
                         user = guild.get_member(BOTID)
-                        await user.edit(mute = True)
+                        await user.edit(mute = True, reason = "Gecko Play Music Self-Unmute")
                         if not guildid in emptynotice:
                             emptynotice.append(guildid)
                             embed = discord.Embed(title=f"Playlist is empty", description="Use /queue to fill it!", color = GECKOCLR)
@@ -800,7 +799,7 @@ async def MusicLoop():
 
                     try:
                         user = guild.get_member(BOTID)
-                        await user.edit(mute = False)
+                        await user.edit(mute = False, reason = "Gecko Play Music Self-Unmute")
                         player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
                         if voice_client.is_playing():
                             continue

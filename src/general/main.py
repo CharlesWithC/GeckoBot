@@ -5,9 +5,12 @@
 # General Functions of Gecko Bot
 
 import discord
+import asyncio
 
+import general.dev
 import general.music
 import general.funhouse.finance
+import general.staff.chat
 import general.staff.embed
 import general.staff.form
 import general.staff.staff
@@ -90,3 +93,26 @@ async def SetChannel(ctx, category: discord.Option(str, "The category of message
         cur.execute(f"UPDATE channelbind SET channelid = {channel} WHERE guildid = {guild.id} AND category = '{category}'")
     conn.commit()
     await ctx.respond(f"<#{channel}> has been configured as {category} channel.\nMake sure I always have access to it.\nUnless you want to stop dealing with those messages, then delete the channel.")
+
+async def UpdateBotStatus():
+    conn = newconn()
+    cur = conn.cursor()
+    await bot.wait_until_ready()
+    await asyncio.sleep(5)
+    while 1:
+        cur.execute(f"SELECT sval FROM settings WHERE skey = 'status' AND guildid = 0")
+        t = cur.fetchall()
+        status = "[Gaming] with Charles"
+        if len(t) > 0:
+            status = b64d(t[0][0])
+        if status.startswith("[Gaming]"):
+            await bot.change_presence(activity=discord.Game(name = status[9:]))
+        elif status.startswith("[Streaming]"):
+            await bot.change_presence(activity=discord.Streaming(name = status[12:].split("|")[0], url = status.split("|")[1]))
+        elif status.startswith("[Listening]"):
+            await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=status[12:]))
+        elif status.startswith("[Watching]"):
+            await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status[11:]))
+        await asyncio.sleep(60)
+    
+bot.loop.create_task(UpdateBotStatus())
