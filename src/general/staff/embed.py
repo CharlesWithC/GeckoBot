@@ -17,14 +17,39 @@ from settings import *
 from functions import *
 from db import newconn
 
+##### EMBED REWORK
+# /embed create - Create an embed and save to database - generate unique embed id
+# /embed edit {embedid} - Edit an embed from database
+# /embed remove {embedid} - Remove an embed from database
+
+# /embed preview {embedid} - Preview an embed
+# /embed list
+# /embed send {#channel} {embedid}- Post embed at #channel
+# /embed update {msglink} {embedid} - Update message using embed 
+
 class EmbedModal(Modal):
-    def __init__(self, channel, message, showauthor, color, author, orgdata, *args, **kwargs) -> None:
+    def __init__(self, embedid, guildid, color, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.channel = channel
-        self.message = message
-        self.showauthor = showauthor
-        self.author = author
+        self.embedid = embedid
+        self.guildid = guildid
         self.color = color
+        
+        conn = newconn()
+        cur = conn.cursor()
+
+        orgdata = ["", "", "", "", ""]
+        if embedid != -1:
+            cur.execute(f"SELECT data FROM embed WHERE embedid = {embedid} AND guildid = {guildid}")
+            t = cur.fetchall()
+            if len(t) == 0:
+                raise Exception("Embed not found!")
+            d = t[0][0].split("|")
+            title = b64d(d[0])
+            url = b64d(d[1])
+            description = b64d(d[2])
+            footer = b64d(d[3])
+            thumbnail_url = b64d(d[4]) + " | " + b64d(d[5])
+            orgdata = [title, url, description, footer, thumbnail_url]
 
         self.add_item(InputText(label="Title", placeholder = "(Required)", value = orgdata[0]))
         self.add_item(InputText(label="URL", placeholder = "(Optional)", value = orgdata[1], required = False))
@@ -33,6 +58,12 @@ class EmbedModal(Modal):
         self.add_item(InputText(label="Thumbnail | Image URL", placeholder = "(Optional, use | to split, you can leave either empty)", value = orgdata[4], required = False))
 
     async def callback(self, interaction: discord.Interaction):
+        conn = newconn()
+        cur = conn.cursor()
+
+        guildid = self.guildid
+        embedid = self.embedid
+        color = self.color
         title = self.children[0].value
         url = self.children[1].value.replace(" ","")
         description = self.children[2].value
@@ -50,8 +81,6 @@ class EmbedModal(Modal):
             footer_icon_url = footer[footer.find("[") + 1: footer.find("]")].replace(" ","")
             footer = footer[footer.find("]") + 1:]
         
-        clr = self.color.split()
-
         if url != "" and validators.url(url) != True:
             await interaction.response.send_message(f"URL {url} is not a valid url.", ephemeral = True)
             return
@@ -65,34 +94,34 @@ class EmbedModal(Modal):
             await interaction.response.send_message(f"Footer Icon URL {footer_icon_url} is not a valid url.", ephemeral = True)
             return
 
-        message = self.message
-        if message is None:
-            try:
-                channel = bot.get_channel(self.channel)
-                embed=discord.Embed(title=title, url=url, description=description, color=discord.Colour.from_rgb(int(clr[0]), int(clr[1]), int(clr[2])))
-                if self.showauthor:
-                    embed.set_author(name=self.author.name, icon_url=self.author.avatar.url)
-                embed.set_footer(text=footer, icon_url=footer_icon_url)
-                embed.set_thumbnail(url=thumbnail_url[0])
-                embed.set_image(url=thumbnail_url[1])
-                await channel.send(embed = embed)
-                await interaction.response.send_message(f"The embed has been posted at <#{self.channel}>", ephemeral = True)
-            except:
-                await interaction.response.send_message(f"I cannot post the embed at <#{self.channel}>", ephemeral = True)
+        if embedid != -1:
+            cur.execute(f"SELECT data FROM embed WHERE embedid = {embedid} AND guildid = {guildid}")
+            t = cur.fetchall()
+            if len(t) == 0:
+                await interaction.response.send_message(f"Embed not found.", ephemeral = True)
+                return
+            data = b64e(title) + "|" + b64e(url) + "|" + b64e(description) + "|" + b64e(footer) + "|" + b64e(thumbnail_url[0]) + "|" + b64e(thumbnail_url[1])
+            data += "|" + color
+            cur.execute(f"UPDATE embed SET data = '{data}' WHERE embedid = {embedid} AND guildid = {guildid}")
+            conn.commit()
+            
+            await interaction.response.send_message(f"Embed #{embedid} updated.", ephemeral = False)
+            await log(f"Embed", f"[Guild {interaction.guild} {guildid}] {interaction.user} ({interaction.user.id}) updated embed #{embedid}", guildid)
+
         else:
-            try:
-                embed=discord.Embed(title=title, url=url, description=description, color=discord.Colour.from_rgb(int(clr[0]), int(clr[1]), int(clr[2])))
-                if self.showauthor:
-                    embed.set_author(name=self.author.name, icon_url=self.author.avatar.url)
-                embed.set_footer(text=footer, icon_url=footer_icon_url)
-                embed.set_thumbnail(url=thumbnail_url[0])
-                embed.set_image(url=thumbnail_url[1])
-                await message.edit(embed = embed)
-                await interaction.response.send_message(f"The embed has been updated.", ephemeral = True)
-            except:
-                import traceback
-                traceback.print_exc()
-                await interaction.response.send_message(f"I cannot edit the message.", ephemeral = True)
+            cur.execute(f"SELECT COUNT(*) FROM embed")
+            t = cur.fetchall()
+            embedid = 0
+            if len(t) > 0:
+                embedid = t[0][0]
+            
+            data = b64e(title) + "|" + b64e(url) + "|" + b64e(description) + "|" + b64e(footer) + "|" + b64e(thumbnail_url[0]) + "|" + b64e(thumbnail_url[1])
+            data += "|" + color
+            cur.execute(f"INSERT INTO embed VALUES ({embedid}, {guildid}, '{data}')")
+            conn.commit()
+
+            await interaction.response.send_message(f"Embed created. Embed ID: `{embedid}`. Use `/embed send` to post it.", ephemeral = False)
+            await log(f"Embed", f"[Guild {interaction.guild} {guildid}] {interaction.user} ({interaction.user.id}) created embed #{embedid}", guildid)
 
 class ManageEmbed(commands.Cog):
     def __init__(self, bot):
@@ -101,9 +130,8 @@ class ManageEmbed(commands.Cog):
     manage = SlashCommandGroup("embed", "Manage embed")
 
     @manage.command(name="create", description="Staff - Create embed. Detailed information will be edited in modal.")
-    async def create(self, ctx, channel: discord.Option(str, "Channel to post the embed", required = True),
-        showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = True, choices = ["Yes", "No"]),
-        color: discord.Option(str, "Color in RGB (e.g. 135 206 235 for skyblue)", required = False)):
+    async def create(self, ctx,
+        color: discord.Option(str, "Color in RGB (default 158 132 46)", required = False)):
         
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -111,30 +139,30 @@ class ManageEmbed(commands.Cog):
 
         if not isStaff(ctx.guild, ctx.author):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
-            return
-        
-        if not channel.startswith("<#") or not channel.endswith(">"):
-            await ctx.respond(f"{channel} is not a valid channel!", ephemeral = True)
             return
         
         if color is None:
-            color = "135 206 235"
+            color = "158 132 46"
+        else:
+            t = color.split(" ")
+            if len(t) != 3:
+                await ctx.respond(f"{color} is not a valid RGB color code.", ephemeral = True)
+                return
+            for tt in t:
+                try:
+                    p = int(tt)
+                    if p < 0 or p > 255:
+                        await ctx.respond(f"{color} is not a valid RGB color code.", ephemeral = True)
+                        return
+                except:
+                    await ctx.respond(f"{color} is not a valid RGB color code.", ephemeral = True)
+                    return
 
-        if showauthor == "Yes":
-            showauthor = True
-        elif showauthor == "No":
-            showauthor = False
-
-        channel = int(channel[2:-1])
-
-        orgdata = ["", "", "", "", ""]
-
-        await ctx.send_modal(EmbedModal(channel, None, showauthor, color, ctx.author, orgdata, "Create embed"))
+        await ctx.send_modal(EmbedModal(-1, ctx.guild.id, color, "Create embed"))
     
     @manage.command(name="edit", description="Staff - Edit embed. Detailed information will be edited in modal.")
-    async def edit(self, ctx, msglink: discord.Option(str, "The message link to the original embed", required = True),
-        showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = True, choices = ["Yes", "No"]),
-        color: discord.Option(str, "Color in RGB (e.g. 135 206 235 for skyblue)", required = False)):
+    async def edit(self, ctx, embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
+        color: discord.Option(str, "Color in RGB. Leave empty to remain unchanged.", required = False)):
         
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -144,57 +172,276 @@ class ManageEmbed(commands.Cog):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
 
-        if not validators.url(msglink):
-            await ctx.respond(f"{msglink} was an invalid message link.", ephemeral = True)
+        try:
+            embedid = int(embedid)
+        except:
+            await ctx.respond("Invalid embed ID!", ephemeral = True)
+            return
+
+        conn = newconn()
+        cur = conn.cursor()
+
+        cur.execute(f"SELECT data FROM embed WHERE guildid = {ctx.guild.id} AND embedid = {embedid}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond("Embed not found.", ephemeral = True)
+            return
+
+        if color is None:
+            color = t[0][0].split("|")[-1]
+        else:
+            t = color.split(" ")
+            if len(t) != 3:
+                await ctx.respond(f"{color} is not a valid RGB color code.", ephemeral = True)
+                return
+            for tt in t:
+                try:
+                    p = int(tt)
+                    if p < 0 or p > 255:
+                        await ctx.respond(f"{color} is not a valid RGB color code.", ephemeral = True)
+                        return
+                except:
+                    await ctx.respond(f"{color} is not a valid RGB color code.", ephemeral = True)
+                    return
+
+        await ctx.send_modal(EmbedModal(embedid, ctx.guild.id, color, "Edit embed"))
+    
+    @manage.command(name="remove", description="Staff - Remove embed from database. This will not delete messages already sent.")
+    async def remove(self, ctx, embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True)):
+        
+        if ctx.guild is None:
+            await ctx.respond("You can only run this command in guilds!")
+            return
+
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
+        try:
+            embedid = int(embedid)
+        except:
+            await ctx.respond("Invalid embed ID!", ephemeral = True)
+            return
+
+        conn = newconn()
+        cur = conn.cursor()
+
+        cur.execute(f"SELECT data FROM embed WHERE guildid = {ctx.guild.id} AND embedid = {embedid}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond("Embed not found.", ephemeral = True)
+            return
+
+        cur.execute(f"UPDATE embed SET data = '', guildid = -1 WHERE guildid = {ctx.guild.id} AND embedid = {embedid}")
+        conn.commit()
+
+        await ctx.respond(f"Embed #{embedid} removed from database. Note that messages sent in guilds are not affected.")
+        await log(f"Embed", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) updated embed #{embedid}", ctx.guild.id)
+    
+    @manage.command(name="preview", description="Staff - Preview an embed privately before posting it in public.")
+    async def preview(self, ctx, embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
+            showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"])):
+        
+        if ctx.guild is None:
+            await ctx.respond("You can only run this command in guilds!")
+            return
+
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
+        try:
+            embedid = int(embedid)
+        except:
+            await ctx.respond("Invalid embed ID!", ephemeral = True)
+            return
+
+        conn = newconn()
+        cur = conn.cursor()
+
+        cur.execute(f"SELECT data FROM embed WHERE guildid = {ctx.guild.id} AND embedid = {embedid}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond("Embed not found.", ephemeral = True)
+            return
+            
+        d = t[0][0].split("|")
+        title = b64d(d[0])
+        url = b64d(d[1])
+        description = b64d(d[2])
+        footer = b64d(d[3])
+        thumbnail_url = [b64d(d[4]), b64d(d[5])]
+        clr = d[6].split(" ")
+
+        footer_icon_url = ""
+
+        if footer.startswith("["):
+            footer_icon_url = footer[footer.find("[") + 1: footer.find("]")].replace(" ","")
+            footer = footer[footer.find("]") + 1:]
+        
+        embed=discord.Embed(title=title, url=url, description=description, color=discord.Colour.from_rgb(int(clr[0]), int(clr[1]), int(clr[2])))
+        if showauthor == "Yes":
+            embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
+        embed.set_footer(text=footer, icon_url=footer_icon_url)
+        embed.set_thumbnail(url=thumbnail_url[0])
+        embed.set_image(url=thumbnail_url[1])
+        await ctx.respond(embed = embed, ephemeral = True)
+
+    @manage.command(name="list", description="Staff - List all embeds in this guild.")
+    async def show(self, ctx):
+        if ctx.guild is None:
+            await ctx.respond("You can only run this command in guilds!")
+            return
+
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
+        conn = newconn()
+        cur = conn.cursor()
+        
+        cur.execute(f"SELECT embedid, data FROM embed WHERE guildid = {ctx.guild.id}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond("There's no embed created in this server. Use `/embed create` to create one.")
             return
         
+        msg = f"Below are all embeds created using Gecko in {ctx.guild}.\nOnly title is shown and you can use `/embed edit` to see details.\n"
+        for tt in t:
+            msg += f"Embed *#{tt[0]}*: **{b64d(tt[1].split('|')[0])}**\n"
+        
+        if len(msg) > 2000:
+            f = io.BytesIO()
+            f.write(msg.encode())
+            f.seek(0)
+            await ctx.respond(file=discord.File(fp=f, filename='Embeds.MD'))
+        else:
+            embed=discord.Embed(title=f"Embeds in {ctx.guild}", description=msg, color=GECKOCLR)
+            await ctx.respond(embed = embed)
+        
+    @manage.command(name="send", description="Staff - Send an embed in public.")
+    async def send(self, ctx, channel: discord.Option(str, "Channel to post the embed.", required = True),
+            embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
+            showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"])):
+        
+        if ctx.guild is None:
+            await ctx.respond("You can only run this command in guilds!")
+            return
+
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
+        if not channel.startswith("<#") or not channel.endswith(">"):
+            await ctx.respond(f"{channel} is not a valid channel!", ephemeral = True)
+            return
+        channelid = int(channel[2:-1])
+
+        try:
+            embedid = int(embedid)
+        except:
+            await ctx.respond("Invalid embed ID!", ephemeral = True)
+            return
+
+        conn = newconn()
+        cur = conn.cursor()
+
+        cur.execute(f"SELECT data FROM embed WHERE guildid = {ctx.guild.id} AND embedid = {embedid}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond("Embed not found.", ephemeral = True)
+            return
+            
+        d = t[0][0].split("|")
+        title = b64d(d[0])
+        url = b64d(d[1])
+        description = b64d(d[2])
+        footer = b64d(d[3])
+        thumbnail_url = [b64d(d[4]), b64d(d[5])]
+        clr = d[6].split(" ")
+
+        footer_icon_url = ""
+
+        if footer.startswith("["):
+            footer_icon_url = footer[footer.find("[") + 1: footer.find("]")].replace(" ","")
+            footer = footer[footer.find("]") + 1:]
+        
+        embed=discord.Embed(title=title, url=url, description=description, color=discord.Colour.from_rgb(int(clr[0]), int(clr[1]), int(clr[2])))
+        if showauthor == "Yes":
+            embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
+        embed.set_footer(text=footer, icon_url=footer_icon_url)
+        embed.set_thumbnail(url=thumbnail_url[0])
+        embed.set_image(url=thumbnail_url[1])
+
+        try:
+            channel = bot.get_channel(channelid)
+            await channel.send(embed = embed)
+            await ctx.respond(f"Embed #{embedid} posted at <#{channelid}>")
+        except:
+            await ctx.respond(f"Failed to post embed at <#{channelid}>. Make sure I have access to the channel!")
+        
+    @manage.command(name="update", description="Staff - Update an embed in a message. The message must be sent by Gecko.")
+    async def update(self, ctx, msglink: discord.Option(str, "Link to the message to update.", required = True),
+            embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
+            showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"])):
+        
+        if ctx.guild is None:
+            await ctx.respond("You can only run this command in guilds!")
+            return
+
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
         if not msglink.endswith("/"):
             msglink = msglink + "/"
         msglink = msglink.split("/")
         messageid = int(msglink[-2])
         channelid = int(msglink[-3])
+
+        try:
+            embedid = int(embedid)
+        except:
+            await ctx.respond("Invalid embed ID!", ephemeral = True)
+            return
+
+        conn = newconn()
+        cur = conn.cursor()
+
+        cur.execute(f"SELECT data FROM embed WHERE guildid = {ctx.guild.id} AND embedid = {embedid}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond("Embed not found.", ephemeral = True)
+            return
+            
+        d = t[0][0].split("|")
+        title = b64d(d[0])
+        url = b64d(d[1])
+        description = b64d(d[2])
+        footer = b64d(d[3])
+        thumbnail_url = [b64d(d[4]), b64d(d[5])]
+        clr = d[6].split(" ")
+
+        footer_icon_url = ""
+
+        if footer.startswith("["):
+            footer_icon_url = footer[footer.find("[") + 1: footer.find("]")].replace(" ","")
+            footer = footer[footer.find("]") + 1:]
         
-        channel = None
-        orgmsg = None
+        embed=discord.Embed(title=title, url=url, description=description, color=discord.Colour.from_rgb(int(clr[0]), int(clr[1]), int(clr[2])))
+        if showauthor == "Yes":
+            embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
+        embed.set_footer(text=footer, icon_url=footer_icon_url)
+        embed.set_thumbnail(url=thumbnail_url[0])
+        embed.set_image(url=thumbnail_url[1])
+
         try:
             channel = bot.get_channel(channelid)
-            orgmsg = await channel.fetch_message(messageid)
-            if orgmsg is None or len(orgmsg.embeds) == 0:
-                await ctx.respond(f"The link does not refer to an existing message or a message containing embed.", ephemeral = True)
-                return
+            message = await channel.fetch_message(messageid)
+            await message.edit(embed = embed)
+            await ctx.respond(f"Embed in [message]({'/'.join(msglink)[:-1]}) updated.")
         except:
-            import traceback
-            traceback.print_exc()
-            await ctx.respond(f"The link does not refer to an existing message or a message containing embed.", ephemeral = True)
-            return
+            await ctx.respond(f"Failed to update [message]({'/'.join(msglink)[:-1]}). Make sure it exists and is sent by Gecko!")
 
-        if orgmsg.author.id != BOTID:
-            await ctx.respond(f"The message wasn't sent by me so I can not edit it.", ephemeral = True)
-            return
-
-        embed = orgmsg.embeds[0]
-        fu = ""
-        if not embed.footer.icon_url == discord.Embed.Empty:
-            fu = embed.footer.icon_url
-        ft = ""
-        if not embed.footer.text == discord.Embed.Empty:
-            ft = embed.footer.text
-        tu = ""
-        if not embed.thumbnail.url == discord.Embed.Empty:
-            tu = embed.thumbnail.url
-        tt = ""
-        if not embed.image.url == discord.Embed.Empty:
-            tt = embed.image.url
-        orgdata = [embed.title, embed.url, embed.description, f"[{fu}] {ft}", f"{tu} | {tt}"]
-        
-        if color is None:
-            color = "135 206 235"
-
-        if showauthor == "Yes":
-            showauthor = True
-        elif showauthor == "No":
-            showauthor = False
-
-        await ctx.send_modal(EmbedModal(channel, orgmsg, showauthor, color, ctx.author, orgdata, "Edit embed"))
 
 bot.add_cog(ManageEmbed(bot))

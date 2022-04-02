@@ -20,6 +20,8 @@ from settings import *
 from functions import *
 from db import newconn
 
+# TODO: /form update - update message view (edit message)
+
 class FormEditModal(Modal):
     def __init__(self, formid, btnlbl, btnclr, onetime, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -82,7 +84,8 @@ class FormEditModal(Modal):
             cur.execute(f"SELECT data FROM form WHERE formid = {formid}")
             t = cur.fetchall()
             if len(t) == 0:
-                raise Exception("Form not found!")
+                await interaction.response.send_message(f"Form not found.", ephemeral = True)
+                return
             orgdata = t[0][0]
             if orgdata.startswith("stopped-"):
                 data = "stopped-" + data
@@ -98,7 +101,7 @@ class FormEditModal(Modal):
                 formid = t[0][0]
             cur.execute(f"INSERT INTO form VALUES ({formid}, {guildid}, '{btn}', '{data}')")
             conn.commit()
-            await interaction.response.send_message(f"Form created. Form ID: `{formid}`", ephemeral = False)
+            await interaction.response.send_message(f"Form created. Form ID: `{formid}`. Use `/form send` to post it.", ephemeral = False)
             await log(f"Form", f"[Guild {interaction.guild} {guildid}] {interaction.user} ({interaction.user.id}) created form #{formid}", guildid)
 
 class FormModal(Modal):
@@ -279,14 +282,16 @@ class ManageForm(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
         
-        cur.execute(f"SELECT * FROM form WHERE formid = {formid} AND guildid = {ctx.guild.id}")
+        cur.execute(f"SELECT btn FROM form WHERE formid = {formid} AND guildid = {ctx.guild.id}")
         t = cur.fetchall()
         if len(t) == 0:
             await ctx.respond(f"Form not found.", ephemeral = True)
             return
+        btn = t[0][0]
+        orgclr = btn.split("|")[0]
         
         if not btncolor in ["blurple", "grey", "gray", "green", "red"]:
-            btncolor = "blurple"
+            btncolor = orgclr
 
         ot = 0
         if onetime == "Yes":

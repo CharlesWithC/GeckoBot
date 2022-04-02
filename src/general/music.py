@@ -118,6 +118,8 @@ class ManageMusic(commands.Cog):
             return
 
         voice_client.pause()
+        user = ctx.guild.get_member(BOTID)
+        await user.edit(mute = True, reason = "Gecko Music User Paused")
         await ctx.respond(f"Music paused! You can use /resume to restart from where it paused.")
 
     @manage.command(name="resume", description="Staff - Music - Resume music.")
@@ -136,6 +138,8 @@ class ManageMusic(commands.Cog):
             return
 
         voice_client.resume()
+        user = ctx.guild.get_member(BOTID)
+        await user.edit(mute = False, reason = "Gecko Music User Resumed")
         await ctx.respond(f"Music resumed!")
 
     @manage.command(name="toggle", description="Staff - Music - Toggle 'Now Playing' auto post, whether Gecko should send it or not.")
@@ -302,8 +306,6 @@ async def NextSong(ctx):
         return
     userid = t[0][0]
     title = t[0][1]
-
-    await ctx.defer()
 
     url = ""
     try:
@@ -627,6 +629,7 @@ async def MusicLoop():
     emptynotice = []
     cursong = {} # cursong[url] = {song name, last update}
     guildsong = {} # guildsong[guildid] = {song name}
+    autopause = []
 
     while not bot.is_closed():
         cur.execute(f"SELECT guildid, channelid FROM vcbind")
@@ -718,7 +721,8 @@ async def MusicLoop():
                         if radiosong != -1 and (not link in cursong.keys() or cursong[link][0] != radiosong):
                             cursong[link] = (radiosong, int(time()))
 
-                if len(voice_client.channel.members) == 1: # only bot in channel
+                if len(voice_client.channel.members) == 1 and not guildid in autopause: # only bot in channel
+                    autopause.append(guildid)
                     user = guild.get_member(BOTID)
                     await user.edit(deafen = True, reason = "Gecko Music Nobody Listening")
                     if len(o) > 0:
@@ -726,7 +730,8 @@ async def MusicLoop():
                     else:
                         voice_client.pause()
                     continue
-                else:
+                elif len(voice_client.channel.members) > 1 and guildid in autopause:
+                    autopause.remove(guildid)
                     if len(o) > 0:
                         radio = o[0][1].split("-")
                         link = radio[2]

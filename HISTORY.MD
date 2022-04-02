@@ -1,5 +1,10 @@
 # Gecko Bot Update History
 
+## Update 2022.04.02
+
+**Version v1.9.2**  
+Rework embed function  
+
 ## Update 2022.04.01
 
 **Version v1.9.1**  
