@@ -199,7 +199,7 @@ class ManageForm(commands.Cog):
         if onetime == "Yes":
             ot = 1
 
-        if len(callback) > 400:
+        if len(str(callback)) > 400:
             await ctx.respond("The length of callback message cannot be greater than 400!", ephemeral = True)
             return
 
@@ -241,7 +241,7 @@ class ManageForm(commands.Cog):
         if onetime == "Yes":
             ot = 1
 
-        if len(callback) > 400:
+        if len(str(callback)) > 400:
             await ctx.respond("The length of callback message cannot be greater than 400!", ephemeral = True)
             return
 

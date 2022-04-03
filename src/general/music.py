@@ -762,7 +762,7 @@ async def MusicLoop():
                     d = cur.fetchall()
                     if len(d) == 0:
                         user = guild.get_member(BOTID)
-                        await user.edit(mute = True, reason = "Gecko Play Music Self-Unmute")
+                        await user.edit(mute = True, reason = "Gecko Play Music Self-Mute")
                         if not guildid in emptynotice:
                             emptynotice.append(guildid)
                             embed = discord.Embed(title=f"Playlist is empty", description="Use /queue to fill it!", color = GECKOCLR)
@@ -778,8 +778,9 @@ async def MusicLoop():
                     title = dd[1]
 
                     url = ""
+                    etitle = title
 
-                    if userid != -1:                
+                    if userid != 1:                
                         try:
                             ydl = search(b64d(title))
                             url = ydl['formats'][0]['url']
@@ -789,6 +790,7 @@ async def MusicLoop():
                                 await textchn.send(f"I cannot find the song **{title}**. This might be a temporary issue.")
                             continue
                     else:
+                        etitle = title
                         data = title
                         title = data.split("-")[1]
                         url = data.split("-")[2]
@@ -814,11 +816,9 @@ async def MusicLoop():
                             await textchn.send(f"Something went wrong.")
                         continue
 
-                    cur.execute(f"UPDATE playlist SET userid = -userid WHERE guildid = {guildid} AND userid = {userid} AND title = '{b64e(title)}'")
+                    cur.execute(f"UPDATE playlist SET userid = -userid WHERE guildid = {guildid} AND userid = {userid} AND title = '{etitle}'")
                     conn.commit()
                     if textchn != None and postupdate(guildid):
-                        title = ydl['title']
-
                         username = "Unknown user"
                         avatar = ""
 
