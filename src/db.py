@@ -36,6 +36,10 @@ cur.execute(f"CREATE TABLE IF NOT EXISTS reactionrole (guildid BIGINT, channelid
 cur.execute(f"CREATE TABLE IF NOT EXISTS rolebind (guildid BIGINT, channelid BIGINT, msgid BIGINT, role BIGINT, emoji VARCHAR(64))")
 cur.execute(f"CREATE TABLE IF NOT EXISTS userrole (guildid BIGINT, channelid BIGINT, msgid BIGINT, userid BIGINT, roleid BIGINT)")
 
+# BUTTON
+cur.execute(f"CREATE TABLE IF NOT EXISTS button (buttonid BIGINT, guildid BIGINT, data TEXT)")
+cur.execute(f"CREATE TABLE IF NOT EXISTS buttonview (buttonid BIGINT, customid TEXT)")
+
 # EMBED
 cur.execute(f"CREATE TABLE IF NOT EXISTS embed (embedid BIGINT, guildid BIGINT, data TEXT)")    
 
@@ -43,9 +47,8 @@ cur.execute(f"CREATE TABLE IF NOT EXISTS embed (embedid BIGINT, guildid BIGINT, 
 cur.execute(f"CREATE TABLE IF NOT EXISTS chataction (guildid BIGINT, keywords TEXT, action VARCHAR(64))")
 
 # FORM
-cur.execute(f"CREATE TABLE IF NOT EXISTS form (formid BIGINT, guildid BIGINT, btn TEXT, data TEXT)")
+cur.execute(f"CREATE TABLE IF NOT EXISTS form (formid BIGINT, guildid BIGINT, data TEXT, callback TEXT)")
 cur.execute(f"CREATE TABLE IF NOT EXISTS formentry (formid BIGINT, userid BIGINT, data TEXT)") # record all forms user submitted
-cur.execute(f"CREATE TABLE IF NOT EXISTS formview (formid BIGINT, customid TEXT)")
 
 # MUSIC
 cur.execute(f"CREATE TABLE IF NOT EXISTS playlist (guildid BIGINT, userid BIGINT, title TEXT)")

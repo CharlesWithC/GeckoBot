@@ -327,8 +327,8 @@ class ManageStatsDisplay(commands.Cog):
         except Exception as e:
             await log("ServerStats", f"Unknown exception: {str(e)}", ctx.guild.id)
 
-    @manage.command(name = "remove", description = "Staff - Remove a stats channel.")
-    async def remove(self, ctx,
+    @manage.command(name = "delete", description = "Staff - Delete a stats channel.")
+    async def delete(self, ctx,
         channelid: discord.Option(str, "Channel ID of the stats channel to edit. You can enable Developer Mode to see it.", required = True)):
         
         if ctx.guild is None:

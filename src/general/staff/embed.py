@@ -60,6 +60,11 @@ class EmbedModal(Modal):
         footer = self.children[3].value
         thumbnail_url = self.children[4].value.replace(" ","")
 
+        l = len(title) + len(description)
+        if l > 2000:
+            await interaction.response.send_message(f"The maximum length of title + description is 2000, current {l}", ephemeral = True)
+            return
+
         if "|" in thumbnail_url:
             thumbnail_url = thumbnail_url.split("|")
         else:
@@ -196,8 +201,8 @@ class ManageEmbed(commands.Cog):
 
         await ctx.send_modal(EmbedModal(embedid, ctx.guild.id, color, "Edit embed"))
     
-    @manage.command(name="remove", description="Staff - Remove embed from database. This will not delete messages already sent.")
-    async def remove(self, ctx, embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True)):
+    @manage.command(name="delete", description="Staff - Delete embed from database. This will not delete messages already sent.")
+    async def delete(self, ctx, embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True)):
         
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -225,7 +230,7 @@ class ManageEmbed(commands.Cog):
         cur.execute(f"UPDATE embed SET data = '', guildid = -1 WHERE guildid = {ctx.guild.id} AND embedid = {embedid}")
         conn.commit()
 
-        await ctx.respond(f"Embed #{embedid} removed from database. Note that messages sent in guilds are not affected.")
+        await ctx.respond(f"Embed #{embedid} deleted from database. Note that messages sent in guilds are not affected.")
         await log(f"Embed", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) updated embed #{embedid}", ctx.guild.id)
     
     @manage.command(name="preview", description="Staff - Preview an embed privately before posting it in public.")
@@ -296,7 +301,7 @@ class ManageEmbed(commands.Cog):
             await ctx.respond("There's no embed created in this guild. Use `/embed create` to create one.")
             return
         
-        msg = f"Below are all embeds created using Gecko in {ctx.guild}.\nOnly title is shown and you can use `/embed edit` to see details.\n"
+        msg = f"Below are all embeds created using Gecko in {ctx.guild}.\nOnly title is shown and you can use `/embed edit` to see details.\n\n"
         for tt in t:
             msg += f"Embed *#{tt[0]}*: **{b64d(tt[1].split('|')[0])}**\n"
         
