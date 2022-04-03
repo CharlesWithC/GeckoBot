@@ -131,7 +131,7 @@ class ManageStaff(commands.Cog):
             msg += "\n" + tmsg
         
         # EMBED
-        embed = discord.Embed(title=f"{ctx.guild.name} Staff", description=msg)
+        embed = discord.Embed(title=f"{ctx.guild.name} Staff", description=msg, color = GECKOCLR)
         embed.set_thumbnail(url = ctx.guild.icon.url)
         embed.set_footer(text=f"{ctx.guild.name}", icon_url = ctx.guild.icon.url)
         await ctx.respond(embed = embed)

@@ -464,7 +464,7 @@ async def StatsDisplayUpdate():
                 guildid = dd[0]
                 categoryid = dd[1]
 
-                if ss_get_channel_fail.count((guildid, 0)) > 10:
+                if ss_get_channel_fail.count((guildid, 0)) > 3:
                     while ss_get_channel_fail.count((guildid, 0)) > 0:
                         ss_get_channel_fail.remove((guildid, 0))
 
@@ -491,7 +491,7 @@ async def StatsDisplayUpdate():
                     channelid = tt[0]
                     conf = b64d(tt[1])
 
-                    if ss_get_channel_fail.count((guildid, channelid)) > 10:
+                    if ss_get_channel_fail.count((guildid, channelid)) > 3:
                         while ss_get_channel_fail.count((guildid, channelid)) > 0:
                             ss_get_channel_fail.remove((guildid, channelid))
                         cur.execute(f"DELETE FROM statsconfig WHERE guildid = {guildid} AND categoryid = {categoryid} AND channelid = {channelid}")

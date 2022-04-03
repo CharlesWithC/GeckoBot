@@ -1,5 +1,12 @@
 # Gecko Bot Update History
 
+## Update 2022.04.03
+
+**Version v1.9.3**  
+1.Improved form function, added `/form attach` and `/form update` (and `/button clear`)  
+  ~~`/button` is a planned function~~  
+2.Improved reaction role function, added emoji test before adding reactions  
+
 ## Update 2022.04.02
 
 **Version v1.9.2**  

@@ -35,6 +35,10 @@ class ReactionRole(commands.Cog):
         if not isStaff(ctx.guild, ctx.author):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
+        botuser = ctx.guild.get_member(BOTID)
+        if not botuser.guild_permissions.add_reactions:
+            await ctx.respond("I don't have permission to add reactions.", ephemeral = True)
+            return
         conn = newconn()
         cur = conn.cursor()
             
@@ -43,6 +47,8 @@ class ReactionRole(commands.Cog):
         rolebindtxt = rolebind.split()
         i = 0
         rolebind = []
+        roles = []
+        emojis = []
         r = -1
         e = ""
         for data in rolebindtxt:
@@ -52,7 +58,12 @@ class ReactionRole(commands.Cog):
                     return
                 r = int(data[3:-1])
             else:
+                if roles.count(r) > 0 or emojis.count(e) > 0:
+                    await ctx.respond(f"{ctx.author.name}, each role can only be bound to one unique emoji.", ephemeral = True)
+                    return
+                roles.append(r)
                 e = data.replace(" ", "")
+                emojis.append(e)
                 rolebind.append((r, e))
                 cur.execute(f"SELECT emoji FROM rolebind WHERE guildid = {guildid} AND role = {r}")
                 t = cur.fetchall()
@@ -60,8 +71,19 @@ class ReactionRole(commands.Cog):
                     emoji = b64d(t[0][0])
                     await ctx.respond(f"{ctx.author.name}, role <@&{r}> already bound to {emoji} in another post.", ephemeral = True)
                     return
-
             i += 1
+        
+        channel = ctx.channel
+        message = await channel.send("Reaction test")
+        for t in rolebind:
+            emoji = t[1]
+            try:
+                await message.add_reaction(emoji)
+            except:
+                await ctx.respond(f"I cannot add reaction {emoji}. Make sure it's a valid emoji.", ephemeral = True)
+                await message.delete()
+                return
+        await message.delete()
         
         if not msglink.endswith("/"):
             msglink = msglink + "/"
@@ -102,6 +124,10 @@ class ReactionRole(commands.Cog):
         if not isStaff(ctx.guild, ctx.author):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
+        botuser = ctx.guild.get_member(BOTID)
+        if not botuser.guild_permissions.add_reactions:
+            await ctx.respond("I don't have permission to add reactions.", ephemeral = True)
+            return
         conn = newconn()
         cur = conn.cursor()
         
@@ -132,6 +158,8 @@ class ReactionRole(commands.Cog):
         rolebindtxt = rolebind.split()
         i = 0
         rolebind = []
+        roles = []
+        emojis = []
         r = -1
         e = ""
         for data in rolebindtxt:
@@ -141,28 +169,53 @@ class ReactionRole(commands.Cog):
                     return
                 r = int(data[3:-1])
             else:
+                if roles.count(r) > 0 or emojis.count(e) > 0:
+                    await ctx.respond(f"{ctx.author.name}, each role can only be bound to one unique emoji.", ephemeral = True)
+                    return
+                roles.append(r)
                 e = data.replace(" ", "")
+                emojis.append(e)
                 rolebind.append((r, e))
             i += 1
+        
+        channel = ctx.channel
+        tmessage = await channel.send("Reaction test")
+        for t in rolebind:
+            emoji = t[1]
+            try:
+                await tmessage.add_reaction(emoji)
+            except:
+                await ctx.respond(f"I cannot add reaction {emoji}. Make sure it's a valid emoji.", ephemeral = True)
+                await tmessage.delete()
+                return
+        await tmessage.delete()
         
         updates = ""
         updateslog = ""
         for data in rolebind:
             roleid = data[0]
             emoji = data[1]
-            cur.execute(f"SELECT * FROM rolebind WHERE guildid = {guildid} AND channelid = {channelid} AND msgid = {msgid} AND role = {roleid}")
+            cur.execute(f"SELECT roleid, emoji FROM rolebind WHERE guildid = {guildid} AND channelid = {channelid} AND msgid = {msgid}")
             t = cur.fetchall()
-            if len(t) == 0: # not found
+            ok = True
+            for tt in t:
+                if tt[0] == roleid:
+                    updates += f"<@&{roleid}> already bound, you cannot have multiple emojis representing it.\n"
+                    ok = False
+                    break
+                elif tt[1] == b64e(emoji):
+                    updates += f"{emoji} already bound, you cannot have multiple emojis representing it.\n"
+                    ok = False
+                    break
+            if ok:
                 updates += f"Added role {roleid} => {emoji}.\n"
                 updateslog += f"Added role {roleid} => {emoji}. "
                 await message.add_reaction(emoji)
                 emoji = b64e(emoji)
                 cur.execute(f"INSERT INTO rolebind VALUES ({guildid}, {channelid}, {msgid}, {roleid}, '{emoji}')")
                 conn.commit()
-            else:
-                updates += f"<@&{roleid}> already bound, you cannot the emoji representing it.\n"
             
-        await ctx.respond(f"{ctx.author.name}, reaction-role post updated!\n`{updates}`")
+        await ctx.respond(f"{ctx.author.name}, reaction-role post updated!\n{updates}")
         await log("Staff", f"{ctx.author} updated reaction-role post {msglink} rolebind. {updateslog}", ctx.guild.id)
 
     @rr.command(name = "list", description = "Staff - List all reaction role posts in this guild.")
@@ -185,7 +238,7 @@ class ReactionRole(commands.Cog):
         for tt in t:
             msg += f"<#{tt[0]}> https://discord.com/channels/{guildid}/{tt[0]}/{tt[1]}\n"
         
-        embed = discord.Embed(title="Reaction role posts in this server", description=msg)
+        embed = discord.Embed(title="Reaction role posts in this guild", description=msg, color = GECKOCLR)
         await ctx.respond(embed=embed)
 
 bot.add_cog(ReactionRole(bot))
@@ -218,7 +271,7 @@ async def ReactionRoleUpdate():
                     rolebind.append((dd[0], dd[1]))
                     rolebindtxt = f"<@&{dd[0]}> => {b64d(dd[1])} "
 
-                if reactionrole_fail.count((channelid, msgid)) > 10:
+                if reactionrole_fail.count((channelid, msgid)) > 3:
                     while reactionrole_fail.count((channelid, msgid)) > 0:
                         reactionrole_fail.remove((channelid, msgid))
                     cur.execute(f"DELETE FROM reactionrole WHERE guildid = {guildid} AND channelid = {channelid} AND msgid = {msgid}")
@@ -226,7 +279,7 @@ async def ReactionRoleUpdate():
                     cur.execute(f"DELETE FROM userrole WHERE guildid = {guildid} AND channelid = {channelid} AND msgid = {msgid}")
                     conn.commit()
                     
-                    await log("ReactionRole", f"[{guild} ({guildid})] Self-role post {msgid} expired as bot cannot access the channel.", ctx.guild.id)
+                    await log("ReactionRole", f"[{guild} ({guildid})] Self-role post {msgid} expired as bot cannot access the channel.", guildid)
                     try:
                         cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'error'")
                         t = cur.fetchall()

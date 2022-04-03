@@ -245,9 +245,9 @@ async def FinanceClaim(ctx):
         cur.execute(f"UPDATE finance SET balance = {balance} WHERE userid = {userid} AND guildid = {guildid}")
         conn.commit()
 
-        embed = discord.Embed(description=f"{ctx.author.name}, you earned **{last_reward}** :coin: from your last job!", color=0x00DD00)
+        embed = discord.Embed(description=f"{ctx.author.name}, you earned **{work_reward}** :coin: from your last job!", color=0x00DD00)
         await ctx.respond(embed=embed)
-        await finance_log(f"{ctx.author} ({ctx.author.id}) earned {last_reward} coins from working, current balance {balance}.")
+        await finance_log(f"{ctx.author} ({ctx.author.id}) earned {work_reward} coins from working, current balance {balance}.")
 
 @bot.slash_command(name="richest", description="Finance Game - Get the richest players in this guild.")
 async def FinanceRichest(ctx):

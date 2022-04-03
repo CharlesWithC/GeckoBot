@@ -20,8 +20,6 @@ from settings import *
 from functions import *
 from db import newconn
 
-# TODO: /form update - update message view (edit message)
-
 class FormEditModal(Modal):
     def __init__(self, formid, btnlbl, btnclr, onetime, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -91,8 +89,8 @@ class FormEditModal(Modal):
                 data = "stopped-" + data
             cur.execute(f"UPDATE form SET btn = '{btn}', data = '{data}' WHERE formid = {formid}")
             conn.commit()
-            await interaction.response.send_message(f"Form #{formid} updated.", ephemeral = False)
-            await log(f"Form", f"[Guild {interaction.guild} {guildid}] {interaction.user} ({interaction.user.id}) updated form #{formid}", guildid)
+            await interaction.response.send_message(f"Form #{formid} edited.", ephemeral = False)
+            await log(f"Form", f"[Guild {interaction.guild} {guildid}] {interaction.user} ({interaction.user.id}) edited form #{formid}", guildid)
         else:
             cur.execute(f"SELECT COUNT(*) FROM form")
             t = cur.fetchall()
@@ -183,6 +181,9 @@ class FormButton(Button):
 
     async def callback(self, interaction: discord.Interaction):        
         custom_id = self.custom_id
+        if not custom_id.startswith("GeckoForm"):
+            return
+
         userid = interaction.user.id
         formid = int(custom_id.split("-")[1])
 
@@ -293,7 +294,7 @@ class ManageForm(commands.Cog):
         if not btncolor in ["blurple", "grey", "gray", "green", "red"]:
             btncolor = orgclr
 
-        ot = 0
+        ot = int(btn.split("|")[1])
         if onetime == "Yes":
             ot = 1
 
@@ -333,67 +334,7 @@ class ManageForm(commands.Cog):
         await ctx.respond(f"Form #{formid} and entries are deleted.")
         await log(f"Form", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) deleted form #{formid}", ctx.guild.id)
 
-    @manage.command(name="send", description="Staff - Send form submit button.")
-    async def send(self, ctx, channel: discord.Option(str, "Channel to send the button", required = True),
-        formid: discord.Option(str, "Form ID, provided when form was created. Use '/form get' to see a list of forms and IDs.", required = True)):
-        
-        if ctx.guild is None:
-            await ctx.respond("You can only run this command in guilds!")
-            return
-
-        if not isStaff(ctx.guild, ctx.author):
-            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
-            return
-        
-        if not channel.startswith("<#") or not channel.endswith(">"):
-            await ctx.respond(f"{channel} is not a valid channel!", ephemeral = True)
-            return
-
-        try:
-            formid = abs(int(formid))
-        except:
-            await ctx.respond(f"Form ID {formid} is invalid.", ephemeral = True)
-            return
-
-        conn = newconn()
-        cur = conn.cursor()
-
-        cur.execute(f"SELECT btn FROM form WHERE formid = {formid} AND guildid = {ctx.guild.id}")
-        t = cur.fetchall()
-        if len(t) == 0:
-            await ctx.respond(f"Form not found.", ephemeral = True)
-            return
-        btn = t[0][0].split("|")
-        color = btn[0]
-        label = b64d(btn[2])
-
-        channelid = int(channel[2:-1])
-        
-        try:
-            channel = bot.get_channel(channelid)
-            if channel is None:
-                raise Exception("No access to channel.")
-            style = BTNSTYLE[color]
-            uniq = f"{randint(1,100000)}{int(time()*100000)}"
-            custom_id = "GeckoForm-"+str(formid)+"-"+uniq
-            button = FormButton(label, style, custom_id)
-            view = View(timeout = None)
-            view.add_item(button)
-            cur.execute(f"INSERT INTO formview VALUES ({formid}, '{custom_id}')")
-            conn.commit()
-            
-            message = await channel.send(view = view)
-
-            await ctx.respond(f"Form submit button sent at <#{channelid}>.", ephemeral = True)
-            await log(f"Form", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) posted form #{formid} at {channel} ({channelid})", ctx.guild.id)
-
-        except:
-            import traceback
-            traceback.print_exc()
-            await ctx.respond(f"I cannot send message at <#{channelid}>.", ephemeral = True)
-            return
-
-    @manage.command(name="sendmul", description="Staff - Send multiple form submit button in a row.")
+    @manage.command(name="send", description="Staff - Send form submit buttons.")
     async def sendmul(self, ctx, channel: discord.Option(str, "Channel to send the button", required = True),
         formids: discord.Option(str, "Form IDs, separate with space, e.g. '1 2 3'", required = True)):
         
@@ -453,14 +394,177 @@ class ManageForm(commands.Cog):
             message = await channel.send(view = view)
 
             await ctx.respond(f"Form submit buttons sent at <#{channelid}>.", ephemeral = True)
-            await log(f"Form", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) posted multiple forms at {channel} ({channelid})", ctx.guild.id)
+            await log(f"Form", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) posted forms {' '.join(formids)} at {channel} ({channelid})", ctx.guild.id)
 
         except:
             import traceback
             traceback.print_exc()
             await ctx.respond(f"I cannot send message at <#{channelid}>.", ephemeral = True)
             return
+    
+    @manage.command(name="attach", description = "Staff - Attach form submit button to an existing message sent by Gecko (Text / Embed)")
+    async def attach(self, ctx, msglink: discord.Option(str, "Link to the message", required = True),
+            formids: discord.Option(str, "Form IDs, separate with space, e.g. '1 2 3'", required = True)):
+        if ctx.guild is None:
+            await ctx.respond("You can only run this command in guilds!")
+            return
 
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
+        if not msglink.endswith("/"):
+            msglink = msglink + "/"
+        msglink = msglink.split("/")
+        msgid = int(msglink[-2])
+        channelid = int(msglink[-3])
+        guildid = int(msglink[-4])
+        message = None
+        try:
+            channel = bot.get_channel(channelid)
+            message = await channel.fetch_message(msgid)
+            if message is None:
+                await ctx.respond("I cannot fetch the message!", ephemeral = True)
+                return
+        except:
+            await ctx.respond("I cannot fetch the message!", ephemeral = True)
+            return
+        if message.author.id != BOTID:
+            await ctx.respond("The message isn't sent by Gecko", ephemeral = True)
+            return
+
+        conn = newconn()
+        cur = conn.cursor()
+        view = View.from_message(message, timeout = None)
+        
+        formids = formids.split(" ")
+        if len(view.children) + len(formids) > 25:
+            await ctx.respond(f"One message can contain at most 25 buttons (Existing buttons are counted, use `/button clear` to remove existing buttons)", ephemeral = True)
+            return
+
+        for i in range(len(formids)):
+            try:
+                formids[i] = int(formids[i])
+                formid = formids[i]
+                cur.execute(f"SELECT btn FROM form WHERE formid = {formid} AND guildid = {ctx.guild.id}")
+                t = cur.fetchall()
+                if len(t) == 0:
+                    await ctx.respond(f"Form with ID {formid} not found.", ephemeral = True)
+                    return
+
+                btn = t[0][0].split("|")
+                color = btn[0]
+                label = b64d(btn[2])
+                style = BTNSTYLE[color]
+                uniq = f"{randint(1,100000)}{int(time()*100000)}"
+                custom_id = "GeckoForm-"+str(formid)+"-"+uniq
+                button = FormButton(label, style, custom_id)
+                view.add_item(button)
+                cur.execute(f"INSERT INTO formview VALUES ({formid}, '{custom_id}')")
+                conn.commit()
+            except:
+                await ctx.respond(f"Form ID {formids[i]} is invalid.", ephemeral = True)
+                return
+
+        await message.edit(content = message.content, embeds = message.embeds, view = view)
+        await ctx.respond(f"Form submit buttons attached to [message]({'/'.join(msglink)[-1]}).")
+    
+    @manage.command(name="update", description = "Staff - Update the labels of submit buttons to the latest ones.")
+    async def attach(self, ctx, msglink: discord.Option(str, "Link to the message", required = True)):
+        if ctx.guild is None:
+            await ctx.respond("You can only run this command in guilds!")
+            return
+
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
+        if not msglink.endswith("/"):
+            msglink = msglink + "/"
+        msglink = msglink.split("/")
+        msgid = int(msglink[-2])
+        channelid = int(msglink[-3])
+        guildid = int(msglink[-4])
+        message = None
+        try:
+            channel = bot.get_channel(channelid)
+            message = await channel.fetch_message(msgid)
+            if message is None:
+                await ctx.respond("I cannot fetch the message!", ephemeral = True)
+                return
+        except:
+            await ctx.respond("I cannot fetch the message!", ephemeral = True)
+            return
+        if message.author.id != BOTID:
+            await ctx.respond("The message isn't sent by Gecko", ephemeral = True)
+            return
+        
+        conn = newconn()
+        cur = conn.cursor()
+        
+        view = View.from_message(message, timeout = None)
+        newview = View(timeout = None)
+        for child in view.children:
+            if not child.custom_id.startswith("GeckoForm"):
+                newview.add_item(child)
+                continue
+            formid = -1
+            try:
+                formid = int(child.custom_id.split("-")[1])
+            except:
+                newview.add_item(child)
+                continue
+            cur.execute(f"SELECT btn FROM form WHERE formid = {formid} AND guildid = {ctx.guild.id}")
+            t = cur.fetchall()
+            if len(t) == 0:
+                continue
+            btn = t[0][0].split("|")
+            color = btn[0]
+            label = b64d(btn[2])
+            style = BTNSTYLE[color]
+            uniq = f"{randint(1,100000)}{int(time()*100000)}"
+            custom_id = "GeckoForm-"+str(formid)+"-"+uniq
+            button = FormButton(label, style, custom_id)
+            newview.add_item(button)
+            cur.execute(f"DELETE FROM formview WHERE formid = {formid} AND customid = '{child.custom_id}'")
+            cur.execute(f"INSERT INTO formview VALUES ({formid}, '{custom_id}')")
+            conn.commit()
+
+        await message.edit(content = message.content, embeds = message.embeds, view = newview)
+        await ctx.respond(f"Form submit buttons in [message]({'/'.join(msglink)[-1]}) are updated.")  
+
+    @manage.command(name="list", description="Staff - List all forms in this guild.")
+    async def show(self, ctx):
+        if ctx.guild is None:
+            await ctx.respond("You can only run this command in guilds!")
+            return
+
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
+        conn = newconn()
+        cur = conn.cursor()
+        
+        cur.execute(f"SELECT formid, btn FROM form WHERE guildid = {ctx.guild.id}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond("There's no form created in this guild. Use `/form create` to create one.")
+            return
+        
+        msg = f"Below are all forms created using Gecko in {ctx.guild}.\nOnly button label is shown and you can use `/form edit` to see details.\n"
+        for tt in t:
+            msg += f"Form *#{tt[0]}*: **{b64d(tt[1].split('|')[2])}**\n"
+        
+        if len(msg) > 2000:
+            f = io.BytesIO()
+            f.write(msg.encode())
+            f.seek(0)
+            await ctx.respond(file=discord.File(fp=f, filename='Forms.MD'))
+        else:
+            embed=discord.Embed(title=f"Forms in {ctx.guild}", description=msg, color=GECKOCLR)
+            await ctx.respond(embed = embed)     
+        
     @manage.command(name="get", description="Staff - Get form ID of form submit button(s) in a message.")
     async def get(self, ctx, msglink: discord.Option(str, "Link to the message", required = True)):
         if ctx.guild is None:
@@ -506,12 +610,12 @@ class ManageForm(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
         for d in view.children:
+            if not d.custom_id.startswith("GeckoForm"):
+                continue
             formid = -1
             try:
                 formid = int(d.custom_id.split("-")[1])
             except:
-                import traceback
-                traceback.print_exc()
                 continue
             cur.execute(f"SELECT btn FROM form WHERE formid = {formid} AND guildid = {ctx.guild.id}")
             t = cur.fetchall()

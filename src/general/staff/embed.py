@@ -17,16 +17,6 @@ from settings import *
 from functions import *
 from db import newconn
 
-##### EMBED REWORK
-# /embed create - Create an embed and save to database - generate unique embed id
-# /embed edit {embedid} - Edit an embed from database
-# /embed remove {embedid} - Remove an embed from database
-
-# /embed preview {embedid} - Preview an embed
-# /embed list
-# /embed send {#channel} {embedid}- Post embed at #channel
-# /embed update {msglink} {embedid} - Update message using embed 
-
 class EmbedModal(Modal):
     def __init__(self, embedid, guildid, color, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -303,7 +293,7 @@ class ManageEmbed(commands.Cog):
         cur.execute(f"SELECT embedid, data FROM embed WHERE guildid = {ctx.guild.id}")
         t = cur.fetchall()
         if len(t) == 0:
-            await ctx.respond("There's no embed created in this server. Use `/embed create` to create one.")
+            await ctx.respond("There's no embed created in this guild. Use `/embed create` to create one.")
             return
         
         msg = f"Below are all embeds created using Gecko in {ctx.guild}.\nOnly title is shown and you can use `/embed edit` to see details.\n"
@@ -442,6 +432,5 @@ class ManageEmbed(commands.Cog):
             await ctx.respond(f"Embed in [message]({'/'.join(msglink)[:-1]}) updated.")
         except:
             await ctx.respond(f"Failed to update [message]({'/'.join(msglink)[:-1]}). Make sure it exists and is sent by Gecko!")
-
 
 bot.add_cog(ManageEmbed(bot))
