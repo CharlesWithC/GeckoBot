@@ -2,6 +2,9 @@
 
 ## Update 2022.04.03
 
+**Version v1.10.2**  
+Bug fixes on music function  
+
 **Version v1.10.1**  
 Minor bug fixes
 
