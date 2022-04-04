@@ -2,7 +2,7 @@
 # Author: @Charles-1414
 # License: Apache-2.0
 
-# Global Trucking VTC Functions of Gecko Bot
+# Global Trucking VTC exclusive
 
 import os, asyncio, io
 import discord

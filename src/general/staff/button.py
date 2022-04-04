@@ -2,7 +2,7 @@
 # Author: @Charles-1414
 # License: Apache-2.0
 
-# Staff Functions of Gecko Bot
+# Staff - Button Management
 
 import os, json, asyncio
 import discord
@@ -21,6 +21,7 @@ from settings import *
 from functions import *
 from db import newconn
 from general.staff.form import FormModal
+from general.funhouse.four import ConnectFourJoinButton
 
 class GeckoButton(Button):
     def __init__(self, label, url, style, disabled, custom_id):
@@ -144,7 +145,10 @@ class ManageButton(commands.Cog):
         d = cur.fetchall()
         for dd in d:
             view = View(timeout=None)
-            view.add_item(GeckoButton("", None, BTNSTYLE["blurple"], False, dd[0]))
+            if dd[0].startswith("GeckoButton"):
+                view.add_item(GeckoButton("", None, BTNSTYLE["blurple"], False, dd[0]))
+            elif dd[0].startswith("GeckoConnectFourGame"):
+                view.add_item(ConnectFourJoinButton("", dd[0]))
             self.bot.add_view(view)
 
     @manage.command(name="create", description="Staff - Create a button")
@@ -590,12 +594,9 @@ class ManageButton(commands.Cog):
             message = await channel.send(view = view)
 
             await ctx.respond(f"Buttons sent at <#{channelid}>.")
-            print(buttonid)
             await log(f"Button", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) sent buttons {buttonid} at {channel} ({channelid})", ctx.guild.id)
 
         except:
-            import traceback
-            traceback.print_exc()
             await ctx.respond(f"I cannot send message at <#{channelid}>.", ephemeral = True)
 
     @manage.command(name="attach", description = "Staff - Attach buttons to an existing message sent by Gecko (Text / Embed)")

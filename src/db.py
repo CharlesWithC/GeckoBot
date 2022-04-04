@@ -57,6 +57,9 @@ cur.execute(f"CREATE TABLE IF NOT EXISTS vcbind (guildid BIGINT, channelid BIGIN
 # FUN HOUSE
 cur.execute(f"CREATE TABLE IF NOT EXISTS finance (guildid BIGINT, userid BIGINT, last_checkin BIGINT, checkin_continuity BIGINT, \
     work_claim_time BIGINT, work_reward BIGINT, balance BIGINT)")
+cur.execute(f"CREATE TABLE IF NOT EXISTS fourgame (gameid BIGINT, red BIGINT, blue BIGINT, \
+    guildid BIGINT, chnid BIGINT, msgid BIGINT, bet BIGINT, state TEXT, customid TEXT, lastop BIGINT)")
+cur.execute(f"CREATE TABLE IF NOT EXISTS fourgame_leaderboard (userid BIGINT, won BIGINT, lost BIGINT, draw BIGINT, earning BIGINT)")
 
 # GENERAL SETTINGS
 cur.execute(f"CREATE TABLE IF NOT EXISTS settings (guildid BIGINT, skey TEXT, sval TEXT)")

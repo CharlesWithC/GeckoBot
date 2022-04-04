@@ -99,17 +99,15 @@ class ManageMusic(commands.Cog):
             try:
                 player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
                 voice_client.play(player)
-                user = guild.get_member(BOTID)
-                await user.edit(mute = False, reason = "Gecko Join Voice Channel and Play Music")
+                await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = False)
             except:
                 await voice_client.disconnect()
                 # failed to play, try again using loop
                 return
         
-        voice_client = guild.voice_client
+        voice_client = ctx.guild.voice_client
         if not voice_client.is_playing() and not voice_client.is_paused():
-            user = guild.get_member(BOTID)
-            await user.edit(mute = True, reason = "Gecko Join Voice Channel")
+            await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = True)
 
     @manage.command(name="leave", description = "Staff - Music - Join the voice channel you are in.")
     async def leave(self, ctx):
@@ -150,8 +148,8 @@ class ManageMusic(commands.Cog):
 
         voice_client.pause()
         user = ctx.guild.get_member(BOTID)
-        await user.edit(mute = True, reason = "Gecko Music User Paused")
-        await ctx.respond(f"Music paused! You can use /resume to restart from where it paused.")
+        await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = True)
+        await ctx.respond(f"Music paused! You can use /music resume to restart from where it paused.")
 
     @manage.command(name="resume", description="Staff - Music - Resume music.")
     async def resume(self, ctx): 
@@ -170,7 +168,7 @@ class ManageMusic(commands.Cog):
 
         voice_client.resume()
         user = ctx.guild.get_member(BOTID)
-        await user.edit(mute = False, reason = "Gecko Music User Resumed")
+        await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = False)
         await ctx.respond(f"Music resumed!")
 
     @manage.command(name="toggle", description="Staff - Music - Toggle 'Now Playing' auto post, whether Gecko should send it or not.")
@@ -279,7 +277,7 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtub
         player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
         voice_client.play(player)
         user = ctx.guild.get_member(BOTID)
-        await user.edit(mute = False, reason = "Gecko Music Play")
+        await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = False)
     except:
         await ctx.respond(f"It looks like I'm blocked by youtube. Please try again later.")
         return
@@ -315,13 +313,25 @@ async def NextSong(ctx):
         await ctx.respond(f"Music can only be played in voice channels in guilds!")
         return
     
+    conn = newconn()
+    cur = conn.cursor()
+
+    guildid = ctx.guild.id
+    if not isStaff(ctx.guild, ctx.author):
+        cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'music'")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond(f"{ctx.author.name}, staff haven't set up a channel to request music! Tell them to use `/setchannel music {{#channel}}` to set it up!", ephemeral = True)
+            return
+        if t[0][0] != ctx.channel.id and t[0][0] != 0:
+            await ctx.respond(f"This is not the channel for using music commands.", ephemeral = True)
+            return
+    
     voice_client = ctx.guild.voice_client
     if voice_client is None or voice_client.channel is None:
         await ctx.respond(f"I'm not in a voice channel. Tell staff to use /join command to join me in.", ephemeral = True)
         return
-    
-    conn = newconn()
-    cur = conn.cursor()
+
     cur.execute(f"SELECT * FROM playlist WHERE guildid = {guildid} AND userid = -1")
     t = cur.fetchall()
     if len(t) != 0:
@@ -353,7 +363,7 @@ async def NextSong(ctx):
         player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
         voice_client.play(player)
         user = ctx.guild.get_member(BOTID)
-        await user.edit(mute = False, reason = "Gecko Music Play")
+        await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = False)
     except:
         await ctx.respond(f"It looks like I'm blocked by youtube. Please try again later.")
         return
@@ -404,8 +414,8 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtub
         if len(t) == 0:
             await ctx.respond(f"{ctx.author.name}, staff haven't set up a channel to request music! Tell them to use `/setchannel music {{#channel}}` to set it up!", ephemeral = True)
             return
-        if t[0][0] != ctx.channel.id:
-            await ctx.respond(f"This is not the channel for requesting music!", ephemeral = True)
+        if t[0][0] != ctx.channel.id and t[0][0] != 0:
+            await ctx.respond(f"This is not the channel for using music commands.", ephemeral = True)
             return
 
     voice_client = ctx.guild.voice_client
@@ -448,6 +458,17 @@ async def UnqueueMusic(ctx, songid: discord.Option(int, "Song id (the number in 
     cur = conn.cursor()
 
     guildid = ctx.guild.id
+    if not isStaff(ctx.guild, ctx.author):
+        cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'music'")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond(f"{ctx.author.name}, staff haven't set up a channel to request music! Tell them to use `/setchannel music {{#channel}}` to set it up!", ephemeral = True)
+            return
+        if t[0][0] != ctx.channel.id and t[0][0] != 0:
+            await ctx.respond(f"This is not the channel for using music commands.", ephemeral = True)
+            return
+
+    guildid = ctx.guild.id
 
     cur.execute(f"SELECT title, userid FROM playlist WHERE guildid = {guildid} AND userid > 0")
     d = cur.fetchall()
@@ -470,17 +491,28 @@ async def PlayList(ctx):
         await ctx.respond(f"Music can only be played in voice channels in guilds!")
         return
 
-    voice_client = ctx.guild.voice_client
-    if voice_client is None or voice_client.channel is None:
-        await ctx.respond(f"Gecko is not playing music at the moment.", ephemeral = True)
-        return
-    
-    await ctx.defer()
-
     conn = newconn()
     cur = conn.cursor()
 
     guildid = ctx.guild.id
+    if not isStaff(ctx.guild, ctx.author):
+        cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'music'")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond(f"{ctx.author.name}, staff haven't set up a channel to request music! Tell them to use `/setchannel music {{#channel}}` to set it up!", ephemeral = True)
+            return
+        if t[0][0] != ctx.channel.id and t[0][0] != 0:
+            await ctx.respond(f"This is not the channel for using music commands.", ephemeral = True)
+            return
+
+    voice_client = ctx.guild.voice_client
+    if voice_client is None or voice_client.channel is None:
+        await ctx.respond(f"Gecko is not playing music at the moment.", ephemeral = True)
+        return
+
+    guildid = ctx.guild.id
+    
+    await ctx.defer()
 
     current = "No song is being played at the moment."
     cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
@@ -528,14 +560,25 @@ async def CurrentSong(ctx):
         return
     guildid = ctx.guild.id
 
+    conn = newconn()
+    cur = conn.cursor()
+
+    guildid = ctx.guild.id
+    if not isStaff(ctx.guild, ctx.author):
+        cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'music'")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond(f"{ctx.author.name}, staff haven't set up a channel to request music! Tell them to use `/setchannel music {{#channel}}` to set it up!", ephemeral = True)
+            return
+        if t[0][0] != ctx.channel.id and t[0][0] != 0:
+            await ctx.respond(f"This is not the channel for using music commands.", ephemeral = True)
+            return
+
     voice_client = ctx.guild.voice_client
     if voice_client is None or voice_client.channel is None:
         await ctx.respond(f"Gecko is not playing music at the moment.", ephemeral = True)
         return
 
-    await ctx.defer()
-    conn = newconn()
-    cur = conn.cursor()
     cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
     t = cur.fetchall()
     if len(t) == 0:
@@ -544,6 +587,7 @@ async def CurrentSong(ctx):
     userid = -t[0][0]
     title = b64d(t[0][1])
 
+    await ctx.defer()
     username = "Unknown user"
     avatar = ""
 
@@ -621,8 +665,7 @@ async def Radio(ctx, station: discord.Option(str, "Radio station (274 stations a
     voice_client.stop()
     player = discord.FFmpegPCMAudio(source = link, before_options = FFMPEG_OPTIONS)
     voice_client.play(player)
-    user = guild.get_member(BOTID)
-    await user.edit(mute = False, reason = "Gecko Play Radio")
+    await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = False)
 
     await ctx.respond(f"Current song has been overwritten to radio station **{station}**.\nThe playlist has been **saved**, use `/next` to go back playing songs.\nRadio streams have **no end**, so Gecko will not stop playing automatically.")
 
@@ -711,8 +754,7 @@ async def MusicLoop():
                         try:
                             player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
                             voice_client.play(player)
-                            user = guild.get_member(BOTID)
-                            await user.edit(mute = False, reason = "Gecko Join Voice Channel and Play Music")
+                            await guild.change_voice_state(channel = voice_client.channel, self_mute = False)
                         except:
                             await voice_client.disconnect()
                             # failed to play, try again next loop
@@ -720,8 +762,7 @@ async def MusicLoop():
                     
                     voice_client = guild.voice_client
                     if not voice_client.is_playing() and not voice_client.is_paused():
-                        user = guild.get_member(BOTID)
-                        await user.edit(mute = True, reason = "Gecko Join Voice Channel")
+                        await guild.change_voice_state(channel = voice_client.channel, self_mute = True)
                         
                     continue
                 
@@ -761,19 +802,22 @@ async def MusicLoop():
                             cursong[link] = (radiosong, int(time()))
 
                 # only bot in channel - then pause music to save bandwidth
-                if len(voice_client.channel.members) == 1 and not guildid in autopause:
+                members = voice_client.channel.members
+                for member in members:
+                    if member.bot == True or member.id == BOTID:
+                        members.remove(member)
+                        
+                if len(members) == 0 and not guildid in autopause:
                     autopause.append(guildid)
-                    user = guild.get_member(BOTID)
-                    await user.edit(deafen = True, reason = "Gecko Music Pause: Nobody Listening")
+                    await guild.change_voice_state(channel = voice_client.channel, self_deaf = True)
                     if len(o) > 0: # if playing radio - then stop ffmpeg to prevent the radio from being paused
                         voice_client.stop()
                     else:
                         voice_client.pause()
                     continue
-                if len(voice_client.channel.members) > 1 and guildid in autopause:
+                if len(members) > 0 and guildid in autopause:
                     autopause.remove(guildid)
-                    user = guild.get_member(BOTID)
-                    await user.edit(deafen = False, reason = "Gecko Music Play: Somebody Listening")
+                    await guild.change_voice_state(channel = voice_client.channel, self_deaf = False)
                     if len(o) > 0: # if playing radio - then restart ffmpeg
                         radio = o[0][1].split("-")
                         link = radio[2]
@@ -786,6 +830,9 @@ async def MusicLoop():
                             continue
                     else:
                         voice_client.resume()
+                    continue
+                
+                if guildid in autopause:
                     continue
                 
                 # play only if the previous music has ended
@@ -807,8 +854,7 @@ async def MusicLoop():
                     cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid > 0 LIMIT 1")
                     d = cur.fetchall()
                     if len(d) == 0:
-                        user = guild.get_member(BOTID)
-                        await user.edit(mute = True, reason = "Gecko Music Pause: Playlist Empty")
+                        await guild.change_voice_state(channel = voice_client.channel, self_mute = True)
                         if not guildid in emptynotice:
                             emptynotice.append(guildid)
                             embed = discord.Embed(title=f"Playlist is empty", description="Use /queue to fill it!", color = GECKOCLR)
@@ -855,8 +901,7 @@ async def MusicLoop():
                         if voice_client.is_playing(): # if already playing, in case user ran /play or /next
                             continue
                         voice_client.play(player)
-                        user = guild.get_member(BOTID)
-                        await user.edit(mute = False, reason = "Gecko Music Play")
+                        await guild.change_voice_state(channel = voice_client.channel, self_mute = False)
                     except:
                         if textchn != None:
                             await textchn.send(f"Something went wrong.")
@@ -874,10 +919,11 @@ async def MusicLoop():
                         await textchn.send(embed=embed)
                 
                 else: # in case bot didn't unmute itself automatically NOTE This shouldn't happen
-                    user = guild.get_member(BOTID)
-                    await user.edit(mute = False, reason = "Gecko Music Play")
+                    await guild.change_voice_state(channel = voice_client.channel, self_mute = False)
                         
             except Exception as e:
+                import traceback
+                traceback.print_exc()
                 try:
                     await log("ERROR",f"Music error: {str(e)}")
                 except:

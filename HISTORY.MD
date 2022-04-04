@@ -1,5 +1,10 @@
 # Gecko Bot Update History
 
+## Update 2022.04.04
+
+**Version v1.11**  
+Introduced Connect Four Game  
+
 ## Update 2022.04.03
 
 **Version v1.10.2**  

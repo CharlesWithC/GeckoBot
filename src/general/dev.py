@@ -2,7 +2,7 @@
 # Author: @Charles-1414
 # License: Apache-2.0
 
-# Music of Gecko Bot
+# Developer-only Commands
 
 import io
 from bot import bot

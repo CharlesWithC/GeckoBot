@@ -10,6 +10,7 @@ import asyncio
 import general.dev
 import general.music
 import general.funhouse.finance
+import general.funhouse.four
 import general.staff.button
 import general.staff.chat
 import general.staff.embed
@@ -28,13 +29,16 @@ I'm ready to use slash commands and you type / to see a list of my commands.
 
 You should set up dedicated channels for specific functions, tell me by using `/setchannel`.
 Form    - Where notifications will be sent when a user submit an entry.
+Four    - Where players will play connect four games.
 Finance - Where players will play finance games.
 Music   - Where players will request for songs. If you don't set this up, only staff will be allowed to play music.
           If you want the bot to stick to a radio station and not being interrupted, then do not set it.
           *A bot can only be in one voice channel at the same time*
 Log     - Where bot audit log will be sent.
 Error   - Where important error notifications will be sent. (This should be rare)
-**NOTE** If the channel got deleted, it will be considered as that the channel hasn't been set up. And users cannot use related commands.
+**NOTE** 
+1.For four, finance and music, you can set channel to "all" so that player can use related commands in any channels.
+2.If the channel got deleted, it will be considered as that the channel hasn't been set up. And users cannot use related commands.
 
 Have a nice day!"""
 
@@ -64,7 +68,7 @@ async def BotSetup(ctx):
         await ctx.respond(f"Hi, {ctx.author.name}\n" + SETUP_MSG)
 
 @bot.slash_command(name="setchannel", description="Staff - Set default channels where specific messages will be dealt with.")
-async def SetChannel(ctx, category: discord.Option(str, "The category of message.", required = True, choices = ["form", "finance", "music", "log", "error"]),
+async def SetChannel(ctx, category: discord.Option(str, "The category of message.", required = True, choices = ["form", "four", "finance", "music", "log", "error"]),
     channel: discord.Option(str, "Any channel you wish, to which I have access", required = True)):
     
     guild = ctx.guild
@@ -78,14 +82,19 @@ async def SetChannel(ctx, category: discord.Option(str, "The category of message
 
     conn = newconn()
     cur = conn.cursor()
-    if not channel.startswith("<#") or not channel.endswith(">"):
-        await ctx.respond(f"{channel} is not a valid channel.", ephemeral = True)
-        return
-    if not category in ["form", "finance", "music", "error", "log"]:
+
+    if not category in ["form", "four", "finance", "music", "error", "log"]:
         await ctx.respond(f"{category} is not a valid category.", ephemeral = True)
         return
 
-    channel = int(channel[2:-1])
+    if category in ["four", "finance", "music"] and channel == "all":
+        channel = 0
+    else:
+        if not channel.startswith("<#") or not channel.endswith(">"):
+            await ctx.respond(f"{channel} is not a valid channel.", ephemeral = True)
+            return
+        channel = int(channel[2:-1])
+    
     cur.execute(f"SELECT * FROM channelbind WHERE guildid = {guild.id} AND category = '{category}'")
     t = cur.fetchall()
     if len(t) == 0:
@@ -93,7 +102,10 @@ async def SetChannel(ctx, category: discord.Option(str, "The category of message
     else:
         cur.execute(f"UPDATE channelbind SET channelid = {channel} WHERE guildid = {guild.id} AND category = '{category}'")
     conn.commit()
-    await ctx.respond(f"<#{channel}> has been configured as {category} channel.\nMake sure I always have access to it.\nUnless you want to stop dealing with those messages, then delete the channel.")
+    if channel != "all":
+        await ctx.respond(f"<#{channel}> has been configured as {category} channel.\nMake sure I always have access to it.\nUnless you want to stop dealing with those messages, then delete the channel.")
+    else:
+        await ctx.respond(f"Members can use {category} commands in any channels.")
 
 async def UpdateBotStatus():
     conn = newconn()

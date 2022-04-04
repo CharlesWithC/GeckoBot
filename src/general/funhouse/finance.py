@@ -2,7 +2,7 @@
 # Author: @Charles-1414
 # License: Apache-2.0
 
-# General Functions of Gecko Bot
+# Fun House - Finance
 
 import os, asyncio
 import discord
@@ -39,7 +39,7 @@ async def FinanceBalance(ctx):
         if len(t) == 0:
             await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!", ephemeral = True)
             return
-        if t[0][0] != ctx.channel.id:
+        if t[0][0] != ctx.channel.id and t[0][0] != 0:
             await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
             return
         
@@ -77,7 +77,7 @@ async def FinanceCheckIn(ctx):
         if len(t) == 0:
             await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!", ephemeral = True)
             return
-        if t[0][0] != ctx.channel.id:
+        if t[0][0] != ctx.channel.id and t[0][0] != 0:
             await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
             return
 
@@ -140,7 +140,7 @@ async def FinanceWork(ctx):
         if len(t) == 0:
             await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!", ephemeral = True)
             return
-        if t[0][0] != ctx.channel.id:
+        if t[0][0] != ctx.channel.id and t[0][0] != 0:
             await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
             return
 
@@ -214,7 +214,7 @@ async def FinanceClaim(ctx):
         if len(t) == 0:
             await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!", ephemeral = True)
             return
-        if t[0][0] != ctx.channel.id:
+        if t[0][0] != ctx.channel.id and t[0][0] != 0:
             await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
             return
         
@@ -263,12 +263,12 @@ async def FinanceRichest(ctx):
         if len(t) == 0:
             await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!", ephemeral = True)
             return
-        if t[0][0] != ctx.channel.id:
+        if t[0][0] != ctx.channel.id and t[0][0] != 0:
             await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
             return
         
     await ctx.trigger_typing()
-    cur.execute(f"SELECT userid, balance FROM finance WHERE guildid = {guildid} ORDER BY balance DESC")
+    cur.execute(f"SELECT userid, balance FROM finance WHERE guildid = {guildid} AND userid != {BOTOWNER} ORDER BY balance DESC")
     t = cur.fetchall()
 
     msg = ""

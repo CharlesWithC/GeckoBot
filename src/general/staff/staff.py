@@ -2,7 +2,7 @@
 # Author: @Charles-1414
 # License: Apache-2.0
 
-# Staff Functions of Gecko Bot
+# Staff - Staff Management
 
 import os, asyncio
 import discord
