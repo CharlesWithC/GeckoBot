@@ -25,6 +25,7 @@ class ManageStaff(commands.Cog):
     async def show(self, ctx, 
         showid: discord.Option(str, "Show user id attached to username?", required = False, choices = ["Yes", "No"])):
             
+        await ctx.defer()    
         conn = newconn()
         cur = conn.cursor()
         await ctx.trigger_typing()
@@ -143,6 +144,7 @@ class ManageStaff(commands.Cog):
             required = True, choices = ["Yes", "No"]),
         obj: discord.Option(str, "All the roles / users you want to add / remove", required = True)):
 
+        await ctx.defer()    
         guild = ctx.guild
         if guild is None:
             await ctx.respond("You can only use this command in guilds, not in DMs.")

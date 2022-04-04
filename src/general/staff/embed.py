@@ -128,6 +128,7 @@ class ManageEmbed(commands.Cog):
     async def create(self, ctx,
         color: discord.Option(str, "Color in RGB (default 158 132 46)", required = False)):
         
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -159,6 +160,7 @@ class ManageEmbed(commands.Cog):
     async def edit(self, ctx, embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
         color: discord.Option(str, "Color in RGB. Leave empty to remain unchanged.", required = False)):
         
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -204,6 +206,7 @@ class ManageEmbed(commands.Cog):
     @manage.command(name="delete", description="Staff - Delete embed from database. This will not delete messages already sent.")
     async def delete(self, ctx, embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True)):
         
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -237,6 +240,7 @@ class ManageEmbed(commands.Cog):
     async def preview(self, ctx, embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
             showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"])):
         
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -284,6 +288,7 @@ class ManageEmbed(commands.Cog):
 
     @manage.command(name="list", description="Staff - List all embeds in this guild.")
     async def show(self, ctx):
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -319,6 +324,7 @@ class ManageEmbed(commands.Cog):
             embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
             showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"])):
         
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -380,6 +386,7 @@ class ManageEmbed(commands.Cog):
             embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
             showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"])):
         
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return

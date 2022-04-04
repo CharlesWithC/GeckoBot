@@ -31,6 +31,7 @@ class ManageStatsDisplay(commands.Cog):
     
     @manage.command(name = "setup", description = "Staff - Set everything up automatically and configure it using a template.")
     async def setup(self, ctx):
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only use this command in guilds, not in DMs.")
             return
@@ -105,6 +106,7 @@ class ManageStatsDisplay(commands.Cog):
     async def create(self, ctx, 
         config: discord.Option(str, "Variables: {time: [strftime]} {members} {online} {@role} {@role online}", required = True)):
         
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only use this command in guilds, not in DMs.")
             return
@@ -210,6 +212,7 @@ class ManageStatsDisplay(commands.Cog):
         channelid: discord.Option(str, "Channel ID of the stats channel to edit. You can enable Developer Mode to see it.", required = True),
         config: discord.Option(str, "Variables: {time: [strftime]} {members} {online} {@role} {@role online}", required = True)):
 
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only use this command in guilds, not in DMs.")
             return
@@ -331,6 +334,7 @@ class ManageStatsDisplay(commands.Cog):
     async def delete(self, ctx,
         channelid: discord.Option(str, "Channel ID of the stats channel to edit. You can enable Developer Mode to see it.", required = True)):
         
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only use this command in guilds, not in DMs.")
             return
@@ -402,6 +406,7 @@ class ManageStatsDisplay(commands.Cog):
 
     @manage.command(name = "destroy", description = "Staff - Disable stats display for this server and delete bound category and channels.")
     async def destroy(self, ctx):
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only use this command in guilds, not in DMs.")
             return

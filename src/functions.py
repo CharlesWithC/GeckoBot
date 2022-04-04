@@ -128,3 +128,12 @@ def GetCurrentSong(url):
                     return title.decode()
         else: 
             return -1
+    
+def CheckVCLock(guildid):
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT * FROM playlist WHERE guildid = {guildid} AND userid = -2")
+    t = cur.fetchall()
+    if len(t) > 0:
+        return True
+    return False

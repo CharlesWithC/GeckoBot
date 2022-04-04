@@ -111,6 +111,7 @@ class ConnectFour(commands.Cog):
     @four.command(name="start", description="Connect Four - Start a game")
     async def start(self, ctx, opponent: discord.Option(str, "Select an opponent and only he / she could join.", required = False),
         bet: discord.Option(int, "How many coins to bet, default 0", required = False, min_value=0, max_value=10000)):
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -167,6 +168,7 @@ class ConnectFour(commands.Cog):
 
     @four.command(name="result", description="Connect Four - Get the result (including the final state) of a given game.")
     async def result(self, ctx, gameid: discord.Option(str, "Game ID", required = True)):
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -228,6 +230,7 @@ class ConnectFour(commands.Cog):
     
     @four.command(name="leaderboard", description="Connect Four - Get the leaderboard.")
     async def leaderboard(self, ctx, sortby: discord.Option(str, "Sort by: ", required = False, choices = ["earnings", "wins", "losses"])):
+        await ctx.defer()    
         conn = newconn()
         cur = conn.cursor()
 
@@ -260,6 +263,7 @@ class ConnectFour(commands.Cog):
     
     @four.command(name="statistics", description="Connect Four - Get your statistics.")
     async def statistics(self, ctx):
+        await ctx.defer()    
         conn = newconn()
         cur = conn.cursor()
 

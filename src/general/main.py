@@ -15,9 +15,10 @@ import general.staff.button
 import general.staff.chat
 import general.staff.embed
 import general.staff.form
+import general.staff.reaction_role
 import general.staff.staff
 import general.staff.stats_display
-import general.staff.reaction_role
+import general.staff.vcrecord
 
 from bot import bot
 from db import newconn
@@ -54,6 +55,7 @@ async def on_guild_join(guild):
 
 @bot.slash_command(name="setup", description="Server Owner - A DM to server owner about Gecko's basic information.")
 async def BotSetup(ctx):
+    await ctx.defer()
     guild = ctx.guild
     if not guild is None:
         try:
@@ -71,6 +73,7 @@ async def BotSetup(ctx):
 async def SetChannel(ctx, category: discord.Option(str, "The category of message.", required = True, choices = ["form", "four", "finance", "music", "log", "error"]),
     channel: discord.Option(str, "Any channel you wish, to which I have access", required = True)):
     
+    await ctx.defer()
     guild = ctx.guild
     if guild is None:
         await ctx.respond(f"You can only use this command in guilds, not in DMs.")

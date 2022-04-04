@@ -18,6 +18,7 @@ from functions import *
 async def DevGuilds(ctx):
     if ctx.author.id != BOTOWNER:
         return
+    await ctx.defer()
     guilds = bot.guilds
     msg = ""
     for guild in guilds:
@@ -36,6 +37,7 @@ async def UpdStatus(ctx, stype: Option(str, "Status type:", required = True, cho
     status: Option(str, "New status")):
     if ctx.author.id != BOTOWNER:
         return
+    await ctx.defer()
     conn = newconn()
     cur = conn.cursor()
     cur.execute(f"DELETE FROM settings WHERE skey = 'status'")

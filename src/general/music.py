@@ -58,12 +58,17 @@ class ManageMusic(commands.Cog):
 
     @manage.command(name="join", description = "Staff - Music - Join the voice channel you are in.")
     async def join(self, ctx):
+        await ctx.defer()
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
 
         if not isStaff(ctx.guild, ctx.author):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
+        if ctx.author.voice is None or ctx.author.voice.channel is None:
+            await ctx.respond("You are not in a voice channel!", ephemeral = True)
             return
         
         voice_client = ctx.guild.voice_client
@@ -120,6 +125,7 @@ class ManageMusic(commands.Cog):
 
     @manage.command(name="leave", description = "Staff - Music - Join the voice channel you are in.")
     async def leave(self, ctx):
+        await ctx.defer()
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -142,6 +148,7 @@ class ManageMusic(commands.Cog):
 
     @manage.command(name="pause", description="Staff - Music - Pause music.")
     async def pause(self, ctx):  
+        await ctx.defer()
         if ctx.guild is None:
             await ctx.respond(f"Music can only be played in voice channels in guilds!")
             return
@@ -162,6 +169,7 @@ class ManageMusic(commands.Cog):
 
     @manage.command(name="resume", description="Staff - Music - Resume music.")
     async def resume(self, ctx): 
+        await ctx.defer()
         if ctx.guild is None:
             await ctx.respond(f"Music can only be played in voice channels in guilds!")
             return
@@ -182,6 +190,7 @@ class ManageMusic(commands.Cog):
 
     @manage.command(name="toggle", description="Staff - Music - Toggle 'Now Playing' auto post, whether Gecko should send it or not.")
     async def toggle(self, ctx): 
+        await ctx.defer()
         if ctx.guild is None:
             await ctx.respond(f"Music can only be played in voice channels in guilds!")
             return
@@ -211,6 +220,7 @@ class ManageMusic(commands.Cog):
 
     @manage.command(name="clear", description="Staff - Music - Clear playlist.")
     async def clear(self, ctx): 
+        await ctx.defer()
         if ctx.guild is None:
             await ctx.respond(f"Music can only be played in voice channels in guilds!")
             return
@@ -228,6 +238,7 @@ class ManageMusic(commands.Cog):
 
     @manage.command(name="loop", description="Staff - Music - Toggle loop playback of the playlist.")
     async def loop(self, ctx): 
+        await ctx.defer()
         if ctx.guild is None:
             await ctx.respond(f"Music can only be played in voice channels in guilds!")
             return
@@ -251,7 +262,8 @@ class ManageMusic(commands.Cog):
             await ctx.respond(f"Loop playback disabled for playlist!")
 
 @bot.slash_command(name="play", description="Staff - Music - Play a song.")
-async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtube", required = True, autocomplete = suggest)):    
+async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtube", required = True, autocomplete = suggest)):
+    await ctx.defer()    
     guildid = 0
     if ctx.guild is None:
         await ctx.respond(f"Music can only be played in voice channels in guilds!")
@@ -265,12 +277,14 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtub
         await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
         return
 
+    if CheckVCLock(ctx.guild.id):
+        await ctx.respond("Gecko VC is locked. Use `/vcrecord unlock` to unlock it.", ephemeral = True)
+        return
+
     voice_client = ctx.guild.voice_client
     if voice_client is None or voice_client.channel is None:
         await ctx.respond(f"I'm not in a voice channel. Use /join command to join me in.", ephemeral = True)
         return
-
-    await ctx.defer()
 
     try:
         ydl = search(song)
@@ -317,9 +331,14 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtub
 
 @bot.slash_command(name="next", description="Music - Play next song in queue.")
 async def NextSong(ctx):    
+    await ctx.defer()    
     guildid = 0
     if ctx.guild is None:
         await ctx.respond(f"Music can only be played in voice channels in guilds!")
+        return
+
+    if CheckVCLock(ctx.guild.id):
+        await ctx.respond("Gecko VC is locked. Use `/vcrecord unlock` to unlock it.", ephemeral = True)
         return
     
     conn = newconn()
@@ -355,8 +374,6 @@ async def NextSong(ctx):
         return
     userid = t[0][0]
     title = t[0][1]
-
-    await ctx.defer()
 
     url = ""
     try:
@@ -408,6 +425,7 @@ async def NextSong(ctx):
 
 @bot.slash_command(name="queue", description="Music - Queue your song to the play list.")
 async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtube", required = True, autocomplete = suggest)):    
+    await ctx.defer()    
     guildid = 0
     if ctx.guild is None:
         await ctx.respond(f"Music can only be played in voice channels in guilds!")
@@ -431,8 +449,6 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtub
     if voice_client is None or voice_client.channel is None:
         await ctx.respond(f"I'm not in a voice channel. Tell staff to use /join command to join me in.", ephemeral = True)
         return
-
-    await ctx.defer()
 
     try:
         ydl = search(song)
@@ -458,6 +474,7 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtub
 
 @bot.slash_command(name="dequeue", description="Music - Remove a song from play list.")
 async def UnqueueMusic(ctx, songid: discord.Option(int, "Song id (the number in front of its name)", required = True)): 
+    await ctx.defer()    
     guildid = 0
     if ctx.guild is None:
         await ctx.respond(f"Music can only be played in voice channels in guilds!")
@@ -495,6 +512,7 @@ async def UnqueueMusic(ctx, songid: discord.Option(int, "Song id (the number in 
 
 @bot.slash_command(name="playlist", description="Music - See the queued play list.")
 async def PlayList(ctx): 
+    await ctx.defer()    
     guildid = 0
     if ctx.guild is None:
         await ctx.respond(f"Music can only be played in voice channels in guilds!")
@@ -520,8 +538,6 @@ async def PlayList(ctx):
         return
 
     guildid = ctx.guild.id
-    
-    await ctx.defer()
 
     current = "No song is being played at the moment."
     cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
@@ -564,6 +580,7 @@ async def PlayList(ctx):
 
 @bot.slash_command(name="current", description="Music - Get current playing song.")
 async def CurrentSong(ctx):
+    await ctx.defer()    
     if ctx.guild is None:
         await ctx.respond(f"Music can only be played in voice channels in guilds!")
         return
@@ -596,7 +613,6 @@ async def CurrentSong(ctx):
     userid = -t[0][0]
     title = b64d(t[0][1])
 
-    await ctx.defer()
     username = "Unknown user"
     avatar = ""
 
@@ -640,12 +656,17 @@ async def RadioSearcher(ctx: discord.AutocompleteContext):
 
 @bot.slash_command(name="radio", description="Staff - Music - Play radio.")
 async def Radio(ctx, station: discord.Option(str, "Radio station (274 stations available)", required = True, autocomplete = RadioSearcher)):
+    await ctx.defer()    
     if ctx.guild is None:
         await ctx.respond("You can only run this command in guilds!")
         return
 
     if not isStaff(ctx.guild, ctx.author):
         await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+        return
+
+    if CheckVCLock(ctx.guild.id):
+        await ctx.respond("Gecko VC is locked. Use `/vcrecord unlock` to unlock it.", ephemeral = True)
         return
 
     guildid = ctx.guild.id
@@ -655,7 +676,6 @@ async def Radio(ctx, station: discord.Option(str, "Radio station (274 stations a
         await ctx.respond(f"I'm not in a voice channel. Use /join command to join me in.", ephemeral = True)
         return
 
-    await ctx.defer()
     station = SearchRadio(station)
     idx = radioname.index(station)
     link = radiolist[idx].split("|")[0]
@@ -686,6 +706,7 @@ async def Radio(ctx, station: discord.Option(str, "Radio station (274 stations a
 
 @bot.slash_command(name="radiolist", description="Music - Available radio station list.")
 async def RadioList(ctx):
+    await ctx.defer()    
     msg = ""
     for name in radioname:
         msg += name + "\n"
@@ -733,6 +754,9 @@ async def MusicLoop():
 
                 guild = bot.get_guild(guildid)
                 voice_client = guild.voice_client
+                            
+                if CheckVCLock(guildid):
+                    continue
 
                 if voice_client is None or voice_client.channel is None:
                     # bot is disconnected - then play current / previous song

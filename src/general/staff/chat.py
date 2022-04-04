@@ -27,6 +27,7 @@ class ManageChat(commands.Cog):
         action: discord.Option(str, "Gecko's action, if set to react, the reaction emoji will be needed", choices = ["timeout", "kick", "ban", "react"]),
         emoji: discord.Option(str, "Reaction emoji, needed only when action is 'react'", required = False)):
 
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -108,6 +109,7 @@ class ManageChat(commands.Cog):
     async def show(self, ctx,
         action: discord.Option(str, "Gecko's action, if set to react, the reaction emoji will be needed", choices = ["timeout", "kick", "ban", "react"])):
 
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -154,6 +156,7 @@ class ManageChat(commands.Cog):
     async def remove(self, ctx, keywords: discord.Option(str, "Keywords, split with ','"),
         action: discord.Option(str, "Gecko's action, if set to react, the reaction emoji will be needed", choices = ["timeout", "kick", "ban", "react"])):
 
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return

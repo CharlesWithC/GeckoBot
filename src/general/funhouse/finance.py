@@ -27,6 +27,7 @@ async def finance_log(text):
     
 @bot.slash_command(name="balance", description="Finance Game - Get your balance.")
 async def FinanceBalance(ctx):
+    await ctx.defer()    
     conn = newconn()
     cur = conn.cursor()
     
@@ -65,6 +66,7 @@ async def FinanceBalance(ctx):
     
 @bot.slash_command(name="checkin", description="Finance Game - Do daily checkin to earn coins.")
 async def FinanceCheckIn(ctx):
+    await ctx.defer()    
     conn = newconn()
     cur = conn.cursor()
     
@@ -128,6 +130,7 @@ async def FinanceCheckIn(ctx):
 
 @bot.slash_command(name="work", description="Finance Game - Work to earn coins.")
 async def FinanceWork(ctx):
+    await ctx.defer()    
     conn = newconn()
     cur = conn.cursor()
 
@@ -202,6 +205,7 @@ async def FinanceWork(ctx):
 
 @bot.slash_command(name="claim", description="Finance Game - Claim the reward from your last work.")
 async def FinanceClaim(ctx):
+    await ctx.defer()    
     conn = newconn()
     cur = conn.cursor()
 
@@ -251,6 +255,7 @@ async def FinanceClaim(ctx):
 
 @bot.slash_command(name="richest", description="Finance Game - Get the richest players in this guild.")
 async def FinanceRichest(ctx):
+    await ctx.defer()    
     conn = newconn()
     cur = conn.cursor()
 

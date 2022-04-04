@@ -24,6 +24,7 @@ BANNER_FONT = "./globaltrucking/WOODCUT.TTF"
 
 @bot.slash_command(name="banner", description="Global Trucking - Generate a driver banner.", guild_ids = [GTGUILD, DEVGUILD])
 async def GenerateBanner(ctx, name: discord.Option(str, "Driver's name", required = True)):
+    await ctx.defer()    
     conn = newconn()
     cur = conn.cursor()
 

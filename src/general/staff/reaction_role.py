@@ -27,6 +27,7 @@ class ReactionRole(commands.Cog):
         msglink: discord.Option(str, "Link to message where members will react. You can use /embed to create one.", required = True), 
         rolebind: discord.Option(str, "Role => Emoji bind (format {@role1} {emoji1} {@role2} {emoji2}, e.g. @Admin :manager:)", required = True)):
         
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -116,6 +117,7 @@ class ReactionRole(commands.Cog):
         msglink: discord.Option(str, "Link to message to edit reaction role.", required = True), 
         rolebind: discord.Option(str, "[Append] Role => Emoji bind (format {@role1} {emoji1} {@role2} {emoji2}, e.g. @Admin :manager:)", required = True)):
         
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -220,6 +222,7 @@ class ReactionRole(commands.Cog):
 
     @rr.command(name = "list", description = "Staff - List all reaction role posts in this guild.")
     async def show(self, ctx):
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return

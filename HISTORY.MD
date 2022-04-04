@@ -2,6 +2,9 @@
 
 ## Update 2022.04.04
 
+**Version v1.12**  
+Introduced **Gecko Voice Channel Recorder**
+
 **Version v1.11.1**  
 Added autocomplete for `/play` `/queue` `/radio`
 

@@ -187,6 +187,7 @@ class ManageForm(commands.Cog):
     @manage.command(name="create", description="Staff - Create form. Detailed information will be edited in modal.")
     async def create(self, ctx, callback: discord.Option(str, "The message to show after the form is submitted, Markdown is accepted", required = False),
         onetime: discord.Option(str, "Allow member to submit form only once?", required = False, choices = ["Yes", "No"])):
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -213,6 +214,7 @@ class ManageForm(commands.Cog):
         callback: discord.Option(str, "The message to show after the form is submitted, leave empty to remain unchanged", required = False),
         onetime: discord.Option(str, "Allow member to submit form only once?", required = False, choices = ["Yes", "No"])):
         
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -249,6 +251,7 @@ class ManageForm(commands.Cog):
 
     @manage.command(name="delete", description="Staff - Delete a form and all submitted entries.")
     async def delete(self, ctx, formid: discord.Option(str, "Form ID", required = True)):
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -281,6 +284,7 @@ class ManageForm(commands.Cog):
 
     @manage.command(name="list", description="Staff - List all forms in this guild.")
     async def show(self, ctx):
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -313,6 +317,7 @@ class ManageForm(commands.Cog):
 
     @manage.command(name="toggle", description="Staff - Toggle form status, whether it accepts new entries.")
     async def toggle(self, ctx, formid: discord.Option(str, "Form ID, provided when form was created. Use '/form list' to see a list of forms and IDs.", required = True)):
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -352,6 +357,7 @@ class ManageForm(commands.Cog):
     @manage.command(name="entry", description="View your entry.")
     async def entry(self, ctx, formid: discord.Option(str, "Form ID", required = True),
         user: discord.Option(str, "User Tag, e.g. @Gecko (Staff can use this to view the entry of a specific user)", required = False)):
+        await ctx.defer()    
         try:
             formid = abs(int(formid))
         except:
@@ -441,6 +447,7 @@ class ManageForm(commands.Cog):
 
     @manage.command(name="download", description="Staff - Download all entries of a form.")
     async def download(self, ctx, formid: discord.Option(str, "Form ID", required = True)):
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return

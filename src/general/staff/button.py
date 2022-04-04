@@ -161,6 +161,7 @@ class ManageButton(commands.Cog):
             content: discord.Option(str, "Content of message to send on click", required = False),
             embedid: discord.Option(str, "ID of embed to send on click", required = False),
             formid: discord.Option(str, "ID of form to display on click", required = False)):
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -275,6 +276,7 @@ class ManageButton(commands.Cog):
             content: discord.Option(str, "Content of message to send on click", required = False),
             embedid: discord.Option(str, "ID of embed to send on click", required = False),
             formid: discord.Option(str, "ID of form to display on click", required = False)):
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -401,6 +403,7 @@ class ManageButton(commands.Cog):
 
     @manage.command(name="delete", description="Staff - Delete a button from database, previously posted button will become invalid.")
     async def delete(self, ctx, buttonid: discord.Option(str, "Button ID, provided when button was created", required = True)):
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -433,6 +436,7 @@ class ManageButton(commands.Cog):
     
     @manage.command(name="get", description="Staff - Get ID of buttons in a message.")
     async def get(self, ctx, msglink: discord.Option(str, "Link to the message", required = True)):
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -502,6 +506,7 @@ class ManageButton(commands.Cog):
 
     @manage.command(name="clear", description="Staff - Clear all buttons in a message")
     async def clear(self, ctx, msglink: discord.Option(str, "Link to the message", required = True)):
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -534,9 +539,10 @@ class ManageButton(commands.Cog):
         await ctx.respond(f"Buttons in [message]({'/'.join(msglink)[-1]}) cleared.")
 
     @manage.command(name="send", description="Staff - Send buttons.")
-    async def sendmul(self, ctx, channel: discord.Option(str, "Channel to send the button", required = True),
+    async def send(self, ctx, channel: discord.Option(str, "Channel to send the button", required = True),
         buttonid: discord.Option(str, "Button ID, separate with space, e.g. '1 2 3'", required = True)):
-        
+
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -603,6 +609,7 @@ class ManageButton(commands.Cog):
     async def attach(self, ctx, msglink: discord.Option(str, "Link to the message", required = True),
             buttonid: discord.Option(str, "Button ID, separate with space, e.g. '1 2 3'", required = True)):
 
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -672,10 +679,10 @@ class ManageButton(commands.Cog):
         except:
             await ctx.respond(f"I cannot edit the [message]({'/'.join(msglink)[-1]}).", ephemeral = True)
 
-    ##### TODO: EDIT CODE BELOW
-    
     @manage.command(name="update", description = "Staff - Update the labels of buttons to the latest ones.")
-    async def attach(self, ctx, msglink: discord.Option(str, "Link to the message", required = True)):
+    async def update(self, ctx, msglink: discord.Option(str, "Link to the message", required = True)):
+        
+        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
