@@ -296,7 +296,11 @@ async def ClearExpiredGame():
             cur.execute(f"SELECT state FROM fourgame WHERE ABS(gameid) = {gameid}")
             t = cur.fetchall()
             state = t[0][0]
-            state = "0" + t[0][0].split("|")[1]
+            p = stats.split("|")
+            if len(p) == 0:
+                state = "0|" + state
+            else:
+                state = "0|" + p[1]
             cur.execute(f"UPDATE fourgame SET state = '{state}' WHERE ABS(gameid) = {gameid}")
             conn.commit()
             channel = bot.get_channel(chnid)
@@ -304,7 +308,8 @@ async def ClearExpiredGame():
                 continue
             try:
                 message = await channel.fetch_message(msgid)
-                await message.edit(f"The game has been cancelled due to inactivity.")
+                await message.edit(f":x: The game has been cancelled due to inactivity.")
+                await message.clear_reactions()
             except:
                 pass
         

@@ -10,13 +10,14 @@ from discord.commands import CommandPermission, SlashCommandGroup
 from discord.ext import commands
 from base64 import b64encode, b64decode
 from time import time
+import requests
 
-from general.radiolist import radiolist, radioname, radiolink, SearchRadio
+from general.radiolist import radiolist, radioname, radiolink, SearchRadio, SearchRadioMul
 
 from requests import get
 from youtube_dl import YoutubeDL
 
-YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True'}
+YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True', 'quite': True, 'ignoreerrors': True}
 def search(arg):
     with YoutubeDL(YDL_OPTIONS) as ydl:
         try:
@@ -26,6 +27,14 @@ def search(arg):
         else:
             video = ydl.extract_info(arg, download=False)
     return video
+
+async def suggest(ctx: discord.AutocompleteContext):
+    if ctx.value.replace(" ", "") == "":
+        return []
+    endpoint = "https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&q="
+    res = requests.get(endpoint + ctx.value)
+    res = res.json()
+    return res[1]
 
 from bot import bot
 from settings import *
@@ -242,7 +251,7 @@ class ManageMusic(commands.Cog):
             await ctx.respond(f"Loop playback disabled for playlist!")
 
 @bot.slash_command(name="play", description="Staff - Music - Play a song.")
-async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtube", required = True)):    
+async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtube", required = True, autocomplete = suggest)):    
     guildid = 0
     if ctx.guild is None:
         await ctx.respond(f"Music can only be played in voice channels in guilds!")
@@ -398,7 +407,7 @@ async def NextSong(ctx):
     await ctx.respond(embed = embed)
 
 @bot.slash_command(name="queue", description="Music - Queue your song to the play list.")
-async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtube", required = True)):    
+async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtube", required = True, autocomplete = suggest)):    
     guildid = 0
     if ctx.guild is None:
         await ctx.respond(f"Music can only be played in voice channels in guilds!")
@@ -623,8 +632,14 @@ async def CurrentSong(ctx):
         embed.set_footer(text=f"Requested by {username}", icon_url = avatar)
         await ctx.respond(embed = embed)
 
+async def RadioSearcher(ctx: discord.AutocompleteContext):
+    if ctx.value.replace(" ", "") == "":
+        return radioname[:10]
+    res = SearchRadioMul(ctx.value.lower())
+    return res
+
 @bot.slash_command(name="radio", description="Staff - Music - Play radio.")
-async def Radio(ctx, station: discord.Option(str, "Radio station (274 stations available)", required = True)):
+async def Radio(ctx, station: discord.Option(str, "Radio station (274 stations available)", required = True, autocomplete = RadioSearcher)):
     if ctx.guild is None:
         await ctx.respond("You can only run this command in guilds!")
         return

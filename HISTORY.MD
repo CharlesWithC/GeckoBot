@@ -2,6 +2,9 @@
 
 ## Update 2022.04.04
 
+**Version v1.11.1**  
+Added autocomplete for `/play` `/queue` `/radio`
+
 **Version v1.11**  
 Introduced Connect Four Game  
 
