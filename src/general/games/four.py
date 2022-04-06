@@ -56,7 +56,7 @@ class ConnectFourJoinButton(Button):
         cur = conn.cursor()
 
         # check if game already started
-        cur.execute(f"SELECT * FROM fourgame WHERE customid = '{custom_id}'")
+        cur.execute(f"SELECT * FROM connectfour WHERE customid = '{custom_id}'")
         p = cur.fetchall()
         if len(p) > 0:
             await interaction.response.send_message(f"The game has already started.", ephemeral = True)
@@ -71,13 +71,13 @@ class ConnectFourJoinButton(Button):
                 return
         
         # update database
-        cur.execute(f"SELECT COUNT(*) FROM fourgame")
+        cur.execute(f"SELECT COUNT(*) FROM connectfour")
         t = cur.fetchall()
         gameid = 1
         if len(t) > 0:
             gameid = t[0][0] + 1
         state = '0'*42
-        cur.execute(f"INSERT INTO fourgame VALUES ({gameid}, {red}, {blue}, {guildid}, {channelid}, 0, {bet}, '1|{state}', '{custom_id}', {int(time())})")
+        cur.execute(f"INSERT INTO connectfour VALUES ({gameid}, {red}, {blue}, {guildid}, {channelid}, 0, {bet}, '1|{state}', '{custom_id}', {int(time())})")
         conn.commit()
 
         # update message status
@@ -99,7 +99,7 @@ class ConnectFourJoinButton(Button):
 
         await interaction.message.delete()
 
-        cur.execute(f"UPDATE fourgame SET msgid = {msg.id} WHERE gameid = {gameid}")
+        cur.execute(f"UPDATE connectfour SET msgid = {msg.id} WHERE gameid = {gameid}")
         conn.commit()
 
 class ConnectFour(commands.Cog):
@@ -183,19 +183,19 @@ class ConnectFour(commands.Cog):
             await ctx.respond(f"{gameid} is not a valid game ID.", ephemeral = True)
             return
 
-        cur.execute(f"SELECT COUNT(*) FROM fourgame")
+        cur.execute(f"SELECT COUNT(*) FROM connectfour")
         t = cur.fetchall()
         if len(t) == 0 or t[0][0] < gameid:
             await ctx.respond(f"{gameid} is not a valid game ID.", ephemeral = True)
             return
         
-        cur.execute(f"SELECT * FROM fourgame WHERE ABS(gameid) = {gameid} AND guildid = {guildid}")
+        cur.execute(f"SELECT * FROM connectfour WHERE ABS(gameid) = {gameid} AND guildid = {guildid}")
         t = cur.fetchall()
         if len(t) == 0:
             await ctx.respond(f"The game didn't happen in this guild and you cannot access it.", ephemeral = True)
             return
 
-        cur.execute(f"SELECT red, blue, state FROM fourgame WHERE gameid = -{gameid} AND guildid = {guildid}")
+        cur.execute(f"SELECT red, blue, state FROM connectfour WHERE gameid = -{gameid} AND guildid = {guildid}")
         t = cur.fetchall()
         if len(t) == 0:
             await ctx.respond(f"The game hasn't ended yet.", ephemeral = True)
@@ -242,7 +242,7 @@ class ConnectFour(commands.Cog):
             sortby = "lost"
         if not sortby in ["earning", "won", "lost"]:
             sortby = "won" # decided by copilot
-        cur.execute(f"SELECT userid, {sortby} FROM fourgame_leaderboard ORDER BY {sortby} DESC LIMIT 10")
+        cur.execute(f"SELECT userid, {sortby} FROM connectfour_leaderboard ORDER BY {sortby} DESC LIMIT 10")
         t = cur.fetchall()
         if len(t) == 0:
             await ctx.respond(f"Nobody has played the game.", ephemeral = True)
@@ -267,7 +267,7 @@ class ConnectFour(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
 
-        cur.execute(f"SELECT won, lost, draw, earning FROM fourgame_leaderboard WHERE userid = {ctx.author.id}")
+        cur.execute(f"SELECT won, lost, draw, earning FROM connectfour_leaderboard WHERE userid = {ctx.author.id}")
         t = cur.fetchall()
         if len(t) == 0:
             await ctx.respond(f"You haven't played the game.", ephemeral = True)
@@ -289,15 +289,13 @@ async def ClearExpiredGame():
     await bot.wait_until_ready()
     await asyncio.sleep(5)
     while not bot.is_closed():
-        cur.execute(f"SELECT gameid, chnid, msgid FROM fourgame WHERE lastop < {int(time())-300} AND gameid > 0")
+        cur.execute(f"SELECT gameid, chnid, msgid FROM connectfour WHERE lastop < {int(time())-300} AND gameid > 0")
         t = cur.fetchall()
-        cur.execute(f"UPDATE fourgame SET gameid = -gameid WHERE lastop < {int(time())-300}")
-        conn.commit()
         for tt in t:
             gameid = tt[0]
             chnid = tt[1]
             msgid = tt[2]
-            cur.execute(f"SELECT state FROM fourgame WHERE ABS(gameid) = {gameid}")
+            cur.execute(f"SELECT state FROM connectfour WHERE ABS(gameid) = {gameid}")
             t = cur.fetchall()
             state = t[0][0]
             p = stats.split("|")
@@ -305,7 +303,7 @@ async def ClearExpiredGame():
                 state = "0|" + state
             else:
                 state = "0|" + p[1]
-            cur.execute(f"UPDATE fourgame SET state = '{state}' WHERE ABS(gameid) = {gameid}")
+            cur.execute(f"UPDATE connectfour SET state = '{state}', gameid = -ABS(gameid) WHERE ABS(gameid) = {gameid}")
             conn.commit()
             channel = bot.get_channel(chnid)
             if channel is None:
@@ -325,31 +323,31 @@ def UpdateLeaderboard(won, lost, bet, draw = False):
     conn = newconn()
     cur = conn.cursor()
 
-    cur.execute(f"SELECT * FROM fourgame_leaderboard WHERE userid = {won}")
+    cur.execute(f"SELECT * FROM connectfour_leaderboard WHERE userid = {won}")
     t = cur.fetchall()
     if len(t) == 0:
         if draw:
-            cur.execute(f"INSERT INTO fourgame_leaderboard VALUES ({won}, 0, 0, 1, {bet})")
+            cur.execute(f"INSERT INTO connectfour_leaderboard VALUES ({won}, 0, 0, 1, {bet})")
         else:
-            cur.execute(f"INSERT INTO fourgame_leaderboard VALUES ({won}, 1, 0, 0, {bet})")
+            cur.execute(f"INSERT INTO connectfour_leaderboard VALUES ({won}, 1, 0, 0, {bet})")
     else:
         if draw:
-            cur.execute(f"UPDATE fourgame_leaderboard SET draw = draw + 1 WHERE userid = {won}")
+            cur.execute(f"UPDATE connectfour_leaderboard SET draw = draw + 1 WHERE userid = {won}")
         else:
-            cur.execute(f"UPDATE fourgame_leaderboard SET won = won + 1, earning = earning + {bet} WHERE userid = {won}")
+            cur.execute(f"UPDATE connectfour_leaderboard SET won = won + 1, earning = earning + {bet} WHERE userid = {won}")
 
-    cur.execute(f"SELECT * FROM fourgame_leaderboard WHERE userid = {lost}")
+    cur.execute(f"SELECT * FROM connectfour_leaderboard WHERE userid = {lost}")
     t = cur.fetchall()
     if len(t) == 0:
         if draw:
-            cur.execute(f"INSERT INTO fourgame_leaderboard VALUES ({lost}, 0, 0, 1, {bet})")
+            cur.execute(f"INSERT INTO connectfour_leaderboard VALUES ({lost}, 0, 0, 1, {bet})")
         else:
-            cur.execute(f"INSERT INTO fourgame_leaderboard VALUES ({lost}, 0, 1, 0, {bet})")
+            cur.execute(f"INSERT INTO connectfour_leaderboard VALUES ({lost}, 0, 1, 0, {bet})")
     else:
         if draw:
-            cur.execute(f"UPDATE fourgame_leaderboard SET draw = draw + 1 WHERE userid = {lost}")
+            cur.execute(f"UPDATE connectfour_leaderboard SET draw = draw + 1 WHERE userid = {lost}")
         else:
-            cur.execute(f"UPDATE fourgame_leaderboard SET lost = lost + 1, earning = earning - {bet} WHERE userid = {lost}")
+            cur.execute(f"UPDATE connectfour_leaderboard SET lost = lost + 1, earning = earning - {bet} WHERE userid = {lost}")
 
     conn.commit()
 
@@ -361,7 +359,7 @@ async def ConnectFourUpdate():
     channel = None
     gameid = 0
     while not bot.is_closed():        
-        cur.execute(f"SELECT gameid, red, blue, guildid, chnid, msgid, state, bet FROM fourgame WHERE gameid > 0 AND msgid != ''")
+        cur.execute(f"SELECT gameid, red, blue, guildid, chnid, msgid, state, bet FROM connectfour WHERE gameid > 0 AND msgid != ''")
         d = cur.fetchall()
         for dd in d:
             try:
@@ -468,7 +466,7 @@ async def ConnectFourUpdate():
                 for i in range(6):
                     matrix.append(state[i*7:i*7+7])
                 
-                cur.execute(f"UPDATE fourgame SET lastop = {int(time())} WHERE gameid = {gameid}")
+                cur.execute(f"UPDATE connectfour SET lastop = {int(time())} WHERE gameid = {gameid}")
                 conn.commit()
 
                 # check if four in a row or column or diagonal
@@ -539,17 +537,17 @@ async def ConnectFourUpdate():
 
                     # update database
                     if redwon:
-                        cur.execute(f"UPDATE fourgame SET state = '-1|{state}', gameid = -gameid WHERE gameid = {gameid}")
+                        cur.execute(f"UPDATE connectfour SET state = '-1|{state}', gameid = -gameid WHERE gameid = {gameid}")
                     elif bluewon:
-                        cur.execute(f"UPDATE fourgame SET state = '-2|{state}', gameid = -gameid WHERE gameid = {gameid}")
+                        cur.execute(f"UPDATE connectfour SET state = '-2|{state}', gameid = -gameid WHERE gameid = {gameid}")
                     elif state.count("0") == 0:
-                        cur.execute(f"UPDATE fourgame SET state = '-3|{state}', gameid = -gameid WHERE gameid = {gameid}")
+                        cur.execute(f"UPDATE connectfour SET state = '-3|{state}', gameid = -gameid WHERE gameid = {gameid}")
                 else:
                     if current == "1":
-                        cur.execute(f"UPDATE fourgame SET state = '2|{state}' WHERE gameid = {gameid}")
+                        cur.execute(f"UPDATE connectfour SET state = '2|{state}' WHERE gameid = {gameid}")
                         await message.edit(f"{vs}{BLUE} <@!{blue}>'s turn\n\n{pstate}")
                     elif current == "2":
-                        cur.execute(f"UPDATE fourgame SET state = '1|{state}' WHERE gameid = {gameid}")
+                        cur.execute(f"UPDATE connectfour SET state = '1|{state}' WHERE gameid = {gameid}")
                         await message.edit(f"{vs}{RED} <@!{red}>'s turn\n\n{pstate}")
                 conn.commit()
 
@@ -557,7 +555,7 @@ async def ConnectFourUpdate():
                 import traceback
                 traceback.print_exc()
                 # try:
-                #     # cur.execute(f"UPDATE fourgame SET gameid = -gameid WHERE gameid = {gameid}")
+                #     # cur.execute(f"UPDATE connectfour SET gameid = -gameid WHERE gameid = {gameid}")
                 #     # conn.commit()
                 #     await channel.send("Game error occurred. This game is no longer available.")
                 # except:

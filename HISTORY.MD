@@ -1,9 +1,14 @@
 # Gecko Bot Update History
 
-## Update 2022.04.04
+## Update 2022.04.06
+
+**Version v1.13.1**  
+Fixed a bug of connect four leaderboard  
 
 **Version v1.13**  
 Added help function  
+
+## Update 2022.04.04
 
 **Version v1.12**  
 Introduced **Gecko Voice Channel Recorder**
