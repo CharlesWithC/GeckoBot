@@ -288,7 +288,7 @@ def SearchRadio(station):
     return station[0]
 
 def SearchRadioMul(station, limit = 10):
-    station = process.extract(station, radioname)[:limit]
+    station = process.extract(station, radioname, limit = limit)[:limit]
     ret = []
     for t in station:
         ret.append(t[0])

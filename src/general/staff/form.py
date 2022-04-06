@@ -74,7 +74,7 @@ class FormEditModal(Modal):
         conn = newconn()
         cur = conn.cursor()
         if formid != -1:
-            cur.execute(f"SELECT data FROM form WHERE formid = {formid}")
+            cur.execute(f"SELECT data FROM form WHERE formid = {formid} AND guildid = {guildid}")
             t = cur.fetchall()
             if len(t) == 0:
                 await interaction.response.send_message(f"Form not found.", ephemeral = True)
@@ -127,7 +127,7 @@ class FormModal(Modal):
 
         conn = newconn()
         cur = conn.cursor()
-        cur.execute(f"SELECT data, callback FROM form WHERE formid = {formid}")
+        cur.execute(f"SELECT data, callback FROM form WHERE formid = {formid} AND guildid = {guildid}")
         t = cur.fetchall()
         if len(t) == 0:
             raise Exception("Form not found!")
@@ -187,7 +187,7 @@ class ManageForm(commands.Cog):
     @manage.command(name="create", description="Staff - Create form. Detailed information will be edited in modal.")
     async def create(self, ctx, callback: discord.Option(str, "The message to show after the form is submitted, Markdown is accepted", required = False),
         onetime: discord.Option(str, "Allow member to submit form only once?", required = False, choices = ["Yes", "No"])):
-        await ctx.defer()    
+        
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -214,7 +214,6 @@ class ManageForm(commands.Cog):
         callback: discord.Option(str, "The message to show after the form is submitted, leave empty to remain unchanged", required = False),
         onetime: discord.Option(str, "Allow member to submit form only once?", required = False, choices = ["Yes", "No"])):
         
-        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -232,7 +231,7 @@ class ManageForm(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
 
-        cur.execute(f"SELECT data FROM form WHERE formid = {formid}")
+        cur.execute(f"SELECT data FROM form WHERE formid = {formid} AND guildid = {ctx.guild.id}")
         t = cur.fetchall()
         if len(t) == 0:
             await ctx.respond("The form does not exist or does not belong to this guild.", ephemeral = True)
@@ -276,7 +275,7 @@ class ManageForm(commands.Cog):
             return
 
         cur.execute(f"UPDATE form SET formid = -formid WHERE formid = {formid} AND guildid = {guildid}")
-        cur.execute(f"UPDATE formentry SET formid = -formid WHERE formid = {formid}")
+        cur.execute(f"UPDATE formentry SET formid = -formid WHERE formid = {formid} AND guildid = {ctx.guild.id}")
         conn.commit()
 
         await ctx.respond(f"Form #{formid} and entries are deleted.")
@@ -343,13 +342,13 @@ class ManageForm(commands.Cog):
         
         data = t[0][0]
         if data.startswith("stopped-"):
-            cur.execute(f"UPDATE form SET data = '{data[8:]}' WHERE formid = {formid}")
+            cur.execute(f"UPDATE form SET data = '{data[8:]}' WHERE formid = {formid} AND guildid = {ctx.guild.id}")
             conn.commit()
             await ctx.respond(f"Form #{formid} is now accepting new entries.")
             await log(f"Form", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) stopped form #{formid}", ctx.guild.id)
 
         else:
-            cur.execute(f"UPDATE form SET data = 'stopped-{data}' WHERE formid = {formid}")
+            cur.execute(f"UPDATE form SET data = 'stopped-{data}' WHERE formid = {formid} AND guildid = {ctx.guild.id}")
             conn.commit()
             await ctx.respond(f"Form #{formid} is no longer accepting new entries.")
             await log(f"Form", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) started form #{formid}", ctx.guild.id)

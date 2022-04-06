@@ -74,6 +74,10 @@ class ReactionRole(commands.Cog):
                     return
             i += 1
         
+        if len(rolebind) > 20:
+            await ctx.respond(f"There could be at most 20 reaction roles for a single message.", ephemeral = True)
+            return
+        
         channel = ctx.channel
         message = await channel.send("Reaction test")
         for t in rolebind:
@@ -179,6 +183,12 @@ class ReactionRole(commands.Cog):
                 emojis.append(e)
                 rolebind.append((r, e))
             i += 1
+        
+        cur.execute(f"SELECT * FROM rolebind WHERE msgid = {msgid}")
+        org = cur.fetchall()
+        if len(org) + len(rolebind) > 20:
+            await ctx.respond(f"There could be at most 20 reaction roles for a single message.", ephemeral = True)
+            return
         
         channel = ctx.channel
         tmessage = await channel.send("Reaction test")

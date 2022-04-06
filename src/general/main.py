@@ -8,9 +8,10 @@ import discord
 import asyncio
 
 import general.dev
+import general.help
 import general.music
-import general.funhouse.finance
-import general.funhouse.four
+import general.games.finance
+import general.games.four
 import general.staff.button
 import general.staff.chat
 import general.staff.embed

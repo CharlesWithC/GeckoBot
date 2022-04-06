@@ -241,7 +241,7 @@ class ConnectFour(commands.Cog):
         elif sortby == "losses":
             sortby = "lost"
         if not sortby in ["earning", "won", "lost"]:
-            sortby = "earning" # decided by copilot
+            sortby = "won" # decided by copilot
         cur.execute(f"SELECT userid, {sortby} FROM fourgame_leaderboard ORDER BY {sortby} DESC LIMIT 10")
         t = cur.fetchall()
         if len(t) == 0:
@@ -529,7 +529,7 @@ async def ConnectFourUpdate():
                 elif state.count("0") == 0:
                     if bet > 0:
                         additional = f"\nNobody has won or lost a coin."
-                    UpdateLeaderboard(won, lost, 0, draw = True)
+                    UpdateLeaderboard(red, blue, 0, draw = True)
                     await message.edit(f"{vs}{BLUE} **Draw**" + additional + "\n\n" + pstate)
                     gameend = True
                 

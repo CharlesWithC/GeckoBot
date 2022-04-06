@@ -21,7 +21,7 @@ from settings import *
 from functions import *
 from db import newconn
 from general.staff.form import FormModal
-from general.funhouse.four import ConnectFourJoinButton
+from general.games.four import ConnectFourJoinButton
 
 class GeckoButton(Button):
     def __init__(self, label, url, style, disabled, custom_id):
@@ -93,28 +93,31 @@ class GeckoButton(Button):
         if formid != None:
             cur.execute(f"SELECT data FROM form WHERE guildid = {guildid} AND formid = {formid}")
             t = cur.fetchall()
-            data = t[0][0]
-            if data.startswith("stopped-"):
-                response.append({"content": "The form is not accpeting new entries at this moment.", "ephemeral": True})
+            if len(t) == 0:
+                response.append({"content": "The form does not exist any longer.", "ephemeral": True})
             else:
-                if data.split("|")[-1] == "1":
-                    cur.execute(f"SELECT userid FROM formentry WHERE userid = {userid} AND formid = {formid}")
-                    p = cur.fetchall()
-                    if len(p) > 0:
-                        response.append({"content": "You can not submit more than once.", "ephemeral": True})
+                data = t[0][0]
+                if data.startswith("stopped-"):
+                    response.append({"content": "The form is not accpeting new entries at this moment.", "ephemeral": True})
+                else:
+                    if data.split("|")[-1] == "1":
+                        cur.execute(f"SELECT userid FROM formentry WHERE userid = {userid} AND formid = {formid}")
+                        p = cur.fetchall()
+                        if len(p) > 0:
+                            response.append({"content": "You can not submit more than once.", "ephemeral": True})
+                        else:
+                            p = data.split("|")[:-1]
+                            d = []
+                            for pp in p:
+                                d.append(b64d(pp))
+                            response.append({"modal": FormModal(formid, d, "Submit Form"), "ephemeral": ephemeral})
                     else:
                         p = data.split("|")[:-1]
                         d = []
                         for pp in p:
                             d.append(b64d(pp))
                         response.append({"modal": FormModal(formid, d, "Submit Form"), "ephemeral": ephemeral})
-                else:
-                    p = data.split("|")[:-1]
-                    d = []
-                    for pp in p:
-                        d.append(b64d(pp))
-                    response.append({"modal": FormModal(formid, d, "Submit Form"), "ephemeral": ephemeral})
-        
+            
         if len(response) == 0:
             await interaction.response.send_message("I think it's a button for **decoration** use only, as the creator didn't tell me what to do when you click it.", ephemeral = True)
 
@@ -503,6 +506,41 @@ class ManageButton(commands.Cog):
 
         embed=discord.Embed(title="Button -> Button ID", description=msg, color=GECKOCLR)
         await ctx.respond(embed = embed)
+
+    @manage.command(name="list", description="Staff - List all buttons in this guild.")
+    async def show(self, ctx):
+        await ctx.defer()    
+        if ctx.guild is None:
+            await ctx.respond("You can only run this command in guilds!")
+            return
+
+        if not isStaff(ctx.guild, ctx.author):
+            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+            return
+
+        conn = newconn()
+        cur = conn.cursor()
+        
+        cur.execute(f"SELECT buttonid, data FROM button WHERE guildid = {ctx.guild.id}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond("There's no button created in this guild. Use `/button create` to create one.")
+            return
+        
+        msg = f"Below are all buttons created using Gecko in {ctx.guild}.\nOnly button id and label is shown.\n\n"
+        for tt in t:
+            data = json.loads(b64d(tt[1]))
+            label = data["label"]
+            msg += f"Button **#{tt[0]}**: {label}\n"
+        
+        if len(msg) > 2000:
+            f = io.BytesIO()
+            f.write(msg.encode())
+            f.seek(0)
+            await ctx.respond(file=discord.File(fp=f, filename='Buttons.MD'))
+        else:
+            embed=discord.Embed(title=f"Buttons in {ctx.guild}", description=msg, color=GECKOCLR)
+            await ctx.respond(embed = embed)     
 
     @manage.command(name="clear", description="Staff - Clear all buttons in a message")
     async def clear(self, ctx, msglink: discord.Option(str, "Link to the message", required = True)):

@@ -128,7 +128,6 @@ class ManageEmbed(commands.Cog):
     async def create(self, ctx,
         color: discord.Option(str, "Color in RGB (default 158 132 46)", required = False)):
         
-        await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
@@ -159,8 +158,7 @@ class ManageEmbed(commands.Cog):
     @manage.command(name="edit", description="Staff - Edit embed. Detailed information will be edited in modal.")
     async def edit(self, ctx, embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
         color: discord.Option(str, "Color in RGB. Leave empty to remain unchanged.", required = False)):
-        
-        await ctx.defer()    
+         
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
             return
