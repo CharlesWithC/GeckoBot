@@ -11,6 +11,7 @@ from discord.ext import commands
 from base64 import b64encode, b64decode
 from time import time
 import requests
+from fuzzywuzzy import process
 
 from general.radiolist import radiolist, radioname, radiolink, SearchRadio, SearchRadioMul
 
@@ -150,7 +151,7 @@ class ManageMusic(commands.Cog):
     async def pause(self, ctx):  
         await ctx.defer()
         if ctx.guild is None:
-            await ctx.respond(f"Music can only be played in voice channels in guilds!")
+            await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
             return
 
         if not isStaff(ctx.guild, ctx.author):
@@ -171,7 +172,7 @@ class ManageMusic(commands.Cog):
     async def resume(self, ctx): 
         await ctx.defer()
         if ctx.guild is None:
-            await ctx.respond(f"Music can only be played in voice channels in guilds!")
+            await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
             return
 
         if not isStaff(ctx.guild, ctx.author):
@@ -192,7 +193,7 @@ class ManageMusic(commands.Cog):
     async def toggle(self, ctx): 
         await ctx.defer()
         if ctx.guild is None:
-            await ctx.respond(f"Music can only be played in voice channels in guilds!")
+            await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
             return
 
         if not isStaff(ctx.guild, ctx.author):
@@ -222,7 +223,7 @@ class ManageMusic(commands.Cog):
     async def clear(self, ctx): 
         await ctx.defer()
         if ctx.guild is None:
-            await ctx.respond(f"Music can only be played in voice channels in guilds!")
+            await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
             return
 
         if not isStaff(ctx.guild, ctx.author):
@@ -240,7 +241,7 @@ class ManageMusic(commands.Cog):
     async def loop(self, ctx): 
         await ctx.defer()
         if ctx.guild is None:
-            await ctx.respond(f"Music can only be played in voice channels in guilds!")
+            await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
             return
 
         if not isStaff(ctx.guild, ctx.author):
@@ -262,11 +263,11 @@ class ManageMusic(commands.Cog):
             await ctx.respond(f"Loop playback disabled for playlist!")
 
 @bot.slash_command(name="play", description="Staff - Music - Play a song.")
-async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtube", required = True, autocomplete = suggest)):
+async def PlayMusic(ctx, song: discord.Option(str, "Keywords for searching", required = True, autocomplete = suggest)):
     await ctx.defer()    
     guildid = 0
     if ctx.guild is None:
-        await ctx.respond(f"Music can only be played in voice channels in guilds!")
+        await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
         return
 
     conn = newconn()
@@ -291,7 +292,7 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtub
         url = ydl['formats'][0]['url']
         title = ydl['title']
     except:
-        await ctx.respond(f"I cannot find that song. This might be a temporary issue.")
+        await ctx.respond(f"I cannot find that song. This might be a temporary issue.", ephemeral = True)
         return
     
     if voice_client.is_playing() and not voice_client.is_paused():
@@ -302,7 +303,7 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtub
         user = ctx.guild.get_member(BOTID)
         await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = False)
     except:
-        await ctx.respond(f"It looks like I'm blocked by youtube. Please try again later.")
+        await ctx.respond(f"It looks like I'm blocked by music provider service. Please try again later.")
         return
     
     cur.execute(f"SELECT userid FROM playlist WHERE guildid = {guildid} AND userid < 0")
@@ -334,7 +335,7 @@ async def NextSong(ctx):
     await ctx.defer()    
     guildid = 0
     if ctx.guild is None:
-        await ctx.respond(f"Music can only be played in voice channels in guilds!")
+        await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
         return
 
     if CheckVCLock(ctx.guild.id):
@@ -391,7 +392,7 @@ async def NextSong(ctx):
         user = ctx.guild.get_member(BOTID)
         await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = False)
     except:
-        await ctx.respond(f"It looks like I'm blocked by youtube. Please try again later.")
+        await ctx.respond(f"It looks like I'm blocked by music provider service. Please try again later.")
         return
 
     username = "Unknown user"
@@ -424,11 +425,11 @@ async def NextSong(ctx):
     await ctx.respond(embed = embed)
 
 @bot.slash_command(name="queue", description="Music - Queue your song to the play list.")
-async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtube", required = True, autocomplete = suggest)):    
+async def PlayMusic(ctx, song: discord.Option(str, "Keywords for searching", required = True, autocomplete = suggest)):    
     await ctx.defer()    
     guildid = 0
     if ctx.guild is None:
-        await ctx.respond(f"Music can only be played in voice channels in guilds!")
+        await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
         return
 
     conn = newconn()
@@ -455,7 +456,7 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtub
         url = ydl['formats'][0]['url']
         title = ydl['title']
     except:
-        await ctx.respond(f"I cannot find that song. This might be a temporary issue.")
+        await ctx.respond(f"I cannot find that song. This might be a temporary issue.", ephemeral = True)
         return
 
     cur.execute(f"SELECT * FROM playlist WHERE guildid = {guildid} AND title = '{b64e(title)}'")
@@ -472,12 +473,30 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords to search on Youtub
     embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = ctx.author.avatar.url)
     await ctx.respond(embed = embed)
 
+async def GetQueueList(ctx: discord.AutocompleteContext):
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT title FROM playlist WHERE guildid = {ctx.interaction.guild.id} AND userid > 0")
+    t = cur.fetchall()
+    if len(t) == 0:
+        return []
+    d = []
+    for tt in t:
+        d.append(b64d(tt[0]))
+    if ctx.value.replace(" ","") == "":
+        return d[:10]
+    d = process.extract(ctx.value.lower(), d, limit = 10)
+    ret = []
+    for dd in d:
+        ret.append(dd[0])
+    return ret[:10]
+
 @bot.slash_command(name="dequeue", description="Music - Remove a song from play list.")
-async def UnqueueMusic(ctx, songid: discord.Option(int, "Song id (the number in front of its name)", required = True)): 
+async def UnqueueMusic(ctx, song: discord.Option(str, "Song, must be one from the autocomplete options", required = True, autocomplete = GetQueueList)): 
     await ctx.defer()    
     guildid = 0
     if ctx.guild is None:
-        await ctx.respond(f"Music can only be played in voice channels in guilds!")
+        await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
         return
 
     conn = newconn()
@@ -496,26 +515,201 @@ async def UnqueueMusic(ctx, songid: discord.Option(int, "Song id (the number in 
 
     guildid = ctx.guild.id
 
-    cur.execute(f"SELECT title, userid FROM playlist WHERE guildid = {guildid} AND userid > 0")
+    cur.execute(f"SELECT title, userid FROM playlist WHERE guildid = {guildid} AND userid > 0 AND title = '{b64e(song)}'")
     d = cur.fetchall()
-    i = 0
-    msg = ""
+    if len(d) == 0:
+        await ctx.respond(f"Song not in queue, make sure you selected one option from the autocomplete results.", ephemeral = True)
+        return
+    cur.execute(f"DELETE FROM playlist WHERE guildid = {guildid} AND userid > 0 AND title = '{b64e(song)}'")
+    conn.commit()
+    await ctx.respond(f"**{song}** removed from queue.")
+
+@bot.slash_command(name="fav", description="Music - Add the current song to your favourite list. Or add a custom one by providing its name.")
+async def FavouriteMusic(ctx, song: discord.Option(str, "Keywords for searching", required = False, autocomplete = suggest)):
+    await ctx.defer()    
+    if ctx.guild is None:
+        await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
+        return
+    guildid = ctx.guild.id
+
+    conn = newconn()
+    cur = conn.cursor()
+
+    if song is None:
+        cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond(f"No song is being played at the moment!", ephemeral = True)
+            return
+        tuserid = t[0][0]
+        title = b64d(t[0][1])
+        if tuserid == -1:
+            title = t[0][1]
+            link = title.split("-")[2]
+            
+            radiosong = GetCurrentSong(link)
+            if radiosong != -1:
+                song = radiosong
+            else:
+                song  = title.split("-")[1]
+        else:
+            song = title
+    
+    else:
+        try:
+            ydl = search(song)
+            url = ydl['formats'][0]['url']
+            title = ydl['title']
+        except:
+            await ctx.respond(f"I cannot find that song. This might be a temporary issue.", ephemeral = True)
+            return
+        
+        song = title
+    
+    cur.execute(f"SELECT songs FROM favourite WHERE userid = {ctx.author.id}")
+    t = cur.fetchall()
+    if len(t) == 0:
+        cur.execute(f"INSERT INTO favourite VALUES ({ctx.author.id}, '{b64e(song)}')")
+    else:
+        org = t[0][0].split(",")
+        if b64e(song) in org:
+            await ctx.respond(f"The song is already in your favourite list.", ephemeral = True)
+            return
+        cur.execute(f"UPDATE favourite SET songs = '{t[0][0] + ',' + b64e(song)}' WHERE userid = {ctx.author.id}")
+    conn.commit()
+
+    await ctx.respond(f"**{song}** has been added to your favourite list.", ephemeral = True)
+
+async def GetfavouriteList(ctx: discord.AutocompleteContext):
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT songs FROM favourite WHERE userid = {ctx.interaction.user.id}")
+    t = cur.fetchall()
+    if len(t) == 0:
+        return []
+    d = []
+    for dd in t[0][0].split(","):
+        d.append(b64d(dd))
+    if ctx.value.replace(" ","") == "":
+        return d[:10]
+    d = process.extract(ctx.value.lower(), d, limit = 10)
+    ret = []
     for dd in d:
-        i += 1
-        if songid == i:
-            if dd[1] != ctx.author.id and not isStaff(ctx.guild, ctx.author):
-                await ctx.respond(f"Only who queued the song or the staff could dequeue the song!", ephemeral = True)
-                return
-            cur.execute(f"DELETE FROM playlist WHERE guildid = {guildid} AND title = '{dd[0]}' AND userid = {dd[1]}")
-            conn.commit()
-            await ctx.respond(f"**{songid}.** **{b64d(dd[0])}** removed from queue.")
+        ret.append(dd[0])
+    return ret[:10]
+
+@bot.slash_command(name="unfav", description="Music - Remove a song from your favourite list.")
+async def UnFavouriteMusic(ctx, song: discord.Option(str, "Song, must be one from the autocomplete options", required = True, autocomplete = GetfavouriteList)):
+    await ctx.defer()    
+    if ctx.guild is None:
+        await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
+        return
+    guildid = ctx.guild.id
+
+    conn = newconn()
+    cur = conn.cursor()
+
+    cur.execute(f"SELECT songs FROM favourite WHERE userid = {ctx.author.id}")
+    t = cur.fetchall()
+    org = t[0][0].split(",")
+    if b64e(song) not in org:
+        await ctx.respond(f"The song is not in your favourite list.", ephemeral = True)
+        return
+    org.remove(b64e(song))
+    cur.execute(f"UPDATE favourite SET songs = '{','.join(org)}' WHERE userid = {ctx.author.id}")
+    conn.commit()
+
+    await ctx.respond(f"**{song}** is removed from your favourite list.", ephemeral = True)
+
+@bot.slash_command(name="favlist", description="Music - Get your favourite list.")
+async def FavouriteList(ctx):
+    await ctx.defer()    
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT songs FROM favourite WHERE userid = {ctx.author.id}")
+    t = cur.fetchall()
+    org = t[0][0].split(",")
+    if len(org) == 0:
+        await ctx.respond(f"You don't have any favourite song.", ephemeral = True)
+        return
+    d = []
+    for dd in org:
+        d.append(b64d(dd))
+    msg = f"**Your favourite song list:**\n" + '\n'.join(d)
+    if len(msg) < 2000:
+        embed = discord.Embed(title=f"{ctx.author.name}'s favourite list", description='\n'.join(d), color = GECKOCLR)
+        embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
+        embed.set_thumbnail(url=BOT_ICON)
+        embed.set_footer(text=f"{ctx.author.name}", icon_url = ctx.author.avatar.url)
+        await ctx.respond(embed = embed)
+    else:
+        f = io.BytesIO()
+        f.write(msg.encode())
+        f.seek(0)
+        await ctx.respond(file=discord.File(fp=f, filename='favourites.MD'))
+
+@bot.slash_command(name="qfav", description="Music - Queue a song from your favourite list.")
+async def Queuefavourite(ctx, song: discord.Option(str, "Song, must be one from the autocomplete options", required = True, autocomplete = GetfavouriteList)):
+    # queue the song
+    await ctx.defer()    
+    if ctx.guild is None:
+        await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
+        return
+    guildid = ctx.guild.id
+      
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT songs FROM favourite WHERE userid = {ctx.author.id}")
+    t = cur.fetchall()
+    org = t[0][0].split(",")
+    if b64e(song) not in org:
+        await ctx.respond(f"The song is not in your favourite list.", ephemeral = True)
+        return
+
+    guildid = ctx.guild.id
+    if not isStaff(ctx.guild, ctx.author):
+        cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'music'")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond(f"{ctx.author.name}, staff haven't set up a channel to request music! Tell them to use `/setchannel music {{#channel}}` to set it up!", ephemeral = True)
+            return
+        if t[0][0] != ctx.channel.id and t[0][0] != 0:
+            await ctx.respond(f"This is not the channel for using music commands.", ephemeral = True)
+            return
+
+    voice_client = ctx.guild.voice_client
+    if voice_client is None or voice_client.channel is None:
+        await ctx.respond(f"I'm not in a voice channel. Tell staff to use /join command to join me in.", ephemeral = True)
+        return
+
+    try:
+        ydl = search(song)
+        url = ydl['formats'][0]['url']
+        title = ydl['title']
+    except:
+        await ctx.respond(f"I cannot find that song. This might be a temporary issue.", ephemeral = True)
+        return
+
+    cur.execute(f"SELECT * FROM playlist WHERE guildid = {guildid} AND title = '{b64e(title)}'")
+    t = cur.fetchall()
+    if len(t) > 0:
+        await ctx.respond(f"The song is already in the playlist.", ephemeral = True)
+        return
+    cur.execute(f"INSERT INTO playlist VALUES ({guildid}, {ctx.author.id}, '{b64e(title)}')")
+    conn.commit()
+
+    embed = discord.Embed(title=f"Added to queue", description=title, color = GECKOCLR)
+    embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
+    embed.set_thumbnail(url=BOT_ICON)
+    embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = ctx.author.avatar.url)
+    await ctx.respond(embed = embed)
 
 @bot.slash_command(name="playlist", description="Music - See the queued play list.")
 async def PlayList(ctx): 
     await ctx.defer()    
     guildid = 0
     if ctx.guild is None:
-        await ctx.respond(f"Music can only be played in voice channels in guilds!")
+        await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
         return
 
     conn = newconn()
@@ -582,7 +776,7 @@ async def PlayList(ctx):
 async def CurrentSong(ctx):
     await ctx.defer()    
     if ctx.guild is None:
-        await ctx.respond(f"Music can only be played in voice channels in guilds!")
+        await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
         return
     guildid = ctx.guild.id
 
@@ -608,7 +802,7 @@ async def CurrentSong(ctx):
     cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
     t = cur.fetchall()
     if len(t) == 0:
-        await ctx.respond(f"No song is being played at the moment! Use /queue to start.")
+        await ctx.respond(f"No song is being played at the moment! Use /queue to start.", ephemeral = True)
         return
     userid = -t[0][0]
     title = b64d(t[0][1])

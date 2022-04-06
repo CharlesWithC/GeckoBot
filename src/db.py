@@ -53,6 +53,7 @@ cur.execute(f"CREATE TABLE IF NOT EXISTS formentry (formid BIGINT, userid BIGINT
 # MUSIC
 cur.execute(f"CREATE TABLE IF NOT EXISTS playlist (guildid BIGINT, userid BIGINT, title TEXT)")
 cur.execute(f"CREATE TABLE IF NOT EXISTS vcbind (guildid BIGINT, channelid BIGINT)")
+cur.execute(f"CREATE TABLE IF NOT EXISTS favourite (userid BIGINT, songs TEXT)")
 
 # FUN HOUSE
 cur.execute(f"CREATE TABLE IF NOT EXISTS finance (guildid BIGINT, userid BIGINT, last_checkin BIGINT, checkin_continuity BIGINT, \

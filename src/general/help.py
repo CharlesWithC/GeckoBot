@@ -434,7 +434,7 @@ For music function, staff can use `/play` to play a song immediately, members ca
 Use `/next` to switch to the next song, and `/dequeue` to remove a song from the list.
 Use `/current` to see the current playing song, and `/playlist` to see the current song and next up songs.
 Staff can toggle whether the `current song` update will be sent in the music channel, decide where Gecko will play the music and pause / resume the music.
-Loopback (playlist) playing is supported. Favoriate function will be implemented very soon.
+Loopback (playlist) playing is supported. favourite (AKA `fav`) lists are also supported.
 
 For radio function, only staff can set which station Gecko will be playing, there's a list of 274 radio stations. They are shown in the autocomplete options, or you can use `/radiolist` to get a full list of them.
 Radio streams are endless and Gecko won't switch to the next song. Staff need to use `/play` or `/next` to switch back to music mode.
@@ -485,7 +485,7 @@ Play a music while stopping the song being played at the moment.
 If loop playback is enabled, the current song will be moved to the end of the list.
 Search suggestion is enabled, so you can type the keywords and see if there's any result.
 
-Usage: `/play {song}`""",
+Usage: `/play {required: song}`""",
 
         "next": """*This command can be used by anyone*
 Switch to the next song.
@@ -495,11 +495,29 @@ Usage: `/next`""",
         "queue": """Queue up a song which will appear in the playlist.
 Search suggestion is enabled, so you can type the keywords and see if there's any result.
 
-Usage: `/queue {song}`""",
+Usage: `/queue {required: song}`""",
 
-        "dequeue": """Remove a song from the playlist, identified by the position in the playlist.
-**Note** The position of song updates when Gecko switches to a new song. So run `/playlist` and confirm the position before dequeuing a song.
-Usage: `/dequeue {song position in playlist}`""",
+        "dequeue": """Remove a song from the playlist.
+The song must be selected from the autocomplete results.
+
+Usage: `/dequeue {required: song}`""",
+
+        "fav": """Add the current song to your own favourite list, or enter a song name to add it to the list.
+
+Usage: `/fav {optional: song}`""",
+
+        "unfav": """Remove a song from your favourite list.
+The song must be selected from the autocomplete results.
+
+Usage: `/unfav {required: song}`""",
+
+        "favlist": """Get your own favourite song list.
+
+Usage: `/favlist`""",
+
+        "qfav": """Select a song from your favourite list and add it to the queue.
+
+Usage: `/qfav {required: song}`""",
 
         "playlist": """Get the current song and all next-up songs.
 
@@ -516,7 +534,7 @@ Radio streams are endless and Gecko won't switch to the next song. You need to u
 
 *If your desired radio station isn't in the list, you could join [Gecko Community](https://discord.gg/wNTaaBZ5qd) and submit the station name & stream link (There must be a stream link otherwise it will not be accepted.) If the radio station is accepted, it will be added to the radiolist very soon.*
 
-Usage: `/radio {radio station}`""",
+Usage: `/radio {required: radio station}`""",
 
         "radiolist": """Get a list of supported radio station.
 

@@ -2,6 +2,9 @@
 
 ## Update 2022.04.06
 
+**Version v1.13.2**  
+Added favourite list function for music  
+
 **Version v1.13.1**  
 Fixed a bug of connect four leaderboard  
 
