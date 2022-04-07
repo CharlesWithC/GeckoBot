@@ -2,11 +2,12 @@
 # Author: @Charles-1414
 # License: Apache-2.0
 
-# General Functions of Gecko Bot
+# General Functions
 
 import discord
 import asyncio
 
+import general.crypto
 import general.dev
 import general.help
 import general.music

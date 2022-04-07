@@ -10,6 +10,7 @@ Use `/help` in bot for detailed help.
 
 **Finance** - earn coins by checking in daily and working  
 **Connect Four** - chess game where two players battle  
+**Message Encrypt & Decrypt** *I consider this a game* - Send a encrypted message and only he / she can decrypt.  
 
 ## Gecko Music
 

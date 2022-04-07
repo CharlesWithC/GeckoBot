@@ -44,7 +44,7 @@ async def FinanceBalance(ctx):
             await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
             return
         
-    await ctx.trigger_typing()
+    
     userid = ctx.author.id
     cur.execute(f"SELECT balance FROM finance WHERE userid = {userid} AND guildid = {guildid}")
     t = cur.fetchall()
@@ -53,7 +53,7 @@ async def FinanceBalance(ctx):
         t = [[0]]
     balance = t[0][0]
 
-    cur.execute(f"SELECT userid FROM finance WHERE guildid = {guildid} ORDER BY balance DESC")
+    cur.execute(f"SELECT userid FROM finance WHERE guildid = {guildid} AND userid != {BOTOWNER} ORDER BY balance DESC")
     t = cur.fetchall()
     rank = 0
     for tt in t:
@@ -83,7 +83,7 @@ async def FinanceCheckIn(ctx):
             await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
             return
 
-    await ctx.trigger_typing()
+    
     userid = ctx.author.id
     cur.execute(f"SELECT last_checkin, checkin_continuity, balance FROM finance WHERE userid = {userid} AND guildid = {guildid}")
     t = cur.fetchall()
@@ -147,7 +147,7 @@ async def FinanceWork(ctx):
             await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
             return
 
-    await ctx.trigger_typing()
+    
     userid = ctx.author.id
     cur.execute(f"SELECT work_claim_time, work_reward, balance FROM finance WHERE userid = {userid} AND guildid = {guildid}")
     t = cur.fetchall()
@@ -222,7 +222,7 @@ async def FinanceClaim(ctx):
             await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
             return
         
-    await ctx.trigger_typing()
+    
     userid = ctx.author.id
     cur.execute(f"SELECT work_claim_time, work_reward, balance FROM finance WHERE userid = {userid} AND guildid = {guildid}")
     t = cur.fetchall()
@@ -272,7 +272,7 @@ async def FinanceRichest(ctx):
             await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
             return
         
-    await ctx.trigger_typing()
+    
     cur.execute(f"SELECT userid, balance FROM finance WHERE guildid = {guildid} AND userid != {BOTOWNER} ORDER BY balance DESC")
     t = cur.fetchall()
 

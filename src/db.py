@@ -2,7 +2,7 @@
 # Author: @Charles-1414
 # License: Apache-2.0
 
-# Database Functions of Gecko Bot
+# Database Functions
 
 import os, json
 import MySQLdb

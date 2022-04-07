@@ -43,7 +43,7 @@ class ReactionRole(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
             
-        await ctx.trigger_typing()
+        
         
         rolebindtxt = rolebind.split()
         i = 0
@@ -137,7 +137,7 @@ class ReactionRole(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
         
-        await ctx.trigger_typing()
+        
 
         if msglink.endswith("/"):
             msglink = msglink[:-1]
@@ -244,7 +244,7 @@ class ReactionRole(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
             
-        await ctx.trigger_typing()
+        
         msg = ""
         cur.execute(f"SELECT channelid, msgid FROM reactionrole WHERE guildid = {guildid}")
         t = cur.fetchall()

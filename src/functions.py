@@ -2,7 +2,7 @@
 # Author: @Charles-1414
 # License: Apache-2.0
 
-# General Functions of Gecko Bot
+# General Functions
 
 from time import time, gmtime, strftime
 from settings import *

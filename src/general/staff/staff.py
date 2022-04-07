@@ -28,7 +28,7 @@ class ManageStaff(commands.Cog):
         await ctx.defer()    
         conn = newconn()
         cur = conn.cursor()
-        await ctx.trigger_typing()
+        
         
         guild = ctx.guild
 
@@ -175,7 +175,7 @@ class ManageStaff(commands.Cog):
             await ctx.respond(f"{ctx.author.name}, {target} is not a valid target!", ephemeral = True)
             return
         
-        await ctx.trigger_typing()
+        
 
         dbprefix = "na"
         resprefix = "non-administrative "

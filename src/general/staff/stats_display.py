@@ -43,7 +43,7 @@ class ManageStatsDisplay(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
             
-        await ctx.trigger_typing()
+        
         try:
             guild = ctx.guild
 
@@ -118,7 +118,7 @@ class ManageStatsDisplay(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
             
-        await ctx.trigger_typing()
+        
         try:
             guild = ctx.guild
             category = None
@@ -224,7 +224,7 @@ class ManageStatsDisplay(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
             
-        await ctx.trigger_typing()
+        
         try:
             guild = ctx.guild
             category = None
@@ -346,7 +346,7 @@ class ManageStatsDisplay(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
             
-        await ctx.trigger_typing()
+        
         try:
             guild = ctx.guild
             category = None
@@ -418,7 +418,7 @@ class ManageStatsDisplay(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
             
-        await ctx.trigger_typing()
+        
         try:
             guild = ctx.guild
             category = None

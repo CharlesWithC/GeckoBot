@@ -2,7 +2,7 @@
 # Author: @Charles-1414
 # License: Apache-2.0
 
-# Music of Gecko Bot
+# Music
 
 import os, asyncio
 import discord
@@ -355,16 +355,15 @@ async def NextSong(ctx):
         if t[0][0] != ctx.channel.id and t[0][0] != 0:
             await ctx.respond(f"This is not the channel for using music commands.", ephemeral = True)
             return
+        cur.execute(f"SELECT * FROM playlist WHERE guildid = {guildid} AND userid = -1")
+        t = cur.fetchall()
+        if len(t) != 0:
+            await ctx.respond(f"A radio stream is being played and you cannot override it. Only staff are allowed to run this command during radio streams.", ephemeral = True)
+            return
     
     voice_client = ctx.guild.voice_client
     if voice_client is None or voice_client.channel is None:
         await ctx.respond(f"I'm not in a voice channel. Tell staff to use /join command to join me in.", ephemeral = True)
-        return
-
-    cur.execute(f"SELECT * FROM playlist WHERE guildid = {guildid} AND userid = -1")
-    t = cur.fetchall()
-    if len(t) != 0:
-        await ctx.respond(f"A radio stream is being played and you cannot override it. Only staff are allowed to run this command during radio streams.", ephemeral = True)
         return
 
     guildid = ctx.guild.id
@@ -763,7 +762,7 @@ async def PlayList(ctx):
     if i == 0:
         msg += f"No song in queue.\n"
     else:
-        msg += "\n\n*You can remove a song from playlist by using /dequeue [queue position].*"
+        msg += "\n\n*Use /dequeue to remove a song from the list.*"
     
     embed = discord.Embed(title=f"Playlist", description=msg, color = GECKOCLR)
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
