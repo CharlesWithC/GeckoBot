@@ -20,7 +20,7 @@ from functions import *
 from db import newconn
 from fuzzywuzzy import process
 
-from general.help import commands
+from general.help import commands, cmdlist
 
 @tbot.command(name="about", description="About Gecko")
 async def tabout(ctx):
@@ -29,6 +29,9 @@ async def tabout(ctx):
 tbot.remove_command('help')
 @tbot.command(name="help", description="Get help.")
 async def thelp(ctx):
-    cmd = " ".join(ctx.message.content.split(" ")[1:])
-    d = process.extract(cmd, commands.keys(), limit = 1)
-    await ctx.send(embed = discord.Embed(title = d[0][0], description=commands[d[0][0]], color = GECKOCLR))
+    if len(ctx.message.content.split(" ")) > 1:
+        cmd = " ".join(ctx.message.content.split(" ")[1:])
+        d = process.extract(cmd, commands.keys(), limit = 1)
+        await ctx.send(embed = discord.Embed(title = d[0][0], description=commands[d[0][0]], color = GECKOCLR))
+    else:
+        await ctx.send(embed = cmdlist)

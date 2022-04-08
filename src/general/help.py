@@ -42,18 +42,17 @@ Includes: button, embed, form, chat action, reaction role, staff management, ser
 **Button** - Create buttons of any kind, the layout and interaction are fully customizable! The interaction could be linked to simple text messages, embed messages or forms.  
 **Embed** - Create and post embeds, the URL, thumbnails, images, footers etc are all customizable. Embeds are stored in the database and can be recovered at any time in case they are deleted accidentally.  
 **Form** - Create forms with at most five input fields, which can be either a multi-line text box or a single-line input. Submissions will be updated in a staff channel and you can download all entries with one command.  
-**Chat Action** - React emojis / Timeout / Kick / Ban a member when a keyword is detected, the emoji reactions always add fun.  
+**Chat Action** - Multiple actions when a keyword is detected, emoji reactions always add fun, delete / kick / ban can be considered auto mod and help keep your community safe (it can also remove invite links, jusy set keyword to `discord.gg`).  
 **Voice Channel Recorder** - Record all the speakers separately, to save a meeting or an interview.  
 **Reaction Role** - Assign members a role when they react an emoji.  
 **Server Stats** - Based on variables, fully customizable!  
 **Staff Management** - Administrative and non-administrative staff, and a staff list for users to know the real staff.  
 
-Gecko is developing fast, you are welcomed to join [Gecko Community](https://discord.gg/wNTaaBZ5qd) to discuss, submit feedbacks and share your ideas.  """
+Join [Gecko Community](https://discord.gg/wNTaaBZ5qd) for help / discussion."""
 
 HELP = {
     "about": ABOUT,
 
-    "help": "Receive this help message.\n\nUsage: `/help`",
 ##### GAMES
     "games": {
         "description": """It's Gecko Playground!
@@ -198,8 +197,15 @@ Usage: `/button update {required: msglink}`"""},
 
     "chat": {
         "description": """**Gecko Chat Action**, take action when keyword is detected.
-Chat Action supports timeout / kick / ban (they are all permanent), and reactions!
-Gecko will automatically react emojis when it find a keyword in the message.
+There's a bunch of actions: including automod, autorole, autoreply etc.
+
+**Automod** includes `delete` `timeout` `kick` `ban`, you could put `discord.gg` as keyword to remove invite links in your guild.
+* Staff always bypass automod.
+**Autorole**, user can get a role / get rid of a role by sending a message, or when they joined.
+**Autoreply**, user receive a message / embed when they send a message containing specific keyword.
+**Reaction**, users' messages get reacted when a keyword is found.
+
+**Variables** are supported, including {name} for username, {nametag} for username#tag, {mention} for mentioning (pinging) the user.
 
 **Note** This function may have a slight delay due to **Discord API Ratelimit**
 
@@ -557,20 +563,45 @@ Usage: `/encrypt {required: @receiver} {required: content}`
 
 Usage: `/decrypt {required: content}`
 
-**NOTE** The command support Gecko prefix (non-slash, like `g?` `g!`), but you are suggested to use slash commands as they are easier to use."""
+**NOTE** The command support Gecko prefix (non-slash, like `g?` `g!`), but you are suggested to use slash commands as they are easier to use.""",
+
+    "purge": """**Staff only command**
+
+Purge n messages in the channel. (n <= 100)
+
+Usage: `/purge {required: count}`"""
 }
 
-commands = {"help": "Get this help message.\n\nUsage: `/help`"}
+cmdlist = discord.Embed(title = "All commands", description = "Use `/help {category} - {command}` to check detailed help, you can use the autocomplete results.", color = GECKOCLR)
+cmdlist.set_thumbnail(url=BOT_ICON)
+cmdlist.set_footer(text="Gecko", icon_url=BOT_ICON)
+
+commands = {}
+a = ""
 for category in HELP.keys():
     if type(HELP[category]) is dict:
+        b = ""
         for subcategory in HELP[category]:
             if type(HELP[category][subcategory]) is dict:
+                c = ""
                 for command in HELP[category][subcategory]:
                     commands[f"{category} - {subcategory} - {command}"] = HELP[category][subcategory][command]
+                    if command != "description":
+                        c += f"`{command}`\n"
+                if c != "":
+                    cmdlist.add_field(name=f"{category} - {subcategory}", value=c)
             else:
                 commands[f"{category} - {subcategory}"] = HELP[category][subcategory]
+                if subcategory != "description":
+                    b += f"`{subcategory}`\n"
+        if b != "":
+            cmdlist.add_field(name=category, value=b)
     else: # no subcategory
         commands[f"{category}"] = HELP[category]
+        if category != "description":
+            a += f"`{category}`\n"
+if a != "":
+    cmdlist.add_field(name="Other commands", value=a)
 
 ckey = list(commands.keys())
 for cmd in ckey:
@@ -592,6 +623,9 @@ async def about(ctx):
     await ctx.respond(HELP["about"])
 
 @bot.slash_command(name="help", description="Get help.")
-async def help(ctx, cmd: discord.Option(str, "Type category or command to get detailed help. Use only autocomplete options.", required = True, autocomplete = HelpAutocomplete)):
-    d = process.extract(cmd, commands.keys(), limit = 1)
-    await ctx.respond(embed = discord.Embed(title = d[0][0], description=commands[d[0][0]], color = GECKOCLR))
+async def help(ctx, cmd: discord.Option(str, "Type category or command to get detailed help.", required = False, autocomplete = HelpAutocomplete)):
+    if cmd != None:
+        d = process.extract(cmd, commands.keys(), limit = 1)
+        await ctx.respond(embed = discord.Embed(title = d[0][0], description=commands[d[0][0]], color = GECKOCLR))
+    else:
+        await ctx.respond(embed = cmdlist)

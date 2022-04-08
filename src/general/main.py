@@ -56,6 +56,26 @@ async def on_guild_join(guild):
         await guild.text_channels[0].send(f"Gecko's here!\n<@{guild.owner.id}>, it seems I cannot DM you. Please allow that and there's something necessary to tell you! After that send !setup and I'll resend the DM.")
         return
 
+@bot.slash_command(name="gstats", description="Gecko Bot Stats")
+async def stats(ctx):
+    # total servers and total users
+    total_servers = len(bot.guilds)
+    total_users = 0
+    total_channels = 0
+    for guild in bot.guilds:
+        total_users += len(guild.members)
+        total_channels += len(guild.text_channels)
+    ping = bot.latency
+    
+    embed = discord.Embed(title="Gecko Stats", color=GECKOCLR)
+    embed.set_thumbnail(url=BOT_ICON)
+    embed.add_field(name="Total Servers", value=total_servers)
+    embed.add_field(name="Total Users", value=total_users)
+    embed.add_field(name="Total Channels", value=total_channels)
+    embed.add_field(name="Ping", value=f"{int(ping*1000)}ms")
+    embed.set_footer(text="Gecko", icon_url=BOT_ICON)
+    await ctx.respond(embed=embed)
+
 @bot.slash_command(name="setup", description="Server Owner - A DM to server owner about Gecko's basic information.")
 async def BotSetup(ctx):
     await ctx.defer()
@@ -132,6 +152,24 @@ async def UpdateBotStatus():
         elif status.startswith("[Watching]"):
             await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status[11:]))
         await asyncio.sleep(60)
+
+@bot.slash_command(name="purge", description="Staff - Purge messages.")
+async def Purge(ctx, count: discord.Option(int, "Number of messages to delete.", required = True)):
+    await ctx.defer()
+    guild = ctx.guild
+    if guild is None:
+        await ctx.respond(f"You can only use this command in guilds, not in DMs.")
+        return
+
+    if not isStaff(ctx.guild, ctx.author):
+        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+        return
+
+    if count < 1 or count > 100:
+        await ctx.respond("You can only delete at most 100 messages at a time.", ephemeral = True)
+        return
+
+    await ctx.channel.purge(limit = count, reason = "Gecko Channel Purge by " + ctx.author.name)
 
 @bot.slash_command(name="ping", description="Get the bot's ping to discord API.")
 async def Ping(ctx):

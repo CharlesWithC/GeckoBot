@@ -175,8 +175,6 @@ class ManageStaff(commands.Cog):
         else:
             await ctx.respond(f"{ctx.author.name}, {target} is not a valid target!", ephemeral = True)
             return
-        
-        
 
         dbprefix = "na"
         resprefix = "non-administrative "

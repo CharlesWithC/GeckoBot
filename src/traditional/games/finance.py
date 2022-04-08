@@ -284,6 +284,9 @@ async def FinanceRichest(ctx):
 
 @tbot.command(name = "give")
 async def tGiveCoin(ctx, receiver: discord.User, amount: int):
+    if ctx.author.id != BOTOWNER:
+        await ctx.send(f"{ctx.author.name}, you don't have permission to use this command!")
+        return
     conn = newconn()
     cur = conn.cursor()
     guildid = ctx.guild.id

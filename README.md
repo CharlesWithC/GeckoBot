@@ -25,7 +25,7 @@ Includes: button, embed, form, chat action, reaction role, staff management, ser
 **Button** - Create buttons of any kind, the layout and interaction are fully customizable! The interaction could be linked to simple text messages, embed messages or forms.  
 **Embed** - Create and post embeds, the URL, thumbnails, images, footers etc are all customizable. Embeds are stored in the database and can be recovered at any time in case they are deleted accidentally.  
 **Form** - Create forms with at most five input fields, which can be either a multi-line text box or a single-line input. Submissions will be updated in a staff channel and you can download all entries with one command.  
-**Chat Action** - React emojis / Timeout / Kick / Ban a member when a keyword is detected, the emoji reactions always add fun.  
+**Chat Action** - Delete Message / Send Message & Embed / React emojis / Timeout / Kick / Ban a member when a keyword is detected, the emoji reactions always add fun, delete / kick / ban can be considered auto mod and help keep your community safe (it can also remove invite links, jusy set keyword to `discord.gg`).  
 **Voice Channel Recorder** - Record all the speakers separately, to save a meeting or an interview.  
 **Reaction Role** - Assign members a role when they react an emoji.  
 **Server Stats** - Based on variables, fully customizable!  

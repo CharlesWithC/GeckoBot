@@ -2,6 +2,12 @@
 
 ## Update 2022.04.08  
 
+**Version v1.16**  
+1.Added delete & message & embed & (un)role to chat action, also support join / leave events  
+2.Added bot stats command `/gstats` or `g?stats`  
+3.Added `/purge` or `g?purge` command
+4.Fixed message recovery cannot recover multiple attachments bug  
+
 **Version v1.15.1**  
 Minor bug fixes and improvements  
 
