@@ -2,6 +2,9 @@
 
 ## Update 2022.04.08  
 
+**Version v1.15.1**  
+Minor bug fixes and improvements  
+
 **Version v1.15**  
 Added support for partial traditional commands like g? and g!  
 Other minor improvements  

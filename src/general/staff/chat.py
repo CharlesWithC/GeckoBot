@@ -279,6 +279,7 @@ async def on_message_delete(message):
                         embeds[i].set_image(url=message.attachments[i].proxy_url)
                         embed.set_footer(text=f"Gecko Message Recovery (Attachment {i}/{tot})", icon_url = BOT_ICON)
 
+                    await channel.send(embeds = embeds)
             except:
                 pass
 

@@ -31,7 +31,4 @@ tbot.remove_command('help')
 async def thelp(ctx):
     cmd = " ".join(ctx.message.content.split(" ")[1:])
     d = process.extract(cmd, commands.keys(), limit = 1)
-    if len(d) > 0:
-        await ctx.send(embed = discord.Embed(title = d[0][0], description=commands[d[0][0]], color = GECKOCLR))
-    else:
-        await ctx.send(f"Command not found. Please select one from the autocomplete options.", ephemeral = True)
+    await ctx.send(embed = discord.Embed(title = d[0][0], description=commands[d[0][0]], color = GECKOCLR))

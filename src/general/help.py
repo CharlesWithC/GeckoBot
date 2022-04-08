@@ -593,7 +593,5 @@ async def about(ctx):
 
 @bot.slash_command(name="help", description="Get help.")
 async def help(ctx, cmd: discord.Option(str, "Type category or command to get detailed help. Use only autocomplete options.", required = True, autocomplete = HelpAutocomplete)):
-    if cmd in commands.keys():
-        await ctx.respond(embed = discord.Embed(title = cmd, description=commands[cmd], color = GECKOCLR))
-    else:
-        await ctx.respond(f"Command not found. Please select one from the autocomplete options.", ephemeral = True)
+    d = process.extract(cmd, commands.keys(), limit = 1)
+    await ctx.respond(embed = discord.Embed(title = d[0][0], description=commands[d[0][0]], color = GECKOCLR))
