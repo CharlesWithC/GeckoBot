@@ -4,10 +4,16 @@
 
 # Database Functions
 
-import os, json
+import os, sys, json
 import MySQLdb
 
-config_txt = open("./bot.conf","r").read()
+config_txt = ""
+if sys.argv[0].endswith("main.py"):
+    print("Initializing Database...")
+    config_txt = open("./bot.conf","r").read()
+elif sys.argv[0].endswith("test.py"):
+    print("Initializing Test Database...")
+    config_txt = open("./test.conf","r").read()
 config = json.loads(config_txt)
 
 host = config["database"]["host"]

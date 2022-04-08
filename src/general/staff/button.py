@@ -162,8 +162,8 @@ class ManageButton(commands.Cog):
             ephemeral: discord.Option(str,"Whether the action on click is only visible to the clicker, default No", required = False, choices = ["Yes", "No"]),
             url: discord.Option(str, "URL to open on click", required = False),
             content: discord.Option(str, "Content of message to send on click", required = False),
-            embedid: discord.Option(str, "ID of embed to send on click", required = False),
-            formid: discord.Option(str, "ID of form to display on click", required = False)):
+            embedid: discord.Option(int, "ID of embed to send on click", required = False),
+            formid: discord.Option(int, "ID of form to display on click", required = False)):
         await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -269,7 +269,7 @@ class ManageButton(commands.Cog):
         await log("Button", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) created button #{buttonid}", guildid)
 
     @manage.command(name="edit", description="Staff - Edit a button. Use 'None' to clear a parameter.")
-    async def edit(self, ctx, buttonid: discord.Option(str, "Button ID, provided when button was created", required = True),
+    async def edit(self, ctx, buttonid: discord.Option(int, "Button ID, provided when button was created", required = True),
             label: discord.Option(str, "Button label", required = False),
             color: discord.Option(str,"Button color, default blurple", required = False, choices = ["blurple", "grey", "green", "red"]),
             emoji: discord.Option(str, "Button emoji", required = False),
@@ -277,8 +277,8 @@ class ManageButton(commands.Cog):
             ephemeral: discord.Option(str,"Whether the action on click is only visible to the clicker, default No", required = False, choices = ["Yes", "No"]),
             url: discord.Option(str, "URL to open on click", required = False),
             content: discord.Option(str, "Content of message to send on click", required = False),
-            embedid: discord.Option(str, "ID of embed to send on click", required = False),
-            formid: discord.Option(str, "ID of form to display on click", required = False)):
+            embedid: discord.Option(int, "ID of embed to send on click", required = False),
+            formid: discord.Option(int, "ID of form to display on click", required = False)):
         await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -405,7 +405,7 @@ class ManageButton(commands.Cog):
         await log("Button", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) edited button #{buttonid}", guildid)
 
     @manage.command(name="delete", description="Staff - Delete a button from database, previously posted button will become invalid.")
-    async def delete(self, ctx, buttonid: discord.Option(str, "Button ID, provided when button was created", required = True)):
+    async def delete(self, ctx, buttonid: discord.Option(int, "Button ID, provided when button was created", required = True)):
         await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -577,7 +577,7 @@ class ManageButton(commands.Cog):
         await ctx.respond(f"Buttons in [message]({'/'.join(msglink)[-1]}) cleared.")
 
     @manage.command(name="send", description="Staff - Send buttons.")
-    async def send(self, ctx, channel: discord.Option(str, "Channel to send the button", required = True),
+    async def send(self, ctx, channel: discord.Option(discord.TextChannel, "Channel to send the button", required = True),
         buttonid: discord.Option(str, "Button ID, separate with space, e.g. '1 2 3'", required = True)):
 
         await ctx.defer()    
@@ -589,9 +589,7 @@ class ManageButton(commands.Cog):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
         
-        if not channel.startswith("<#") or not channel.endswith(">"):
-            await ctx.respond(f"{channel} is not a valid channel!", ephemeral = True)
-            return
+        channelid = channel.id
 
         conn = newconn()
         cur = conn.cursor()
@@ -629,9 +627,7 @@ class ManageButton(commands.Cog):
                 await ctx.respond(f"Button ID {buttonid[i]} is invalid.", ephemeral = True)
                 return
                 
-        channelid = int(channel[2:-1])
         try:
-            channel = bot.get_channel(channelid)
             if channel is None:
                 raise Exception("No access to channel.")
             

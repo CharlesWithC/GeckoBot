@@ -6,6 +6,8 @@ Games, Music and a lot of staff functions are supported.
 More functions are planned and being added.  
 Use `/help` in bot for detailed help.
 
+**NOTE** Gecko supports non-slash commands for non-staff commands only, such as games and music. Staff commands usually contain a lot of arguments and it will be very hard to use non-slash commands.
+
 ## Gecko Games
 
 **Finance** - earn coins by checking in daily and working  

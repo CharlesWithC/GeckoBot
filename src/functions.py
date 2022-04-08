@@ -26,7 +26,16 @@ def TimeDelta(timestamp): # returns human-readable delta
         if delta / 60 == 1:
             return f"1 minute"
         else:
-            return f"{int(delta/60)} minutes"    
+            return f"{int(delta/60)} minutes" 
+
+async def finance_log(text):
+    text = f"[{strftime('%Y-%m-%d %H:%M:%S', gmtime())}] [Finance] {text}"
+    print(text)
+    try:
+        channel = bot.get_channel(FINANCE_LOG_CHANNEL[1])
+        await channel.send(f"```{text}```")
+    except:
+        pass   
 
 async def log(func, text, guildid = None):
     text = f"[{strftime('%Y-%m-%d %H:%M:%S', gmtime())}] [{func}] {text}"

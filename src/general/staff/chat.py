@@ -230,4 +230,56 @@ async def on_message(message):
                 except Exception as e:
                     await log("ChatAction", f"[Guild {message.guild} ({message.guild.id})] Unknown error occurred on {action} {user}: {str(e)}", message.guild.id)
 
+dlconn = newconn()
+@bot.event
+async def on_message_delete(message):
+    if message.author.id == BOTID or message.author.bot == True:
+        return
+    global dlconn
+    try:
+        cur = dlconn.cursor()
+    except:
+        dlconn = newconn()
+        cur = dlconn.cursor()
+        
+    guildid = message.guild.id
+    cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'deleted'")
+    t = cur.fetchall()
+    if len(t) > 0:
+        channel = bot.get_channel(t[0][0])
+        if channel != None:
+            try:
+                tot = len(message.attachments)
+                if tot == 0:
+                    embed=discord.Embed(title=f"Message deleted at #{message.channel}", description=message.content, color = GECKOCLR)
+                    embed.set_author(name=message.author, icon_url=message.author.avatar.url)
+                    embed.set_footer(text=f"Gecko Message Recovery", icon_url = BOT_ICON)
+                    await channel.send(embed = embed)
+
+                elif tot == 1:
+                    embed=discord.Embed(title=f"Message deleted at #{message.channel}", description=message.content, color = GECKOCLR)
+                    embed.set_author(name=message.author, icon_url=message.author.avatar.url)
+                    embed.set_image(url=message.attachments[0].proxy_url)
+                    embed.set_footer(text=f"Gecko Message Recovery", icon_url = BOT_ICON)
+                    await channel.send(embed = embed)
+                
+                elif tot > 1:
+                    embeds = []
+                    embeds.append(discord.Embed(title=f"Message deleted at #{message.channel}", description=message.content, color = GECKOCLR))
+                    embeds[0].set_author(name=message.author, icon_url=message.author.avatar.url)
+                    embeds[0].set_image(url=message.attachments[0].proxy_url)
+                    embeds[0].set_footer(text=f"Gecko Message Recovery (Attachment 1/{tot})", icon_url = BOT_ICON)
+
+                    for i in range(1,tot):
+                        if i % 10 == 0 and i != 0:
+                            await channel.send(embeds = embeds)
+                            embeds = []
+                        embeds.append(discord.Embed(title=f"Message deleted at #{message.channel}", description="*Attachment*", color = GECKOCLR))
+                        embeds[i].set_author(name=message.author, icon_url=message.author.avatar.url)
+                        embeds[i].set_image(url=message.attachments[i].proxy_url)
+                        embed.set_footer(text=f"Gecko Message Recovery (Attachment {i}/{tot})", icon_url = BOT_ICON)
+
+            except:
+                pass
+
 bot.add_cog(ManageChat(bot))

@@ -15,7 +15,7 @@ from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
 from Crypto import Random
 
-from bot import bot
+from bot import tbot
 from settings import *
 from functions import *
 from db import newconn
@@ -71,32 +71,32 @@ def decrypt(userid, source, decode=True):
         raise ValueError("Invalid padding...")
     return data[:-padding].decode()  # remove the padding
 
-@bot.slash_command(name="encrypt", description="Encrypt a message")
-async def EncryptMessage(ctx, receiver: discord.Option(discord.User, "Receiver of the message, only he / she could decrypt the message", required = True),
-        content: discord.Option(str, "Content of message", required = True)):
+@tbot.command(name="encrypt", description="Encrypt a message")
+async def EncryptMessage(ctx, receiver: discord.User):
     
     receiver = receiver.id
     
+    content = " ".join(ctx.message.content.split(" ")[2:])
+    
     if len(content) > 500:
-        await ctx.respond("Content can be at most 500 characters long.", ephemeral = True)
+        await ctx.send("Content can be at most 500 characters long.")
         return
-
     s = encrypt(receiver, str(receiver) + content)
     if len(s) > 1800:
-        await ctx.respond("Content too long.", ephemeral = True)
+        await ctx.send("Content too long.")
         return
 
-    await ctx.respond(f"Encrypted message to <@{receiver}>:\n||{s}||", ephemeral = True)
+    await ctx.send(f"Encrypted message to <@{receiver}>:\n||{s}||")
 
-@bot.slash_command(name="decrypt", description="Decrypt a message")
-async def DecryptMessage(ctx, content: discord.Option(str, "Encrypted message sent to you", required = True)):
+@tbot.command(name="decrypt", description="Decrypt a message")
+async def DecryptMessage(ctx, content: str):
     try:
         s = decrypt(ctx.author.id, content)
     except:
-        await ctx.respond("Not a message to you.", ephemeral = True)
+        await ctx.send("Not a message to you.")
         return
     if not s.startswith(str(ctx.author.id)):
-        await ctx.respond("Not a message to you.", ephemeral = True)
+        await ctx.send("Not a message to you.")
         return
     s = s[len(str(ctx.author.id)):]
-    await ctx.respond(f"Decrypted message:\n||{s}||", ephemeral = True)
+    await ctx.send(f"Decrypted message:\n||{s}||")

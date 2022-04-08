@@ -202,7 +202,7 @@ class ManageEmbed(commands.Cog):
         await ctx.send_modal(EmbedModal(embedid, ctx.guild.id, color, "Edit embed"))
     
     @manage.command(name="delete", description="Staff - Delete embed from database. This will not delete messages already sent.")
-    async def delete(self, ctx, embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True)):
+    async def delete(self, ctx, embedid: discord.Option(int, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True)):
         
         await ctx.defer()    
         if ctx.guild is None:
@@ -235,7 +235,7 @@ class ManageEmbed(commands.Cog):
         await log(f"Embed", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) updated embed #{embedid}", ctx.guild.id)
     
     @manage.command(name="preview", description="Staff - Preview an embed privately before posting it in public.")
-    async def preview(self, ctx, embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
+    async def preview(self, ctx, embedid: discord.Option(int, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
             showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"])):
         
         await ctx.defer()    
@@ -318,8 +318,8 @@ class ManageEmbed(commands.Cog):
             await ctx.respond(embed = embed)
         
     @manage.command(name="send", description="Staff - Send an embed in public.")
-    async def send(self, ctx, channel: discord.Option(str, "Channel to post the embed.", required = True),
-            embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
+    async def send(self, ctx, channel: discord.Option(discord.TextChannel, "Channel to post the embed.", required = True),
+            embedid: discord.Option(int, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
             showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"])):
         
         await ctx.defer()    
@@ -331,10 +331,7 @@ class ManageEmbed(commands.Cog):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
 
-        if not channel.startswith("<#") or not channel.endswith(">"):
-            await ctx.respond(f"{channel} is not a valid channel!", ephemeral = True)
-            return
-        channelid = int(channel[2:-1])
+        channelid = channel.id
 
         try:
             embedid = int(embedid)
@@ -373,7 +370,6 @@ class ManageEmbed(commands.Cog):
         embed.set_image(url=thumbnail_url[1])
 
         try:
-            channel = bot.get_channel(channelid)
             await channel.send(embed = embed)
             await ctx.respond(f"Embed #{embedid} posted at <#{channelid}>")
         except:
@@ -381,7 +377,7 @@ class ManageEmbed(commands.Cog):
         
     @manage.command(name="update", description="Staff - Update an embed in a message. The message must be sent by Gecko.")
     async def update(self, ctx, msglink: discord.Option(str, "Link to the message to update.", required = True),
-            embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
+            embedid: discord.Option(int, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
             showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"])):
         
         await ctx.defer()    

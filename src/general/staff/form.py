@@ -167,7 +167,7 @@ class FormModal(Modal):
             channelid = t[0][0]
             channel = bot.get_channel(channelid)
             if channel != None:
-                desc = data.replace(f"**{user.name}**", f"<@!{user.id}>")
+                desc = data.replace(f"**{user.name}**", f"<@{user.id}>")
                 if len(desc) <= 2000:
                     embed=discord.Embed(title=f"New form #{formid} submission", description=desc, color=GECKOCLR)
                     await channel.send(embed = embed)
@@ -210,7 +210,7 @@ class ManageForm(commands.Cog):
         await ctx.send_modal(FormEditModal(-1, ot, callback, "Create form"))
 
     @manage.command(name="edit", description="Staff - Edit form. Detailed information will be edited in modal.")
-    async def edit(self, ctx, formid: discord.Option(str, "Form ID, provided when form was created. Use '/form list' to see a list of forms and IDs.", required = True),
+    async def edit(self, ctx, formid: discord.Option(int, "Form ID, provided when form was created. Use '/form list' to see a list of forms and IDs.", required = True),
         callback: discord.Option(str, "The message to show after the form is submitted, leave empty to remain unchanged", required = False),
         onetime: discord.Option(str, "Allow member to submit form only once?", required = False, choices = ["Yes", "No"])):
         
@@ -249,7 +249,7 @@ class ManageForm(commands.Cog):
         await ctx.send_modal(FormEditModal(formid, ot, callback, "Edit form"))
 
     @manage.command(name="delete", description="Staff - Delete a form and all submitted entries.")
-    async def delete(self, ctx, formid: discord.Option(str, "Form ID", required = True)):
+    async def delete(self, ctx, formid: discord.Option(int, "Form ID", required = True)):
         await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -315,7 +315,7 @@ class ManageForm(commands.Cog):
             await ctx.respond(embed = embed)     
 
     @manage.command(name="toggle", description="Staff - Toggle form status, whether it accepts new entries.")
-    async def toggle(self, ctx, formid: discord.Option(str, "Form ID, provided when form was created. Use '/form list' to see a list of forms and IDs.", required = True)):
+    async def toggle(self, ctx, formid: discord.Option(int, "Form ID, provided when form was created. Use '/form list' to see a list of forms and IDs.", required = True)):
         await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -354,8 +354,8 @@ class ManageForm(commands.Cog):
             await log(f"Form", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) started form #{formid}", ctx.guild.id)
 
     @manage.command(name="entry", description="View your entry.")
-    async def entry(self, ctx, formid: discord.Option(str, "Form ID", required = True),
-        user: discord.Option(str, "User Tag, e.g. @Gecko (Staff can use this to view the entry of a specific user)", required = False)):
+    async def entry(self, ctx, formid: discord.Option(int, "Form ID", required = True),
+        user: discord.Option(discord.User, "User Tag, e.g. @Gecko (Staff can use this to view the entry of a specific user)", required = False)):
         await ctx.defer()    
         try:
             formid = abs(int(formid))
@@ -367,11 +367,7 @@ class ManageForm(commands.Cog):
         cur = conn.cursor()
         
         if user != None:
-            if not user.startswith("<@!") or not user.endswith(">"):
-                await ctx.respond(f"User Tag {user} is invalid.", ephemeral = True)
-                return
-            
-            userid = int(user[3:-1])
+            userid = user.id
 
             if ctx.guild is None:
                 await ctx.respond("You can only run this command in guilds!")
@@ -398,7 +394,7 @@ class ManageForm(commands.Cog):
             t = cur.fetchall()
             for tt in t:
                 data = tt[0]
-                desc = b64d(data).replace(f"**{username}**", f"<@!{userid}>")
+                desc = b64d(data).replace(f"**{username}**", f"<@{userid}>")
                 if len(desc) <= 2000:
                     embed=discord.Embed(title=f"Form #{formid} submission record", description=desc, color=GECKOCLR)
                     await ctx.respond(embed = embed)
@@ -410,7 +406,7 @@ class ManageForm(commands.Cog):
                     await ctx.respond(file=discord.File(fp=f, filename='Entry.MD'))
                 cnt += 1
             if cnt == 0:
-                await ctx.respond(f"<@!{userid}> hasn't submitted this form before.", ephemeral = True)
+                await ctx.respond(f"<@{userid}> hasn't submitted this form before.", ephemeral = True)
 
         else:
             user = ctx.author
@@ -420,7 +416,7 @@ class ManageForm(commands.Cog):
             for tt in t:
                 cnt += 1
                 data = tt[0]
-                desc = b64d(data).replace(f"**{user.name}**", f"<@!{user.id}>")
+                desc = b64d(data).replace(f"**{user.name}**", f"<@{user.id}>")
                 if ctx.guild != None:
                     if len(desc) <= 2000:
                         embed=discord.Embed(title=f"Form #{formid} submission record", description=desc, color=GECKOCLR)
@@ -445,7 +441,7 @@ class ManageForm(commands.Cog):
                 await ctx.respond(f"You haven't submitted this form before or the creator deleted the form.", ephemeral = True)
 
     @manage.command(name="download", description="Staff - Download all entries of a form.")
-    async def download(self, ctx, formid: discord.Option(str, "Form ID", required = True)):
+    async def download(self, ctx, formid: discord.Option(int, "Form ID", required = True)):
         await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")

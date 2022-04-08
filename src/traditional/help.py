@@ -1,0 +1,37 @@
+# Copyright (C) 2022 Charles All rights reserved.
+# Author: @Charles-1414
+# License: Apache-2.0
+
+# Help
+
+import os, asyncio
+import discord
+from discord.commands import CommandPermission, SlashCommandGroup
+from discord.ext import commands
+from discord.ui import Modal, InputText
+from base64 import b64encode, b64decode
+from time import time
+from random import randint
+import io
+
+from bot import tbot
+from settings import *
+from functions import *
+from db import newconn
+from fuzzywuzzy import process
+
+from general.help import commands
+
+@tbot.command(name="about", description="About Gecko")
+async def tabout(ctx):
+    await ctx.send(commands["about"])
+
+tbot.remove_command('help')
+@tbot.command(name="help", description="Get help.")
+async def thelp(ctx):
+    cmd = " ".join(ctx.message.content.split(" ")[1:])
+    d = process.extract(cmd, commands.keys(), limit = 1)
+    if len(d) > 0:
+        await ctx.send(embed = discord.Embed(title = d[0][0], description=commands[d[0][0]], color = GECKOCLR))
+    else:
+        await ctx.send(f"Command not found. Please select one from the autocomplete options.", ephemeral = True)

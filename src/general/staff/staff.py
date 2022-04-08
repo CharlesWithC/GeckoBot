@@ -48,7 +48,7 @@ class ManageStaff(commands.Cog):
         userids = cur.fetchall()
         msg = "**Administrative Staff**\n"
         msg += "**Server Owner**\n"
-        msg += f"<@!{ctx.guild.owner.id}> "
+        msg += f"<@{ctx.guild.owner.id}> "
         if showid == "Yes":
             msg += f"(`{ctx.guild.owner.id}`)"
         msg += "\n\n"
@@ -61,7 +61,7 @@ class ManageStaff(commands.Cog):
                 for r in member.roles:
                     if r.id == roleid:
                         found = True
-                        msg += f"<@!{member.id}> "
+                        msg += f"<@{member.id}> "
                         if showid == "Yes":
                             msg += f"(`{member.id}`)\n"
                         if userids.count((member.id,)) > 0:
@@ -78,7 +78,7 @@ class ManageStaff(commands.Cog):
             msg += "*They are staff but they don't have any role above.*\n"
             for d in userids:
                 userid = d[0]
-                msg += f"<@!{userid}> "
+                msg += f"<@{userid}> "
                 if showid == "Yes":
                     msg += f"(`{member.id}`)\n"
             msg += "\n\n"
@@ -105,7 +105,7 @@ class ManageStaff(commands.Cog):
                     if r.id == roleid:
                         cnt += 1
                         found = True
-                        tmsg += f"<@!{member.id}> "
+                        tmsg += f"<@{member.id}> "
                         if showid == "Yes":
                             tmsg += f"(`{member.id}`)\n"
                         if userids.count((member.id,)) > 0:
@@ -123,7 +123,7 @@ class ManageStaff(commands.Cog):
             for d in userids:
                 cnt += 1
                 userid = d[0]
-                tmsg += f"<@!{userid}> "
+                tmsg += f"<@{userid}> "
                 if showid == "Yes":
                     tmsg += f"(`{member.id}`)\n"
             tmsg += "\n\n"
@@ -142,7 +142,7 @@ class ManageStaff(commands.Cog):
         target: discord.Option(str, "Target", required = True, choices = ["role", "user"]),
         administrative: discord.Option(str, "Is administrative? (Only administrative staff are able to use staff commands)", \
             required = True, choices = ["Yes", "No"]),
-        obj: discord.Option(str, "All the roles / users you want to add / remove", required = True)):
+        obj: discord.Option(str, "All the roles / users you want to add / remove (Type '@' to get a list of them)", required = True)):
 
         await ctx.defer()    
         guild = ctx.guild
@@ -167,10 +167,11 @@ class ManageStaff(commands.Cog):
                 d.append(int(ob[3:-1]))
         elif target == "user":
             for ob in obj:
-                if not ob.startswith("<@!") or not ob.endswith(">"):
+                ob = ob.replace("@!","@")
+                if not ob.startswith("<@") or not ob.endswith(">"):
                     await ctx.respond(f"{ctx.author.name}, {ob} is not a valid user! You should tag the user, e.g. <@{ctx.author.id}>", ephemeral = True)
                     return
-                d.append(int(ob[3:-1]))
+                d.append(int(ob[2:-1]))
         else:
             await ctx.respond(f"{ctx.author.name}, {target} is not a valid target!", ephemeral = True)
             return

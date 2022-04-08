@@ -260,7 +260,7 @@ async def ReactionRoleUpdate():
     conn = newconn()
     cur = conn.cursor()
     await bot.wait_until_ready()
-    await asyncio.sleep(5)
+    
     reactionrole_fail = [] # (channelid, msgid)
     while not bot.is_closed():
         # Self role

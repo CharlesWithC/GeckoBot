@@ -65,7 +65,9 @@ Check `games - finance` or `games - four` for detailed information.""",
             "description": """This is Gecko Finance. Like your bank account.
 Your coins can only be used in the server where you earned it.
 There are various commands related to `games - finance`:
-`balance` `checkin` `work` `claim` `richest`""",
+`balance` `checkin` `work` `claim` `richest`
+
+**NOTE** Game commands support Gecko prefix (non-slash, like `g?` `g!`), but you are suggested to use slash commands as they are easier to use.""",
 
             "balance": """Check your Gecko Finance Balance (It's virtual!) and your ranking in the server.
 The balance can be used throughout the bot, in finance games and connect four games betting.
@@ -100,7 +102,13 @@ You can **bet** your coins in this game, up to 10000 coins, winner take all the 
 And due to **Discord API Ratelimit**, the game might be a bit *slow*. Please note the "**whose turn**" status and be patient.
 
 Subcommands of `/four` group:
-`start` `result` `leaderboard` `statistics`""",
+`start` `result` `leaderboard` `statistics`
+
+**NOTE** Game commands support Gecko prefix (non-slash, like `g?` `g!`), but you are suggested to use slash commands as they are easier to use.
+Non-slash commands: `g?four` `g?fresult` `g?fleaderboard` `g?fstatistics`
+For `g?four`, the user tag you entered will be considered opponent, the integar you entered will be considered bet.
+For `g?fresult`, you must provide Game ID.
+For `g?fleaderboard`, you could set `sortby`, which is one of `earnings`, `wins`, `losses`""",
 
         "start": """Create a match and wait for others to join it.
 You can select your opponent by providing the `opponent` argument.
@@ -360,15 +368,11 @@ To get help about configuration, use `/help stats_display`.
 Usage: `/stats_display create {required: config}`""",
 
         "edit": """Edit an existing stats channel (update the configuration)
-You need to provide the channel ID because hashtags aren't supported for Voice Channels.
-To get it, enable Developer Mode for your Discord. There's a lot of tutorial on the Internet.
 
 Usage: `/stats_display edit {required: channelid} {required: (new) config}""",
 
         "delete": """Delete a stats channel.
 This will delete the channel and Gecko will no longer update stats of it.
-You need to provide the channel ID because hashtags aren't supported for Voice Channels.
-To get it, enable Developer Mode for your Discord. There's a lot of tutorial on the Internet.
 
 Usage: `/stats_display delete {required: channelid}""",
 
@@ -443,7 +447,9 @@ Subcommands of `/music` group
 `join` `leave` `pause` `resume` `toggle` `clear` `loop` 
 
 Music commands without group (no `/music` prefix is needed)
-`play` `next` `queue` `dequeue` `playlist` `current` `radio` `radiolist`""",
+`play` `next` `queue` `dequeue` `playlist` `current` `radio` `radiolist`
+
+**NOTE** Music commands support Gecko prefix (non-slash, like `g?` `g!`), but you are suggested to use slash commands as they are easier to use.""",
 
         "join": """**Staff only command**
 Join the voice channel you are in and start playing the songs in the playlist, if there are.
@@ -539,7 +545,19 @@ Usage: `/radio {required: radio station}`""",
         "radiolist": """Get a list of supported radio station.
 
 Usage: `/radiolist`"""
-    }
+    },
+
+    "encrypt": """Encrypt a message and only the receiver you selected will be able to decrypt it.
+
+Usage: `/encrypt {required: @receiver} {required: content}`
+
+**NOTE** The command support Gecko prefix (non-slash, like `g?` `g!`), but you are suggested to use slash commands as they are easier to use.""",
+
+    "encrypt": """Decrypt a message sent to you.
+
+Usage: `/decrypt {required: content}`
+
+**NOTE** The command support Gecko prefix (non-slash, like `g?` `g!`), but you are suggested to use slash commands as they are easier to use."""
 }
 
 commands = {"help": "Get this help message.\n\nUsage: `/help`"}
@@ -570,7 +588,7 @@ async def HelpAutocomplete(ctx: discord.AutocompleteContext):
     return ret[:10]
 
 @bot.slash_command(name="about", description="About Gecko")
-async def help(ctx):
+async def about(ctx):
     await ctx.respond(HELP["about"])
 
 @bot.slash_command(name="help", description="Get help.")

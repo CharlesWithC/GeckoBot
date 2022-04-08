@@ -4,7 +4,7 @@
 # Author: @Charles-1414
 # License: Apache-2.0
 
-# Gecko Bot 
+# Lizard Bot (Beta Gecko)
 
 from bot import bot, tbot
 from settings import *
@@ -23,7 +23,7 @@ async def on_ready():
 async def on_ready():
     print(f"[Traditional Bot] Logged in as {tbot.user} (ID: {tbot.user.id})")
 
-config_txt = open("./bot.conf","r").read()
+config_txt = open("./test.conf","r").read()
 config = json.loads(config_txt)
 
 loop = asyncio.get_event_loop()

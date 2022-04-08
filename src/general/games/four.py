@@ -44,7 +44,7 @@ class ConnectFourJoinButton(Button):
             await interaction.response.send_message(f"You cannot play with yourself.", ephemeral = True)
             return
         if int(d[2]) != 0 and interaction.user.id != int(d[2]):
-            await interaction.response.send_message(f"The match starter selected <@!{d[2]}> to be their opponent and you cannot join.", ephemeral = True)
+            await interaction.response.send_message(f"The match starter selected <@{d[2]}> to be their opponent and you cannot join.", ephemeral = True)
             return
         blue = interaction.user.id
         bet = int(d[3])
@@ -91,7 +91,7 @@ class ConnectFourJoinButton(Button):
         conn.commit()
 
         # start game
-        msg = f"**Connect Four #{gameid}**\n{RED} <@!{red}> vs {BLUE} <@!{blue}>\n{RED} <@!{red}> turn\n\n" + TNUM + "\n"
+        msg = f"**Connect Four #{gameid}**\n{RED} <@{red}> vs {BLUE} <@{blue}>\n{RED} <@{red}> turn\n\n" + TNUM + "\n"
         msg += (WHITE * 7 + "\n") * 6
         msg = await channel.send(msg)
         for emoji in NUM:
@@ -109,7 +109,7 @@ class ConnectFour(commands.Cog):
     four = SlashCommandGroup("four", "Connect Four Game")
 
     @four.command(name="start", description="Connect Four - Start a game")
-    async def start(self, ctx, opponent: discord.Option(str, "Select an opponent and only he / she could join.", required = False),
+    async def start(self, ctx, opponent: discord.Option(discord.User, "Select an opponent and only he / she could join.", required = False),
         bet: discord.Option(int, "How many coins to bet, default 0", required = False, min_value=0, max_value=10000)):
         await ctx.defer()    
         if ctx.guild is None:
@@ -136,10 +136,7 @@ class ConnectFour(commands.Cog):
         if opponent is None:
             opponent = 0
         else:
-            if not opponent.startswith("<@!") or not opponent.endswith(">"):
-                await ctx.respond(f"You must tag the opponent if you want to select one.", ephemeral = True)
-                return
-            opponent = opponent[3:-1]
+            opponent = opponent.id
         
         if bet is None:
             bet = 0
@@ -160,14 +157,14 @@ class ConnectFour(commands.Cog):
         button = ConnectFourJoinButton(f"Join Match", customid)
         view.add_item(button)
         if opponent != 0:
-            await ctx.respond(content = f"<@!{opponent}>, you are invited to join **Connect Four** match started by <@!{ctx.author.id}>.\n{additional}Press 'Join Match' to start the game.", view = view)
+            await ctx.respond(content = f"<@{opponent}>, you are invited to join **Connect Four** match started by <@{ctx.author.id}>.\n{additional}Press 'Join Match' to start the game.", view = view)
         else:
-            await ctx.respond(content = f"<@!{ctx.author.id}> started a **Connect Four** match.\n{additional}Press 'Join Match' to start the game.", view = view)
+            await ctx.respond(content = f"<@{ctx.author.id}> started a **Connect Four** match.\n{additional}Press 'Join Match' to start the game.", view = view)
         cur.execute(f"INSERT INTO buttonview VALUES ({int(time())}, '{customid}')")
         conn.commit()
 
     @four.command(name="result", description="Connect Four - Get the result (including the final state) of a given game.")
-    async def result(self, ctx, gameid: discord.Option(str, "Game ID", required = True)):
+    async def result(self, ctx, gameid: discord.Option(int, "Game ID", required = True)):
         await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -203,13 +200,13 @@ class ConnectFour(commands.Cog):
         
         red = t[0][0]
         blue = t[0][1]
-        result = f"{RED} <@!{red}> vs {BLUE} <@!{blue}>\n"
+        result = f"{RED} <@{red}> vs {BLUE} <@{blue}>\n"
         state = t[0][2]
         won = state.split("|")[0]
         if won == "-1":
-            result += f"{RED} <@!{red}> won\n"
+            result += f"{RED} <@{red}> won\n"
         elif won == "-2":
-            result += f"{BLUE} <@!{blue}> won\n"
+            result += f"{BLUE} <@{blue}> won\n"
         elif won == "-3":
             result += f"**Draw**\n"
         elif won == "0":
@@ -287,7 +284,7 @@ async def ClearExpiredGame():
     conn = newconn()
     cur = conn.cursor()
     await bot.wait_until_ready()
-    await asyncio.sleep(5)
+    
     while not bot.is_closed():
         cur.execute(f"SELECT gameid, chnid, msgid FROM connectfour WHERE lastop < {int(time())-300} AND gameid > 0")
         t = cur.fetchall()
@@ -340,9 +337,9 @@ def UpdateLeaderboard(won, lost, bet, draw = False):
     t = cur.fetchall()
     if len(t) == 0:
         if draw:
-            cur.execute(f"INSERT INTO connectfour_leaderboard VALUES ({lost}, 0, 0, 1, {bet})")
+            cur.execute(f"INSERT INTO connectfour_leaderboard VALUES ({lost}, 0, 0, 1, -{bet})")
         else:
-            cur.execute(f"INSERT INTO connectfour_leaderboard VALUES ({lost}, 0, 1, 0, {bet})")
+            cur.execute(f"INSERT INTO connectfour_leaderboard VALUES ({lost}, 0, 1, 0, -{bet})")
     else:
         if draw:
             cur.execute(f"UPDATE connectfour_leaderboard SET draw = draw + 1 WHERE userid = {lost}")
@@ -371,7 +368,7 @@ async def ConnectFourUpdate():
                 msgid = dd[5]
                 state = dd[6]
                 bet = dd[7]
-                vs = f"**Connect Four #{gameid}**\n{RED} <@!{red}> vs {BLUE} <@!{blue}>\n"
+                vs = f"**Connect Four #{gameid}**\n{RED} <@{red}> vs {BLUE} <@{blue}>\n"
                 
                 channel = bot.get_channel(chnid)
 
@@ -512,7 +509,7 @@ async def ConnectFourUpdate():
                         cur.execute(f"UPDATE finance SET balance = balance + {bet} WHERE userid = {red}")
                         additional = f" and earned {bet} :coin: from bet!"
                     UpdateLeaderboard(red, blue, bet)
-                    await message.edit(f"{vs}{RED} <@!{red}> won the game" + additional + "\n\n" + pstate)
+                    await message.edit(f"{vs}{RED} <@{red}> won the game" + additional + "\n\n" + pstate)
                     gameend = True
                 elif bluewon:
                     additional = "!"
@@ -522,7 +519,7 @@ async def ConnectFourUpdate():
                         cur.execute(f"UPDATE finance SET balance = balance + {bet} WHERE userid = {blue}")
                         additional = f" and earned {bet} :coin: from bet!"
                     UpdateLeaderboard(blue, red, bet)
-                    await message.edit(f"{vs}{BLUE} <@!{blue}> won the game" + additional + "\n\n" + pstate)
+                    await message.edit(f"{vs}{BLUE} <@{blue}> won the game" + additional + "\n\n" + pstate)
                     gameend = True
                 elif state.count("0") == 0:
                     if bet > 0:
@@ -545,10 +542,10 @@ async def ConnectFourUpdate():
                 else:
                     if current == "1":
                         cur.execute(f"UPDATE connectfour SET state = '2|{state}' WHERE gameid = {gameid}")
-                        await message.edit(f"{vs}{BLUE} <@!{blue}>'s turn\n\n{pstate}")
+                        await message.edit(f"{vs}{BLUE} <@{blue}>'s turn\n\n{pstate}")
                     elif current == "2":
                         cur.execute(f"UPDATE connectfour SET state = '1|{state}' WHERE gameid = {gameid}")
-                        await message.edit(f"{vs}{RED} <@!{red}>'s turn\n\n{pstate}")
+                        await message.edit(f"{vs}{RED} <@{red}>'s turn\n\n{pstate}")
                 conn.commit()
 
             except Exception as e:

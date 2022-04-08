@@ -13,7 +13,7 @@ from discord.ext import commands
 from db import *
 from functions import *
 
-@bot.slash_command(name="guilds", description="Bot Owner - Get guilds bot is in.")
+@bot.slash_command(name="guilds", description="Bot Owner - Get guilds bot is in.", guild_ids = [DEVGUILD])
 @commands.is_owner()
 async def DevGuilds(ctx):
     if ctx.author.id != BOTOWNER:
@@ -22,7 +22,7 @@ async def DevGuilds(ctx):
     guilds = bot.guilds
     msg = ""
     for guild in guilds:
-        msg += str(guild) + "\n"
+        msg += f"{guild} (`{guild.id}`)\n"
     if len(msg) <= 2000:
         await ctx.respond(msg)
     else:
@@ -31,7 +31,7 @@ async def DevGuilds(ctx):
         f.seek(0)
         await ctx.respond(file=discord.File(fp=f, filename='Guilds.MD'))
 
-@bot.slash_command(name="status", description="Bot Owner - Update bot activity status",)
+@bot.slash_command(name="status", description="Bot Owner - Update bot activity status", guild_ids = [DEVGUILD])
 @commands.is_owner()
 async def UpdStatus(ctx, stype: Option(str, "Status type:", required = True, choices = ["Gaming", "Listening", "Watching", "Streaming"]),
     status: Option(str, "New status")):

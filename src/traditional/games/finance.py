@@ -12,14 +12,16 @@ from datetime import datetime
 from random import randint
 from base64 import b64encode, b64decode
 
-from bot import bot
+from bot import tbot
 from settings import *
 from functions import *
 from db import newconn
-    
-@bot.slash_command(name="balance", description="Finance Game - Get your balance.")
+
+from general.help import commands
+
+@tbot.command(name="balance", description="Finance Game - Get your balance.")
 async def FinanceBalance(ctx):
-    await ctx.defer()    
+        
     conn = newconn()
     cur = conn.cursor()
     
@@ -30,10 +32,10 @@ async def FinanceBalance(ctx):
         cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'finance'")
         t = cur.fetchall()
         if len(t) == 0:
-            await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!", ephemeral = True)
+            await ctx.send(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!")
             return
         if t[0][0] != ctx.channel.id and t[0][0] != 0:
-            await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
+            await ctx.send(f"This is not the channel for finance games!")
             return
         
     
@@ -54,11 +56,11 @@ async def FinanceBalance(ctx):
             break
     
     embed = discord.Embed(description=f"{ctx.author.name}, you have **{balance}** :coin:, ranking **#{rank}**.", color=0x0000DD)
-    await ctx.respond(embed=embed)
+    await ctx.send(embed=embed)
     
-@bot.slash_command(name="checkin", description="Finance Game - Do daily checkin to earn coins.")
+@tbot.command(name="checkin", description="Finance Game - Do daily checkin to earn coins.")
 async def FinanceCheckIn(ctx):
-    await ctx.defer()    
+        
     conn = newconn()
     cur = conn.cursor()
     
@@ -69,10 +71,10 @@ async def FinanceCheckIn(ctx):
         cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'finance'")
         t = cur.fetchall()
         if len(t) == 0:
-            await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!", ephemeral = True)
+            await ctx.send(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!")
             return
         if t[0][0] != ctx.channel.id and t[0][0] != 0:
-            await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
+            await ctx.send(f"This is not the channel for finance games!")
             return
 
     
@@ -94,7 +96,7 @@ async def FinanceCheckIn(ctx):
     last = datetime(last.year, last.month, last.day, 0)
     if today == last:
         embed = discord.Embed(description=f"{ctx.author.name}, you have already checked in today, come back tomorrow!", color=0xDD0000)
-        await ctx.respond(embed=embed)
+        await ctx.send(embed=embed)
     else:
         if (today - last).days == 1:
             checkin_continuity += 1
@@ -113,16 +115,16 @@ async def FinanceCheckIn(ctx):
         conn.commit()
         if bonus == 0:
             embed = discord.Embed(description=f"{ctx.author.name}, you earned **{reward}** :coin:!", color=0x00DD00)
-            await ctx.respond(embed=embed)
+            await ctx.send(embed=embed)
             await finance_log(f"{ctx.author} ({ctx.author.id}) earned {reward} coins for checking in, current balance {balance}.")
         else:
             embed = discord.Embed(description=f"{ctx.author.name}, **{checkin_continuity + 1} days in a row!** You earned {reward} :coin:!", color=0x00DD00)
-            await ctx.respond(embed=embed)
+            await ctx.send(embed=embed)
             await finance_log(f"{ctx.author} ({ctx.author.id}) earned {reward} coins for checking in {checkin_continuity + 1} days in a row, current balance {balance}.")
 
-@bot.slash_command(name="work", description="Finance Game - Work to earn coins.")
+@tbot.command(name="work", description="Finance Game - Work to earn coins.")
 async def FinanceWork(ctx):
-    await ctx.defer()    
+        
     conn = newconn()
     cur = conn.cursor()
 
@@ -133,10 +135,10 @@ async def FinanceWork(ctx):
         cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'finance'")
         t = cur.fetchall()
         if len(t) == 0:
-            await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!", ephemeral = True)
+            await ctx.send(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!")
             return
         if t[0][0] != ctx.channel.id and t[0][0] != 0:
-            await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
+            await ctx.send(f"This is not the channel for finance games!")
             return
 
     
@@ -154,10 +156,10 @@ async def FinanceWork(ctx):
     if work_claim_time > time():
         if work_reward > 0:
             embed = discord.Embed(description=f"{ctx.author.name}, you haven't finished the last delivery! Come back after **{TimeDelta(work_claim_time)}**.", color=0xDD0000)
-            await ctx.respond(embed=embed)
+            await ctx.send(embed=embed)
         else:
             embed = discord.Embed(description=f"{ctx.author.name}, you are still resting! Come back after **{TimeDelta(work_claim_time)}**.", color=0xDD0000)
-            await ctx.respond(embed=embed)
+            await ctx.send(embed=embed)
 
     else:
         balance += work_reward
@@ -171,7 +173,7 @@ async def FinanceWork(ctx):
             conn.commit()
 
             embed = discord.Embed(description=f"{ctx.author.name}, you finished your delivery and earned **{work_reward}** :coin:. However you are too tired and need to have a rest. Come back after 30 minutes!", color=0x00DD00)
-            await ctx.respond(embed=embed)
+            await ctx.send(embed=embed)
             await finance_log(f"{ctx.author} ({ctx.author.id}) earned {work_reward} coins from working, current balance {balance}.")
 
         else: # new work
@@ -188,16 +190,16 @@ async def FinanceWork(ctx):
 
             if last_reward != 0:
                 embed = discord.Embed(description=f"{ctx.author.name}, you earned **{last_reward}** :coin: from your last job. And you started working again, this job will finish in **{length} minutes** and you will earn **{work_reward}** :coin:.", color=0x00DD00)
-                await ctx.respond(embed=embed)
+                await ctx.send(embed=embed)
                 await finance_log(f"{ctx.author} ({ctx.author.id}) earned {last_reward} coins from working, current balance {balance}.")
 
             else:
                 embed = discord.Embed(description=f"{ctx.author.name}, you started working, the job will finish in **{length} minutes** and you will earn **{work_reward}** :coin:.", color=0x00DD00)
-                await ctx.respond(embed=embed)
+                await ctx.send(embed=embed)
 
-@bot.slash_command(name="claim", description="Finance Game - Claim the reward from your last work.")
+@tbot.command(name="claim", description="Finance Game - Claim the reward from your last work.")
 async def FinanceClaim(ctx):
-    await ctx.defer()    
+        
     conn = newconn()
     cur = conn.cursor()
 
@@ -208,10 +210,10 @@ async def FinanceClaim(ctx):
         cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'finance'")
         t = cur.fetchall()
         if len(t) == 0:
-            await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!", ephemeral = True)
+            await ctx.send(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!")
             return
         if t[0][0] != ctx.channel.id and t[0][0] != 0:
-            await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
+            await ctx.send(f"This is not the channel for finance games!")
             return
         
     
@@ -228,11 +230,11 @@ async def FinanceClaim(ctx):
 
     if work_reward == 0:
         embed = discord.Embed(description=f"{ctx.author.name}, you are not working! Use !work to start working.", color=0xDD0000)
-        await ctx.respond(embed=embed)
+        await ctx.send(embed=embed)
 
     elif work_claim_time > time():
         embed = discord.Embed(description=f"{ctx.author.name}, you haven't finished the delivery! Come back after **{TimeDelta(work_claim_time)}**.", color=0xDD0000)
-        await ctx.respond(embed=embed)
+        await ctx.send(embed=embed)
 
     else:
         balance += work_reward
@@ -242,12 +244,12 @@ async def FinanceClaim(ctx):
         conn.commit()
 
         embed = discord.Embed(description=f"{ctx.author.name}, you earned **{work_reward}** :coin: from your last job!", color=0x00DD00)
-        await ctx.respond(embed=embed)
+        await ctx.send(embed=embed)
         await finance_log(f"{ctx.author} ({ctx.author.id}) earned {work_reward} coins from working, current balance {balance}.")
 
-@bot.slash_command(name="richest", description="Finance Game - Get the richest players in this guild.")
+@tbot.command(name="richest", description="Finance Game - Get the richest players in this guild.")
 async def FinanceRichest(ctx):
-    await ctx.defer()    
+        
     conn = newconn()
     cur = conn.cursor()
 
@@ -258,10 +260,10 @@ async def FinanceRichest(ctx):
         cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'finance'")
         t = cur.fetchall()
         if len(t) == 0:
-            await ctx.respond(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!", ephemeral = True)
+            await ctx.send(f"{ctx.author.name}, staff haven't set up a finance game channel yet! Tell them to use `/setchannel finance {{#channel}}` to set it up!")
             return
         if t[0][0] != ctx.channel.id and t[0][0] != 0:
-            await ctx.respond(f"This is not the channel for finance games!", ephemeral = True)
+            await ctx.send(f"This is not the channel for finance games!")
             return
         
     
@@ -275,7 +277,22 @@ async def FinanceRichest(ctx):
         if rank > 10:
             break
         
-        msg += f"**{RANK_EMOJI[rank]} {bot.get_user(tt[0]).name}**\n:coin: {tt[1]}\n\n"
+        msg += f"**{RANK_EMOJI[rank]} {tbot.get_user(tt[0]).name}**\n:coin: {tt[1]}\n\n"
     
     embed = discord.Embed(title="**Top 10 richest players**", description=msg, color=0x0000DD)
-    await ctx.respond(embed=embed)
+    await ctx.send(embed=embed)
+
+@tbot.command(name = "give")
+async def tGiveCoin(ctx, receiver: discord.User, amount: int):
+    conn = newconn()
+    cur = conn.cursor()
+    guildid = ctx.guild.id
+    userid = receiver.id
+    cur.execute(f"SELECT * FROM finance WHERE guildid = {guildid} AND userid = {userid}")
+    t = cur.fetchall()
+    if len(t) == 0:
+        cur.execute(f"INSERT INTO finance VALUES ({guildid}, {userid}, 0, 0, 0, 0, {amount})")
+    else:
+        cur.execute(f"UPDATE finance SET balance = balance + {amount} WHERE userid = {userid}")
+    conn.commit()
+    await ctx.send(f"{amount} :coin: is given to <@{userid}>")

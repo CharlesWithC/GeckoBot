@@ -1,8 +1,14 @@
 # Gecko Bot Update History
 
+## Update 2022.04.08  
+
+**Version v1.15**  
+Added support for partial traditional commands like g? and g!  
+Other minor improvements  
+
 ## Update 2022.04.07
 
-**version v1.14**  
+**Version v1.14**  
 Added encrypt / decrypt message function  
 
 ## Update 2022.04.06

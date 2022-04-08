@@ -209,7 +209,7 @@ class ManageStatsDisplay(commands.Cog):
 
     @manage.command(name = "edit", description = "Staff - Edit an existing stats channel.")
     async def edit(self, ctx, 
-        channelid: discord.Option(str, "Channel ID of the stats channel to edit. You can enable Developer Mode to see it.", required = True),
+        channel: discord.Option(discord.VoiceChannel, "Server stats channel", required = True),
         config: discord.Option(str, "Variables: {time: [strftime]} {members} {online} {@role} {@role online}", required = True)):
 
         await ctx.defer()    
@@ -224,7 +224,7 @@ class ManageStatsDisplay(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
             
-        
+        channelid = channel.id
         try:
             guild = ctx.guild
             category = None
@@ -245,8 +245,6 @@ class ManageStatsDisplay(commands.Cog):
                     return
             
             try:
-                channelid = int(channelid)
-                channel = bot.get_channel(channelid)
                 if channel is None:
                     await ctx.respond(f"{ctx.author.name}, cannot fetch channel `{channelid}`", ephemeral = True)
                     return
@@ -332,7 +330,7 @@ class ManageStatsDisplay(commands.Cog):
 
     @manage.command(name = "delete", description = "Staff - Delete a stats channel.")
     async def delete(self, ctx,
-        channelid: discord.Option(str, "Channel ID of the stats channel to edit. You can enable Developer Mode to see it.", required = True)):
+        channel: discord.Option(discord.VoiceChannel, "Server stats channel", required = True)):
         
         await ctx.defer()    
         if ctx.guild is None:
@@ -346,7 +344,7 @@ class ManageStatsDisplay(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
             
-        
+        channelid = channel.id
         try:
             guild = ctx.guild
             category = None
@@ -369,8 +367,6 @@ class ManageStatsDisplay(commands.Cog):
                     return
             
             try:
-                channelid = int(channelid)
-                channel = bot.get_channel(channelid)
                 if channel is None:
                     await ctx.respond(f"{ctx.author.name}, cannot fetch channel `{channelid}`", ephemeral = True)
                     return
@@ -460,7 +456,7 @@ async def StatsDisplayUpdate():
     conn = newconn()
     cur = conn.cursor()
     await bot.wait_until_ready()
-    await asyncio.sleep(5)
+    
     while not bot.is_closed():
         cur.execute(f"SELECT guildid, categoryid FROM serverstats")
         d = cur.fetchall()
