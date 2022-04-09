@@ -318,6 +318,9 @@ async def givexp(ctx, user: discord.Option(discord.User, "Member to give / remov
     if not found:
         await ctx.respond("Member not found.", ephemeral = True)
         return
+    if member.bot:
+        await ctx.respond("Bots cannot receive XP.", ephemeral = True)
+        return
 
     cur.execute(f"SELECT xp FROM level WHERE guildid = {guildid} AND userid = {userid}")
     t = cur.fetchall()

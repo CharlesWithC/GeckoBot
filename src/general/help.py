@@ -633,7 +633,13 @@ Usage: `/decrypt {required: content}`
 
 Purge n messages in the channel. (n <= 100)
 
-Usage: `/purge {required: count}`"""
+Usage: `/purge {required: count}`""",
+
+    "dm": """**Staff only command**
+
+DM a member through Gecko.
+
+Usage: `/dm {required: @member} {required: msg} {optional: showauthor}`"""
 }
 
 cmdlist = discord.Embed(title = "All commands", description = "Use `/help {category} - {command}` to check detailed help, you can use the autocomplete results.", color = GECKOCLR)

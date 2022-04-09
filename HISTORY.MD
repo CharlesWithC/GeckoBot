@@ -2,6 +2,9 @@
 
 ## Update 2022.04.09  
 
+**Version v1.17.4**  
+Added dm function for staff  
+
 **Version v1.17.3**  
 Minor bug fixes & improvements  
 

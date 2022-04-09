@@ -489,5 +489,48 @@ class ManageForm(commands.Cog):
             traceback.print_exc()
             await ctx.respond(f"For security reasons, Gecko has to send you the data in DM. Please allow Gecko to send you DMs.", ephemeral = True)
 
+@bot.slash_command(name="dm", description="DM a member through Gecko. Your message will be forwarded in embed.")
+async def dm(ctx, user: discord.Option(discord.User, "Member to DM, must be in this guild", required = True),
+        msg: discord.Option(str, "Message to be sent to the member", required = True),
+        showauthor: discord.Option(str, "Show your name on the message, default Yes", required = False, choices = ["Yes", "No"])):
+    
+    await ctx.defer()
+    if ctx.guild is None:
+        await ctx.respond("You can only run this command in guilds!")
+        return
+    
+    if not isStaff(ctx.guild, ctx.author):
+        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+        return
+    
+    if user.bot:
+        await ctx.respond("You can't DM bots.", ephemeral = True)
+        return
+    
+    if user.id == bot.user.id:
+        await ctx.respond("You can't DM me.", ephemeral = True)
+        return
+    
+    if ctx.guild.get_member(user.id) is None:
+        await ctx.respond(f"{user} is not in this guild.", ephemeral = True)
+        return
+    
+    try:
+        channel = await user.create_dm()
+        if channel is None:
+            await ctx.respond(f"I cannot DM the member", ephemeral = True)
+            return
+        embed=discord.Embed(title=f"Message from staff of {ctx.guild.name}", description=msg, color=GECKOCLR)
+        if showauthor == "Yes":
+            avatar = ""
+            if ctx.author.avatar != None:
+                avatar = ctx.author.avatar.url
+            embed.set_author(name=ctx.author.name, icon_url=avatar)
+        await channel.send(embed = embed)
+        await ctx.respond(f"DM sent", ephemeral = True)
+    except:
+        import traceback
+        traceback.print_exc()
+        await ctx.respond(f"I cannot DM the member", ephemeral = True)
 
 bot.add_cog(ManageForm(bot))
