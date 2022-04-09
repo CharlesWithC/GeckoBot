@@ -327,7 +327,10 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords for searching", req
     embed = discord.Embed(title=f"Now playing", description=title, color = GECKOCLR)
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
     embed.set_thumbnail(url=BOT_ICON)
-    embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = ctx.author.avatar.url)
+    icon_url = None
+    if not ctx.author.avatar is None:
+        icon_url = ctx.author.avatar.url
+    embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = icon_url)
     await ctx.respond(embed = embed)
 
 @bot.slash_command(name="next", description="Music - Play next song in queue.")
@@ -395,7 +398,7 @@ async def NextSong(ctx):
         return
 
     username = "Unknown user"
-    avatar = ""
+    avatar = None
     try:
         user = guild.get_member(userid)
         username = user.name
@@ -469,7 +472,10 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords for searching", req
     embed = discord.Embed(title=f"Added to queue", description=title, color = GECKOCLR)
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
     embed.set_thumbnail(url=BOT_ICON)
-    embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = ctx.author.avatar.url)
+    icon_url = None
+    if not ctx.author.avatar is None:
+        icon_url = ctx.author.avatar.url
+    embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = icon_url)
     await ctx.respond(embed = embed)
 
 async def GetQueueList(ctx: discord.AutocompleteContext):
@@ -639,7 +645,10 @@ async def FavouriteList(ctx):
         embed = discord.Embed(title=f"{ctx.author.name}'s favourite list", description='\n'.join(d), color = GECKOCLR)
         embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
         embed.set_thumbnail(url=BOT_ICON)
-        embed.set_footer(text=f"{ctx.author.name}", icon_url = ctx.author.avatar.url)
+        icon_url = None
+        if not ctx.author.avatar is None:
+            icon_url = ctx.author.avatar.url
+        embed.set_footer(text=f"{ctx.author.name}", icon_url = icon_url)
         await ctx.respond(embed = embed)
     else:
         f = io.BytesIO()
@@ -700,7 +709,10 @@ async def Queuefavourite(ctx, song: discord.Option(str, "Song, must be one from 
     embed = discord.Embed(title=f"Added to queue", description=title, color = GECKOCLR)
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
     embed.set_thumbnail(url=BOT_ICON)
-    embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = ctx.author.avatar.url)
+    icon_url = None
+    if not ctx.author.avatar is None:
+        icon_url = ctx.author.avatar.url
+    embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = icon_url)
     await ctx.respond(embed = embed)
 
 @bot.slash_command(name="playlist", description="Music - See the queued play list.")
@@ -807,7 +819,7 @@ async def CurrentSong(ctx):
     title = b64d(t[0][1])
 
     username = "Unknown user"
-    avatar = ""
+    avatar = None
 
     try:
         user = ctx.guild.get_member(userid)
@@ -1039,13 +1051,14 @@ async def MusicLoop():
                     if member.bot == True or member.id == BOTID:
                         members.remove(member)
                         
-                if len(members) == 0 and not guildid in autopause:
-                    autopause.append(guildid)
-                    await guild.change_voice_state(channel = voice_client.channel, self_deaf = True)
-                    if len(o) > 0: # if playing radio - then stop ffmpeg to prevent the radio from being paused
-                        voice_client.stop()
-                    else:
-                        voice_client.pause()
+                if len(members) == 0:
+                    if not guildid in autopause:
+                        autopause.append(guildid)
+                        await guild.change_voice_state(channel = voice_client.channel, self_deaf = True)
+                        if len(o) > 0: # if playing radio - then stop ffmpeg to prevent the radio from being paused
+                            voice_client.stop()
+                        else:
+                            voice_client.pause()
                     continue
                 if len(members) > 0 and guildid in autopause:
                     autopause.remove(guildid)
@@ -1062,9 +1075,6 @@ async def MusicLoop():
                             continue
                     else:
                         voice_client.resume()
-                    continue
-                
-                if guildid in autopause:
                     continue
                 
                 # play only if the previous music has ended
@@ -1119,7 +1129,7 @@ async def MusicLoop():
 
                     # get music requester
                     username = "Unknown user"
-                    avatar = ""
+                    avatar = None
                     try:
                         user = guild.get_member(userid)
                         username = user.name

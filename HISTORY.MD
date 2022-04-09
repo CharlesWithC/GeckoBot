@@ -1,5 +1,12 @@
 # Gecko Bot Update History
 
+## Update 2022.04.09  
+
+**Version v1.16.1**  
+1.Added `/user` `/server` command  
+2.Added on join notification (to dev server)  
+3.Other minor improvements
+
 ## Update 2022.04.08  
 
 **Version v1.16**  

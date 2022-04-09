@@ -22,7 +22,7 @@ async def DevGuilds(ctx):
     guilds = bot.guilds
     msg = ""
     for guild in guilds:
-        msg += f"{guild} (`{guild.id}`)\n"
+        msg += f"{guild} (`{guild.id}`) | **Owner** {guild.owner}\n"
     if len(msg) <= 2000:
         await ctx.respond(msg)
     else:

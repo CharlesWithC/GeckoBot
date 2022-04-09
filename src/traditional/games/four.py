@@ -206,11 +206,16 @@ async def statistics(ctx):
         return
     
     result = f"**{ctx.author.name}**\n"
-    result += f":game_die: {t[0][0]+t[0][1]+t[0][2]} games\n"
-    result += f":medal: {t[0][0]} wins\n"
-    result += f":white_circle: {t[0][2]} draws\n"
-    result += f":x: {t[0][1]} losses\n"
-    result += f":coin: {t[0][3]} earned\n"
-    embed = discord.Embed(title = "Connect Four - Statistics", description=result, color = GECKOCLR)
+    embed = discord.Embed(title = f"{ctx.author}", description="```Connect Four - Statistics```", color = GECKOCLR)
+    if not ctx.author.avatar is None:
+        embed.set_thumbnail(url = ctx.author.avatar.url)
+    embed.add_field(name = "Games", value = f"```{t[0][0]+t[0][1]+t[0][2]}```", inline = True)
+    embed.add_field(name = chr(173), value = chr(173))
+    embed.add_field(name = "Earnings", value = f"```{t[0][3]}```", inline = True)
+
+    embed.add_field(name = "Wins", value = f"```{t[0][0]}```", inline = True)
+    embed.add_field(name = "Draws", value = f"```{t[0][2]}```", inline = True)
+    embed.add_field(name = "Losses", value = f"```{t[0][1]}```", inline = True)
+
     embed.set_footer(text = "The statistics include all games played, throughout all guilds.", icon_url = BOT_ICON)
     await ctx.send(embed = embed)

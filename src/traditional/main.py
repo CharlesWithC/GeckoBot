@@ -19,6 +19,51 @@ from db import newconn
 from settings import *
 from functions import *
 
+@tbot.command(name="user", description="Get user information")
+async def getuser(ctx, user: discord.Member):
+    actv = "*No activity*"
+    if user.activity != None:
+        actv = user.activity.name
+    embed = discord.Embed(title = f"{user.name}#{user.discriminator}", description=f"**Activity**: {actv}", color = GECKOCLR)
+    if not user.avatar is None:
+        embed.set_thumbnail(url = user.avatar.url)
+    if not user.banner is None:
+        embed.set_image(url = user.banner.url)
+
+    embed.add_field(name = "Status", value = f"{STATUS[str(user.status)]}", inline = False)
+
+    embed.add_field(name = "Member Since", value = f"<t:{int(user.joined_at.timestamp())}>", inline = True)
+    embed.add_field(name = "Account Creation", value = f"<t:{int(user.created_at.timestamp())}>", inline = True)
+    if not user.premium_since is None:
+        embed.add_field(name = "Boosting Since", value = f"<t:{int(user.premium_since.timestamp())}>", inline = True)
+        
+    roles = ""
+    for role in user.roles:
+        if role != user.guild.default_role:
+            roles += f"<@&{role.id}> "
+    embed.add_field(name = "Roles", value = roles, inline = False)
+
+    embed.set_footer(text = f"ID: {user.id}")
+
+    await ctx.send(embed = embed)
+
+@tbot.command(name="server", description="Get server information")
+async def getserver(ctx):
+    embed = discord.Embed(title = f"{ctx.guild.name}", description=f"**Description**: {ctx.guild.description}", color = GECKOCLR)
+    embed.add_field(name = "Owner", value = f"<@{ctx.guild.owner_id}>", inline = True)
+    embed.add_field(name = "Members", value = f"{ctx.guild.member_count}", inline = True)
+    embed.add_field(name = "Roles", value = f"{len(ctx.guild.roles)}", inline = True)
+    embed.add_field(name = "Categories", value = f"{len(ctx.guild.categories)}", inline = True)
+    embed.add_field(name = "Text Channels", value = f"{len(ctx.guild.text_channels)}", inline = True)
+    embed.add_field(name = "Voice Channels", value = f"{len(ctx.guild.voice_channels)}", inline = True)
+    icon_url = None
+    if not ctx.guild.icon is None:
+        icon_url = ctx.guild.icon.url
+    embed.set_thumbnail(url = icon_url)
+    embed.set_author(name = f"{ctx.guild.name}", icon_url = icon_url)
+    embed.set_footer(text = f"ID: {ctx.guild.id} | Server Creation: {ctx.guild.created_at.strftime('%m/%d/%Y')}")
+    await ctx.send(embed = embed)
+
 @tbot.command(name="stats", description="Gecko Bot Stats")
 async def stats(ctx):
     # total servers and total users
@@ -32,10 +77,10 @@ async def stats(ctx):
     
     embed = discord.Embed(title="Gecko Stats", color=GECKOCLR)
     embed.set_thumbnail(url=BOT_ICON)
-    embed.add_field(name="Total Servers", value=total_servers)
-    embed.add_field(name="Total Users", value=total_users)
-    embed.add_field(name="Total Channels", value=total_channels)
-    embed.add_field(name="Ping", value=f"{int(ping*1000)}ms")
+    embed.add_field(name="Total Servers", value=f"```{total_servers}```")
+    embed.add_field(name="Total Users", value=f"```{total_users}```")
+    embed.add_field(name="Total Channels", value=f"```{total_channels}```")
+    embed.add_field(name="Ping", value=f"```{int(ping*1000)}ms```")
     embed.set_footer(text="Gecko", icon_url=BOT_ICON)
     await ctx.send(embed=embed)
 

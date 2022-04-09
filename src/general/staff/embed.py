@@ -278,7 +278,10 @@ class ManageEmbed(commands.Cog):
         
         embed=discord.Embed(title=title, url=url, description=description, color=discord.Colour.from_rgb(int(clr[0]), int(clr[1]), int(clr[2])))
         if showauthor == "Yes":
-            embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
+            icon_url = None
+            if not ctx.author.avatar is None:
+                icon_url = ctx.author.avatar.url
+            embed.set_author(name=ctx.author.name, icon_url=icon_url)
         embed.set_footer(text=footer, icon_url=footer_icon_url)
         embed.set_thumbnail(url=thumbnail_url[0])
         embed.set_image(url=thumbnail_url[1])
@@ -364,7 +367,10 @@ class ManageEmbed(commands.Cog):
         
         embed=discord.Embed(title=title, url=url, description=description, color=discord.Colour.from_rgb(int(clr[0]), int(clr[1]), int(clr[2])))
         if showauthor == "Yes":
-            embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
+            icon_url = None
+            if not ctx.author.avatar is None:
+                icon_url = ctx.author.avatar.url
+            embed.set_author(name=ctx.author.name, icon_url=icon_url)
         embed.set_footer(text=footer, icon_url=footer_icon_url)
         embed.set_thumbnail(url=thumbnail_url[0])
         embed.set_image(url=thumbnail_url[1])
@@ -426,7 +432,10 @@ class ManageEmbed(commands.Cog):
         
         embed=discord.Embed(title=title, url=url, description=description, color=discord.Colour.from_rgb(int(clr[0]), int(clr[1]), int(clr[2])))
         if showauthor == "Yes":
-            embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar.url)
+            icon_url = None
+            if not ctx.author.avatar is None:
+                icon_url = ctx.author.avatar.url
+            embed.set_author(name=ctx.author.name, icon_url=icon_url)
         embed.set_footer(text=footer, icon_url=footer_icon_url)
         embed.set_thumbnail(url=thumbnail_url[0])
         embed.set_image(url=thumbnail_url[1])

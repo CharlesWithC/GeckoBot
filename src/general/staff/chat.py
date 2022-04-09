@@ -618,7 +618,11 @@ async def on_message_delete(message):
                 tot = len(message.attachments)
                 if tot == 0:
                     embed=discord.Embed(title=f"Message deleted at #{message.channel}", description=message.content, color = GECKOCLR)
-                    embed.set_author(name=message.author, icon_url=message.author.avatar.url)
+                    
+                    icon_url = None
+                    if not message.author.avatar is None:
+                        icon_url = message.author.avatar.url
+                    embed.set_author(name=message.author, icon_url=icon_url)
                     embed.set_footer(text=f"Gecko Message Recovery", icon_url = BOT_ICON)
                     await channel.send(embed = embed)
                 
@@ -626,7 +630,10 @@ async def on_message_delete(message):
                     embeds = []
                     files = []
                     embed = discord.Embed(title=f"Message deleted at #{message.channel}", description=message.content, color = GECKOCLR)
-                    embed.set_author(name=message.author, icon_url=message.author.avatar.url)
+                    icon_url = None
+                    if not message.author.avatar is None:
+                        icon_url = message.author.avatar.url
+                    embed.set_author(name=message.author, icon_url=icon_url)
                     embed.set_footer(text=f"Gecko Message Recovery (Message content)", icon_url = BOT_ICON)
                     embeds.append(embed)
 
@@ -638,7 +645,10 @@ async def on_message_delete(message):
                         isimage = message.attachments[i].content_type.startswith("image")
                         if isimage:
                             embed = discord.Embed(title=f"Message deleted at #{message.channel}", description="*Attachment*", color = GECKOCLR)
-                            embed.set_author(name=message.author, icon_url=message.author.avatar.url)
+                            icon_url = None
+                            if not message.author.avatar is None:
+                                icon_url = message.author.avatar.url
+                            embed.set_author(name=message.author, icon_url=icon_url)
                             embed.set_image(url=message.attachments[i].url)
                             embed.set_footer(text=f"Gecko Message Recovery (Attachment {i+1}/{tot})", icon_url = BOT_ICON)
                             embeds.append(embed)

@@ -321,7 +321,10 @@ async def PlayMusic(ctx):
     embed = discord.Embed(title=f"Now playing", description=title, color = GECKOCLR)
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
     embed.set_thumbnail(url=BOT_ICON)
-    embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = ctx.author.avatar.url)
+    icon_url = None
+    if not ctx.author.avatar is None:
+        icon_url = ctx.author.avatar.url
+    embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = icon_url)
     await ctx.send(embed = embed)
 
 @tbot.command(name="next", description="Music - Play next song in queue.")
@@ -390,7 +393,7 @@ async def NextSong(ctx):
         return
 
     username = "Unknown user"
-    avatar = ""
+    avatar = None
     try:
         user = guild.get_member(userid)
         username = user.name
@@ -465,7 +468,10 @@ async def PlayMusic(ctx):
     embed = discord.Embed(title=f"Added to queue", description=title, color = GECKOCLR)
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
     embed.set_thumbnail(url=BOT_ICON)
-    embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = ctx.author.avatar.url)
+    icon_url = None
+    if not ctx.author.avatar is None:
+        icon_url = ctx.author.avatar.url
+    embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = icon_url)
     await ctx.send(embed = embed)
 
 @tbot.command(name="dequeue", description="Music - Remove a song from play list.")
@@ -605,7 +611,10 @@ async def FavouriteList(ctx):
         embed = discord.Embed(title=f"{ctx.author.name}'s favourite list", description='\n'.join(d), color = GECKOCLR)
         embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
         embed.set_thumbnail(url=BOT_ICON)
-        embed.set_footer(text=f"{ctx.author.name}", icon_url = ctx.author.avatar.url)
+        icon_url = None
+        if not ctx.author.avatar is None:
+            icon_url = ctx.author.avatar.url
+        embed.set_footer(text=f"{ctx.author.name}", icon_url = icon_url)
         await ctx.send(embed = embed)
     else:
         f = io.BytesIO()
@@ -666,7 +675,10 @@ async def Queuefavourite(ctx):
     embed = discord.Embed(title=f"Added to queue", description=title, color = GECKOCLR)
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
     embed.set_thumbnail(url=BOT_ICON)
-    embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = ctx.author.avatar.url)
+    icon_url = None
+    if not ctx.author.avatar is None:
+        icon_url = ctx.author.avatar.url
+    embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = icon_url)
     await ctx.send(embed = embed)
 
 @tbot.command(name="playlist", description="Music - See the queued play list.")
@@ -775,7 +787,7 @@ async def CurrentSong(ctx):
     title = b64d(t[0][1])
 
     username = "Unknown user"
-    avatar = ""
+    avatar = None
 
     try:
         user = ctx.guild.get_member(userid)
