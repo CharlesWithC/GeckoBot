@@ -26,6 +26,11 @@ Games, Music and a lot of staff functions are supported.
 More functions are planned and being added.  
 Use `/help` in bot for detailed help.
 
+**Gecko Ranking**
+
+*Rankcard supports any background image from the web! For free!*
+*Also support level role*
+
 **Gecko Games**
 
 **Finance** - earn coins by checking in daily and working  
@@ -34,7 +39,6 @@ Use `/help` in bot for detailed help.
 **Gecko Music**
 
 *Not only music, but also radio!*  
-274 radio stations are supported, and you can request your desired station to be added.  
 
 **Staff Functions**
 
@@ -551,6 +555,58 @@ Usage: `/radio {required: radio station}`""",
         "radiolist": """Get a list of supported radio station.
 
 Usage: `/radiolist`"""
+    },
+
+    "ranking": {
+        "description": """**Gecko Ranking**
+*Rankcard supports any background image from the web! For free!*  
+Staff can set any xp rate, yes, even to 100! Also level roles, members will be given the role when the reach the level.
+Maximum level is 100, after reaching maximum level, xp still goes up but level doesn't go up.
+
+Supported slash commands:
+`rank` `card` `leaderboard` `givexp` `xprate` `levelrole`
+Supported traditional commands:
+`g?rank` `g?leaderboard`""",
+
+        "rank": """Get your rank, or other member's rank.
+
+Usage: `/rank {optional: @member}`
+For `g?` commands, you can only get your own rank, usage: `g?rank`""",
+
+        "card": """Customize your rank card!
+You can set any **background image** from the web! For free!
+Or choose **solid color**, using RGB format.
+Foreground is the rank and level text color, must be in RGB format.
+You can also set a **global** layout, which will be used anywhere, except servers you have set specific layouts.
+
+**RGB Format**: `r g b`, example: `144 255 144`
+
+Usage: /card {optional: background, url / RGB} {optional: foreground, RGB} {optional: globallayout} {optional: remove}`
+*You must provide at least one of the arguments*""",
+
+        "leaderboard": """Get the leaderboard
+You can specify the page of the leaderboard, 10 members are displayed on each page.
+
+Usage: `/leaderboard {optional: page, default 1}`
+For `g?` commands, you can only get the first page, usage: `g?leaderboard`""",
+
+        "givexp": """**Staff-only command**
+Give / remove XP from a member.
+Set {xp} to negative integars to remove xp.
+
+Usage: `/givexp {required: @member} {required: xp}`""",
+
+        "xprate": """**Staff-only command**
+Set the XP rate.
+Higher rate will result in faster level increase.
+
+Usage: `/xprate {required: xprate}`""",
+
+        "levelrole": """**Staff-only command**
+Set the role to be assigned to members when they reach a certain role.
+Set `remove` to `Yes` to remove the level role.
+
+Usage: `/levelrole {required: level} {required: @role} {optional: remove}`"""
     },
 
     "user": """Get user information of given user.

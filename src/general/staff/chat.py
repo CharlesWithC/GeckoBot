@@ -557,12 +557,18 @@ async def on_message(message):
         t = cur.fetchall()
         if len(t) > 0:
             role = guild.get_role(t[0][0])
-            await user.add_roles(role, reason = "Gecko Rank Role")
+            try:
+                await user.add_roles(role, reason = "Gecko Rank Role")
+            except:
+                pass
             cur.execute(f"SELECT roleid FROM levelrole WHERE guildid = {guildid} AND level < {updlvl} ORDER BY level DESC LIMIT 1")
             t = cur.fetchall()
             if len(t) > 0:
                 role = guild.get_role(t[0][0])
-                await user.remove_roles(role, reason = "Gecko Rank Role")
+                try:
+                    await user.remove_roles(role, reason = "Gecko Rank Role")
+                except:
+                    pass
 
     haveresp = False
     cur.execute(f"SELECT keywords, action FROM chataction WHERE guildid = {message.guild.id}")

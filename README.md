@@ -14,6 +14,11 @@ Use `/help` in bot for detailed help.
 **Connect Four** - chess game where two players battle  
 **Message Encrypt & Decrypt** *I consider this a game* - Send a encrypted message and only he / she can decrypt.  
 
+## Gecko Ranking  
+
+*Rankcard supports any background image from the web! For free!*  
+*Also support level role*  
+
 ## Gecko Music
 
 *Not only music, but also radio!*  

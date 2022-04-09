@@ -198,8 +198,8 @@ async def rank(ctx, member: discord.Option(discord.User, "@member", required = F
 @bot.slash_command(name="card", description="Customize your rank card.")
 async def card(ctx, background: discord.Option(str, "Backgroun image, supports RGB (solid color), or URL (web image)", required = False),
         foreground: discord.Option(str, "Rank and level text color, accepts RGB (solid color)", required = False),
-        everyguild: discord.Option(str, "Whether this layout will apply to all guilds, overridden by guild specific layout", required = False, choices = ["Yes", "No"]),
-        remove: discord.Option(str, "Remove guild specific layout, or general layout if everyguild is yes", required = False, choices = ["Yes", "No"])):
+        globallayout: discord.Option(str, "Whether this layout will apply to all guilds, overridden by guild specific layout", required = False, choices = ["Yes", "No"]),
+        remove: discord.Option(str, "Remove guild specific layout, or general layout if global is yes", required = False, choices = ["Yes", "No"])):
     # NOTE For URL background, check premium when Gecko reaches 100 guilds
     await ctx.defer()
     if ctx.guild is None:
@@ -209,7 +209,7 @@ async def card(ctx, background: discord.Option(str, "Backgroun image, supports R
     conn = newconn()
     cur = conn.cursor()
     guildid = ctx.guild.id
-    if everyguild == "Yes":
+    if globallayout == "Yes":
         guildid = 0
     
     if remove == "Yes":
