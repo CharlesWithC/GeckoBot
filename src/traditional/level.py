@@ -31,8 +31,13 @@ async def rank(ctx):
 
     conn = newconn()
     cur = conn.cursor()
-    
-    member = ctx.author
+
+    user = ctx.author
+    guild = ctx.guild
+    members = guild.members
+    for member in members:
+        if member.id == ctx.author.id:
+            user = member
 
     xp = 0
     level = 0

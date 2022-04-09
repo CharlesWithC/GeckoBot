@@ -32,12 +32,19 @@ async def rank(ctx, member: discord.Option(discord.User, "@member", required = F
     conn = newconn()
     cur = conn.cursor()
 
-    if member is None:
-        member = ctx.author
+    user = ctx.author
+    if member != None:
+        user = member
+    else:
+        guild = ctx.guild
+        members = guild.members
+        for member in members:
+            if member.id == ctx.author.id:
+                user = member
 
     xp = 0
     level = 0
-    cur.execute(f"SELECT xp, level FROM level WHERE guildid = {ctx.guild.id} AND userid = {member.id}")
+    cur.execute(f"SELECT xp, level FROM level WHERE guildid = {ctx.guild.id} AND userid = {user.id}")
     t = cur.fetchall()
     if len(t) > 0:
         xp = t[0][0]
@@ -51,7 +58,7 @@ async def rank(ctx, member: discord.Option(discord.User, "@member", required = F
     if len(t) > 0:
         rank = t[0][0] + 1
         
-    cur.execute(f"SELECT bgcolor, fgcolor FROM rankcard WHERE guildid = {ctx.guild.id} AND userid = {member.id}")
+    cur.execute(f"SELECT bgcolor, fgcolor FROM rankcard WHERE guildid = {ctx.guild.id} AND userid = {user.id}")
     bgclr = (144, 255, 144) # light green
     bg = ""
     fgclr = (255, 255, 255)
@@ -66,7 +73,7 @@ async def rank(ctx, member: discord.Option(discord.User, "@member", required = F
             fgclr = (int(fgclr[0]), int(fgclr[1]), int(fgclr[2]))
         bg = b64d(t[0][0])
     else:
-        cur.execute(f"SELECT bgcolor, fgcolor FROM rankcard WHERE guildid = 0 AND userid = {member.id}")
+        cur.execute(f"SELECT bgcolor, fgcolor FROM rankcard WHERE guildid = 0 AND userid = {user.id}")
         t = cur.fetchall()
         if len(t) > 0:
             if len(t[0][0].split(" ")) == 3:
@@ -140,7 +147,7 @@ async def rank(ctx, member: discord.Option(discord.User, "@member", required = F
     draw.rounded_rectangle((24, 42, card.size[0] - 24, card.size[1] - 42), fill=(0, 0, 0, 64), radius = radius)
 
     # avatar (transparent => grey) + draw
-    avatar = member.avatar.url
+    avatar = user.avatar.url
     avatar = requests.get(avatar)
     avatar = Image.open(io.BytesIO(avatar.content))
     avatar = avatar.convert("RGBA")
@@ -161,9 +168,9 @@ async def rank(ctx, member: discord.Option(discord.User, "@member", required = F
     offset = 10
     # username#discriminator
     fontB4 = ImageFont.truetype("../res/ComicSansMSBold.ttf", 40)
-    draw.text((left + margin, top + margin), f"{member.name}", fill=txtclr, font=fontB4)
-    draw.text((left + margin + fontB4.getsize(f"{member.name}")[0], top + margin), f"#", fill=greyclr, font=fontB4)
-    draw.text((left + margin + fontB4.getsize(f"{member.name}#")[0], top + margin), f"{member.discriminator}", fill=txtclr, font=fontB4)
+    draw.text((left + margin, top + margin), f"{user.name}", fill=txtclr, font=fontB4)
+    draw.text((left + margin + fontB4.getsize(f"{user.name}")[0], top + margin), f"#", fill=greyclr, font=fontB4)
+    draw.text((left + margin + fontB4.getsize(f"{user.name}#")[0], top + margin), f"{user.discriminator}", fill=txtclr, font=fontB4)
     # rank
     fontB5 = ImageFont.truetype("../res/ComicSansMSBold.ttf", 50)
     draw.text((right - margin - fontB5.getsize(f"#{rank}")[0], top + margin / 2), f"#{rank}", font=fontB5, fill=fgclr)
@@ -172,11 +179,11 @@ async def rank(ctx, member: discord.Option(discord.User, "@member", required = F
     # user activity
     font3 = ImageFont.truetype("../res/ComicSansMS3.ttf", 30)
     actv = " Not doing anything at the moment -.-"
-    if member.activity != None:
-        actv = " "+member.activity.name
+    if user.activity != None:
+        actv = " "+user.activity.name
         while font3.getsize(actv)[0] + left + margin > right - margin:
             actv = actv[:-5] + "..."
-    draw.text((left + margin, top + margin + fontB4.getsize(member.name)[1] + offset), f"{actv}", font=font3, fill=txtclr)
+    draw.text((left + margin, top + margin + fontB4.getsize(user.name)[1] + offset), f"{actv}", font=font3, fill=txtclr)
     # level / xp
     font3B = ImageFont.truetype("../res/ComicSansMSBold.ttf", 30)
     draw.text((right - margin - font3B.getsize(f"Lv.{level} ({xp}/{nxtlvl})")[0], bottom - font3B.getsize("Lv.")[1] - margin), f"Lv.{level} ({xp}/{nxtlvl})", font=font3B, fill=fgclr)

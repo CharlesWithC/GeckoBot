@@ -51,12 +51,12 @@ async def getuser(ctx, user: discord.Member):
 @tbot.command(name="server", description="Get server information")
 async def getserver(ctx):
     embed = discord.Embed(title = f"{ctx.guild.name}", description=f"**Description**: {ctx.guild.description}", color = GECKOCLR)
-    embed.add_field(name = "Owner", value = f"<@{ctx.guild.owner_id}>", inline = True)
-    embed.add_field(name = "Members", value = f"{ctx.guild.member_count}", inline = True)
-    embed.add_field(name = "Roles", value = f"{len(ctx.guild.roles)}", inline = True)
-    embed.add_field(name = "Categories", value = f"{len(ctx.guild.categories)}", inline = True)
-    embed.add_field(name = "Text Channels", value = f"{len(ctx.guild.text_channels)}", inline = True)
-    embed.add_field(name = "Voice Channels", value = f"{len(ctx.guild.voice_channels)}", inline = True)
+    embed.add_field(name = "Owner", value = f"```{ctx.guild.owner}```", inline = True)
+    embed.add_field(name = "Members", value = f"```{ctx.guild.member_count}```", inline = True)
+    embed.add_field(name = "Roles", value = f"```{len(ctx.guild.roles)}```", inline = True)
+    embed.add_field(name = "Categories", value = f"```{len(ctx.guild.categories)}```", inline = True)
+    embed.add_field(name = "Text Channels", value = f"```{len(ctx.guild.text_channels)}```", inline = True)
+    embed.add_field(name = "Voice Channels", value = f"```{len(ctx.guild.voice_channels)}```", inline = True)
     icon_url = None
     if not ctx.guild.icon is None:
         icon_url = ctx.guild.icon.url
