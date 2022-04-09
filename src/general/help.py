@@ -553,6 +553,14 @@ Usage: `/radio {required: radio station}`""",
 Usage: `/radiolist`"""
     },
 
+    "user": """Get user information of given user.
+
+Usage: `/user {required: user}`""",
+
+    "server": """Get server information.
+
+Usage: `/server`""",
+
     "encrypt": """Encrypt a message and only the receiver you selected will be able to decrypt it.
 
 Usage: `/encrypt {required: @receiver} {required: content}`

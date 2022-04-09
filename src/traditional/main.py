@@ -10,6 +10,7 @@ import asyncio
 import traditional.crypto
 import traditional.dev
 import traditional.help
+import traditional.level
 import traditional.music
 import traditional.games.finance
 import traditional.games.four
@@ -99,11 +100,11 @@ async def SetChannel(ctx, category: str, channel: str):
     conn = newconn()
     cur = conn.cursor()
 
-    if not category in ["form", "four", "finance", "music", "error", "log", "deleted"]:
+    if not category in ["form", "four", "finance", "music", "level", "error", "log", "deleted"]:
         await ctx.send(f"{category} is not a valid category.")
         return
 
-    if category in ["four", "finance", "music"] and channel == "all":
+    if category in ["four", "finance", "music", "level"] and channel == "all":
         channel = 0
     else:
         if not channel.startswith("<#") or not channel.endswith(">"):

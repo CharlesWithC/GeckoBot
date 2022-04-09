@@ -11,6 +11,7 @@ from discord.ext import commands
 from base64 import b64encode, b64decode
 from datetime import datetime
 import requests, io
+from random import randint
 
 from bot import bot
 from settings import *
@@ -351,6 +352,15 @@ async def on_member_join(member):
     haveresp = False
     guild = member.guild
     guildid = member.guild.id
+    userid = member.id
+
+    cur.execute(f"SELECT * FROM level WHERE guildid = {guildid} AND userid = {userid}")
+    t = cur.fetchall()
+    if len(t) > 0:
+        cur.execute(f"DELETE FROM level WHERE guildid = {guildid} AND userid = {userid}")
+    cur.execute(f"INSERT INTO level VALUES ({guildid}, {userid}, 0, 0, 0)")
+    conn.commit()  
+
     botuser = guild.get_member(BOTID)
     cur.execute(f"SELECT keywords, action FROM chataction WHERE guildid = {guildid}")
     t = cur.fetchall()
@@ -435,6 +445,14 @@ async def on_member_remove(member):
         cur = conn.cursor()
     guild = member.guild
     guildid = member.guild.id
+    userid = member.id
+
+    cur.execute(f"SELECT * FROM level WHERE guildid = {guildid} AND userid = {userid}")
+    t = cur.fetchall()
+    if len(t) > 0:
+        cur.execute(f"DELETE FROM level WHERE guildid = {guildid} AND userid = {userid}")
+        conn.commit()
+
     botuser = guild.get_member(BOTID)
     cur.execute(f"SELECT keywords, action FROM chataction WHERE guildid = {guildid}")
     t = cur.fetchall()
@@ -503,10 +521,49 @@ async def on_message(message):
         return
     botuser = guild.get_member(BOTID)
     user = message.author
+    userid = user.id
+    guildid = message.guild.id
     msg = message.content
     msg = " "+msg.lower()+" "
     if user.id == BOTID or message.guild is None:
         return
+
+    updlvl = 0
+
+    if len(msg) > 3:
+        cur.execute(f"SELECT xp, level, lastmsg FROM level WHERE guildid = {guildid} AND userid = {userid}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            cur.execute(f"INSERT INTO level VALUES ({guildid}, {userid}, 0, 15, {int(time())})")
+            conn.commit()
+        else:
+            xp = t[0][0]
+            oldlvl = t[0][1]
+            lastmsg = t[0][2]
+            if time() - lastmsg >= 60:
+                cur.execute(f"SELECT sval FROM settings WHERE guildid = {guildid} AND skey = 'xprate'")
+                xprate = 1
+                t = cur.fetchall()
+                if len(t) > 0:
+                    xprate = float(t[0][0])
+                xp += randint(15, 25) * xprate
+                level = CalcLevel(xp)
+                cur.execute(f"UPDATE level SET xp = {xp}, level = {level}, lastmsg = {int(time())} WHERE guildid = {guildid} AND userid = {userid}")
+                conn.commit()
+                if level > oldlvl:
+                    updlvl = level
+    if updlvl > 0:
+        cur.execute(f"SELECT roleid FROM levelrole WHERE guildid = {guildid} AND level = {updlvl}")
+        t = cur.fetchall()
+        if len(t) > 0:
+            role = guild.get_role(t[0][0])
+            await user.add_roles(role, reason = "Gecko Rank Role")
+            cur.execute(f"SELECT roleid FROM levelrole WHERE guildid = {guildid} AND level < {updlvl} ORDER BY level DESC LIMIT 1")
+            t = cur.fetchall()
+            if len(t) > 0:
+                role = guild.get_role(t[0][0])
+                await user.remove_roles(role, reason = "Gecko Rank Role")
+
     haveresp = False
     cur.execute(f"SELECT keywords, action FROM chataction WHERE guildid = {message.guild.id}")
     t = cur.fetchall()
@@ -595,6 +652,21 @@ async def on_message(message):
 
                 except Exception as e:
                     await log("ChatAction", f"[Guild {message.guild} ({message.guild.id})] Unknown error occurred on {action} {user}: {str(e)}", message.guild.id)
+
+    if updlvl > 0:
+        cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'level'")
+        t = cur.fetchall()
+        if len(t) == 0 or t[0][0] == 0:
+            await message.channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
+        else:
+            channel = bot.get_channel(int(t[0][0]))
+            if channel is None:
+                await message.channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
+            else:
+                try:
+                    await channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
+                except:
+                    await message.channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
 
 dlconn = newconn()
 @bot.event

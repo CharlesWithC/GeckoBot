@@ -11,6 +11,7 @@ import general.staff.chat
 import general.crypto
 import general.dev
 import general.help
+import general.level
 import general.music
 import general.games.finance
 import general.games.four
@@ -38,12 +39,14 @@ Finance - Where players will play finance games.
 Music   - Where players will request for songs. If you don't set this up, only staff will be allowed to play music.
           If you want the bot to stick to a radio station and not being interrupted, then do not set it.
           *A bot can only be in one voice channel at the same time*
-Deleted - Where deleted messages will be posted
+Level   - Where level updates will be posted.
+Deleted - Where deleted messages will be posted.
 Log     - Where bot audit log will be sent.
 Error   - Where important error notifications will be sent. (This should be rare)
 **NOTE** 
 1.For four, finance and music, you can set channel to "all" so that player can use related commands in any channels.
-2.If the channel got deleted, it will be considered as that the channel hasn't been set up. And users cannot use related commands.
+2.For level, if you set channel to "all", the level update will be posted at the channel where the user sent the last message before upgrading.
+3.If the channel got deleted, it will be considered as that the channel hasn't been set up. And users cannot use related commands.
 
 Have a nice day!"""
 
@@ -145,7 +148,7 @@ async def BotSetup(ctx):
         await ctx.respond(f"Hi, {ctx.author.name}\n" + SETUP_MSG)
 
 @bot.slash_command(name="setchannel", description="Staff - Set default channels where specific messages will be dealt with.")
-async def SetChannel(ctx, category: discord.Option(str, "The category of message.", required = True, choices = ["form", "four", "finance", "music", "deleted", "log", "error"]),
+async def SetChannel(ctx, category: discord.Option(str, "The category of message.", required = True, choices = ["form", "four", "finance", "music", "level", "deleted", "log", "error"]),
     channel: discord.Option(str, "Channel for messages, type 'all' for four / finance / music to allow all channels", required = True)):
     
     await ctx.defer()
@@ -161,11 +164,11 @@ async def SetChannel(ctx, category: discord.Option(str, "The category of message
     conn = newconn()
     cur = conn.cursor()
 
-    if not category in ["form", "four", "finance", "music", "error", "log", "deleted"]:
+    if not category in ["form", "four", "finance", "music", "level", "error", "log", "deleted"]:
         await ctx.respond(f"{category} is not a valid category.", ephemeral = True)
         return
 
-    if category in ["four", "finance", "music"] and channel == "all":
+    if category in ["four", "finance", "music", "level"] and channel == "all":
         channel = 0
     else:
         if not channel.startswith("<#") or not channel.endswith(">"):

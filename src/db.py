@@ -38,6 +38,9 @@ cur.execute(f"CREATE TABLE IF NOT EXISTS statsconfig (guildid BIGINT, categoryid
 cur.execute(f"CREATE TABLE IF NOT EXISTS channelbind (guildid BIGINT, category VARCHAR(32), channelid BIGINT)")
 
 # USER MANAGEMENT
+cur.execute(f"CREATE TABLE IF NOT EXISTS level (guildid BIGINT, userid BIGINT, level BIGINT, xp BIGINT, lastmsg BIGINT)")
+cur.execute(f"CREATE TABLE IF NOT EXISTS levelrole (guildid BIGINT, level BIGINT, roleid BIGINT)")
+cur.execute(f"CREATE TABLE IF NOT EXISTS rankcard (guildid BIGINT, userid BIGINT, bgcolor TEXT, fgcolor TEXT)")
 cur.execute(f"CREATE TABLE IF NOT EXISTS reactionrole (guildid BIGINT, channelid BIGINT, msgid BIGINT)")
 cur.execute(f"CREATE TABLE IF NOT EXISTS rolebind (guildid BIGINT, channelid BIGINT, msgid BIGINT, role BIGINT, emoji VARCHAR(64))")
 cur.execute(f"CREATE TABLE IF NOT EXISTS userrole (guildid BIGINT, channelid BIGINT, msgid BIGINT, userid BIGINT, roleid BIGINT)")

@@ -146,3 +146,14 @@ def CheckVCLock(guildid):
     if len(t) > 0:
         return True
     return False
+
+def CalcLevel(xp):
+    i = 0
+    while xp >= 5 / 6 * i * (2 * i * i + 27 * i + 91):
+        i += 1
+    if i-1 > 100:
+        return 100
+    return i-1
+
+def CalcXP(i):
+    return 5 / 6 * i * (2 * i * i + 27 * i + 91)
