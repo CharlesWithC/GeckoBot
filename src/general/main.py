@@ -68,6 +68,10 @@ async def on_guild_join(guild):
 
 @bot.slash_command(name="user", description="Get information of a user")
 async def getuser(ctx, user: discord.Option(discord.User, "User", required = True)):
+    guild = ctx.guild
+    if guild is None:
+        await ctx.respond(f"You can only use this command in guilds, not in DMs.")
+        return
     actv = "*No activity*"
     if user.activity != None and user.activity.name != None:
         actv = user.activity.name
@@ -94,8 +98,12 @@ async def getuser(ctx, user: discord.Option(discord.User, "User", required = Tru
 
     await ctx.respond(embed = embed)
 
-@bot.command(name="server", description="Get server information")
+@bot.slash_command(name="server", description="Get server information")
 async def getserver(ctx):
+    guild = ctx.guild
+    if guild is None:
+        await ctx.respond(f"You can only use this command in guilds, not in DMs.")
+        return
     embed = discord.Embed(title = f"{ctx.guild.name}", description=f"**Description**: {ctx.guild.description}", color = GECKOCLR)
     embed.add_field(name = "Owner", value = f"```{ctx.guild.owner}```", inline = True)
     embed.add_field(name = "Members", value = f"```{ctx.guild.member_count}```", inline = True)

@@ -22,6 +22,10 @@ from functions import *
 
 @tbot.command(name="user", description="Get user information")
 async def getuser(ctx, user: discord.Member):
+    guild = ctx.guild
+    if guild is None:
+        await ctx.send(f"You can only use this command in guilds, not in DMs.")
+        return
     actv = "*No activity*"
     if user.activity != None and user.activity.name != None:
         actv = user.activity.name
@@ -50,6 +54,10 @@ async def getuser(ctx, user: discord.Member):
 
 @tbot.command(name="server", description="Get server information")
 async def getserver(ctx):
+    guild = ctx.guild
+    if guild is None:
+        await ctx.send(f"You can only use this command in guilds, not in DMs.")
+        return
     embed = discord.Embed(title = f"{ctx.guild.name}", description=f"**Description**: {ctx.guild.description}", color = GECKOCLR)
     embed.add_field(name = "Owner", value = f"```{ctx.guild.owner}```", inline = True)
     embed.add_field(name = "Members", value = f"```{ctx.guild.member_count}```", inline = True)
