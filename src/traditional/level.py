@@ -38,6 +38,7 @@ async def rank(ctx):
     for member in members:
         if member.id == ctx.author.id:
             user = member
+            break
 
     xp = 0
     level = 0

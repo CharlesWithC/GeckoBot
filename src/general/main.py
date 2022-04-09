@@ -69,7 +69,7 @@ async def on_guild_join(guild):
 @bot.slash_command(name="user", description="Get information of a user")
 async def getuser(ctx, user: discord.Option(discord.User, "User", required = True)):
     actv = "*No activity*"
-    if user.activity != None:
+    if user.activity != None and user.activity.name != None:
         actv = user.activity.name
     embed = discord.Embed(title = f"{user.name}#{user.discriminator}", description=f"**Activity**: {actv}", color = GECKOCLR)
     if not user.avatar is None:

@@ -666,13 +666,11 @@ async def on_message(message):
             await message.channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
         else:
             channel = bot.get_channel(int(t[0][0]))
-            if channel is None:
-                await message.channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
-            else:
+            if channel != None:
                 try:
                     await channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
                 except:
-                    await message.channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
+                    pass
 
 dlconn = newconn()
 @bot.event

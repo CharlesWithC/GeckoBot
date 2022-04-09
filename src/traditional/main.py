@@ -23,7 +23,7 @@ from functions import *
 @tbot.command(name="user", description="Get user information")
 async def getuser(ctx, user: discord.Member):
     actv = "*No activity*"
-    if user.activity != None:
+    if user.activity != None and user.activity.name != None:
         actv = user.activity.name
     embed = discord.Embed(title = f"{user.name}#{user.discriminator}", description=f"**Activity**: {actv}", color = GECKOCLR)
     if not user.avatar is None:

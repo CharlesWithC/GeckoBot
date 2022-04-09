@@ -41,6 +41,7 @@ async def rank(ctx, member: discord.Option(discord.User, "@member", required = F
         for member in members:
             if member.id == ctx.author.id:
                 user = member
+                break
 
     xp = 0
     level = 0
@@ -179,7 +180,7 @@ async def rank(ctx, member: discord.Option(discord.User, "@member", required = F
     # user activity
     font3 = ImageFont.truetype("../res/ComicSansMS3.ttf", 30)
     actv = " Not doing anything at the moment -.-"
-    if user.activity != None:
+    if user.activity != None and user.activity.name != None:
         actv = " "+user.activity.name
         while font3.getsize(actv)[0] + left + margin > right - margin:
             actv = actv[:-5] + "..."

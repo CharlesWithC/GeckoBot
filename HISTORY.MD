@@ -2,6 +2,9 @@
 
 ## Update 2022.04.09  
 
+**Version v1.17.2**  
+Minor bug fixes & improvements  
+
 **Version v1.17.1**  
 Minor bug fixes & improvements  
 
