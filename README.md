@@ -46,6 +46,6 @@ Gecko is developing fast, you are welcomed to join [Gecko Community](https://dis
 All Gecko functions are free at the moment, some functions will become premium-only when we reach 100 guilds. But the first 100 guilds will receive 1 year free premium!
 
 ## Some screenshot
-![Embed & Button](https://cdn.discordapp.com/attachments/961135600830926878/961135616106590238/unknown.png)
-![Form](https://cdn.discordapp.com/attachments/961135600830926878/961135779529232384/unknown.png)
+
+![Rank card](https://cdn.discordapp.com/attachments/961135600830926878/962361230935330866/unknown.png)
 ![Connect Four](https://cdn.discordapp.com/attachments/961135600830926878/961136034597445682/unknown.png)  
