@@ -8,16 +8,16 @@ Use `/help` in bot for detailed help.
 
 **NOTE** Gecko supports non-slash commands for non-staff commands only, such as games and music. Staff commands usually contain a lot of arguments and it will be very hard to use non-slash commands.
 
+## Gecko Ranking  
+
+*Rankcard supports any background image from the web! For free!*  
+*Also support level role*  
+
 ## Gecko Games
 
 **Finance** - earn coins by checking in daily and working  
 **Connect Four** - chess game where two players battle  
 **Message Encrypt & Decrypt** *I consider this a game* - Send a encrypted message and only he / she can decrypt.  
-
-## Gecko Ranking  
-
-*Rankcard supports any background image from the web! For free!*  
-*Also support level role*  
 
 ## Gecko Music
 
