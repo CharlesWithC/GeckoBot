@@ -94,6 +94,10 @@ def betterStrftime(s):
 def isStaff(guild, user):
     if guild.owner.id == user.id:
         return True
+    
+    for permission in user.guild_permissions:
+        if permission[0] == "administrator" and permission[1]:
+            return True
         
     conn = newconn()
     cur = conn.cursor()

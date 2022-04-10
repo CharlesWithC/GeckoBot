@@ -59,12 +59,8 @@ async def on_guild_join(guild):
         import traceback
         traceback.print_exc()
         pass
-    try:
-        channel = await guild.owner.create_dm()
-        await channel.send(f"Hi, {guild.owner.name}\n" + SETUP_MSG)
-    except:
-        await guild.text_channels[0].send(f"Gecko's here!\n<@{guild.owner.id}>, it seems I cannot DM you. Please allow that and there's something necessary to tell you! After that send !setup and I'll resend the DM.")
-        return
+    
+    await guild.text_channels[0].send(f"Gecko's here!\nYou are suggested to check `/setup` and `/help`.")
 
 @bot.slash_command(name="user", description="Get information of a user")
 async def getuser(ctx, user: discord.Option(discord.User, "User", required = True)):
@@ -139,19 +135,17 @@ async def stats(ctx):
     embed.set_footer(text="Gecko", icon_url=BOT_ICON)
     await ctx.respond(embed=embed)
 
-@bot.slash_command(name="setup", description="Server Owner - A DM to server owner about Gecko's basic information.")
+@bot.slash_command(name="setup", description="Hint to setup Gecko in the guild.")
 async def BotSetup(ctx):
     await ctx.defer()
     guild = ctx.guild
     if not guild is None:
         try:
-            if ctx.author.id != guild.owner.id:
-                return
-            channel = await guild.owner.create_dm()
-            await channel.send(f"Hi, {guild.owner.name}\n" + SETUP_MSG)
+            channel = await ctx.author.create_dm()
+            await channel.send(f"Hi, {ctx.author.name}\n" + SETUP_MSG)
             await ctx.respond(f"Check your DM")
         except:
-            await ctx.respond(f"I still cannot DM you")
+            await ctx.respond(f"I cannot DM you")
     else:
         await ctx.respond(f"Hi, {ctx.author.name}\n" + SETUP_MSG)
 
@@ -231,6 +225,11 @@ async def Purge(ctx, count: discord.Option(int, "Number of messages to delete.",
     if count < 1 or count > 100:
         await ctx.respond("You can only delete at most 100 messages at a time.", ephemeral = True)
         return
+
+    botuser = guild.get_member(BOTID)
+    if not botuser.guild_permissions.manage_messages:
+        await ctx.respond("I don't have permission to delete messages.", ephemeral = True)
+        return  
 
     await ctx.channel.purge(limit = count + 1)
 

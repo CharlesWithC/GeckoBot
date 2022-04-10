@@ -45,7 +45,7 @@ class ManageStaff(commands.Cog):
                 roleids.append((r.id,)) # to sort roles based on their guild role level
         roleids.reverse()
         cur.execute(f"SELECT userid FROM staffuser WHERE guildid = {ctx.guild.id}")
-        userids = cur.fetchall()
+        userids = list(cur.fetchall())
         msg = "**Administrative Staff**\n"
         msg += "**Server Owner**\n"
         msg += f"<@{ctx.guild.owner.id}> "
@@ -93,7 +93,7 @@ class ManageStaff(commands.Cog):
                 roleids.append((r.id,)) # to sort roles based on their guild role level
         roleids.reverse()
         cur.execute(f"SELECT userid FROM nastaffuser WHERE guildid = {ctx.guild.id}")
-        userids = cur.fetchall()
+        userids = list(cur.fetchall())
         tmsg = "**Non-Administrative Staff**\n"
         for d in roleids:
             roleid = d[0]
