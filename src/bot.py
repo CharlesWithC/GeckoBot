@@ -8,9 +8,18 @@ import discord,sys
 from discord.ext import commands,tasks
 
 synccmd = False
-if len(sys.argv) > 1 and sys.argv[1] == "synccmd":
+if len(sys.argv) > 1 and "synccmd" in sys.argv:
     synccmd = True
+
+shard = 2
+for arg in sys.argv:
+    try:
+        shard = int(arg)
+    except:
+        pass
+
+print(f"Starting main bot with {shard} shards, traditional bot with {int(shard / 2)} shards.")
     
 intents = discord.Intents().all()
-bot = commands.Bot(command_prefix='/', intents=intents, auto_sync_commands = synccmd)
-tbot = commands.Bot(command_prefix=('g?','G?','g!','G!'), intents=intents, auto_sync_commands = False)
+bot = commands.AutoShardedBot(command_prefix='/', intents=intents, shard_count=shard, auto_sync_commands = synccmd)
+tbot = commands.AutoShardedBot(command_prefix=('g?','G?','g!','G!'), intents=intents, shard_count=max(int(shard / 2), 2), auto_sync_commands = False)

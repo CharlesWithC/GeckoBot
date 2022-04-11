@@ -15,7 +15,7 @@ import traditional.music
 import traditional.games.finance
 import traditional.games.four
 
-from bot import tbot
+from bot import tbot, shard
 from db import newconn
 from settings import *
 from functions import *
@@ -84,11 +84,12 @@ async def stats(ctx):
         total_channels += len(guild.text_channels)
     ping = tbot.latency
     
-    embed = discord.Embed(title="Gecko Stats", color=GECKOCLR)
+    embed = discord.Embed(title="Gecko Stats", description="Shard refers to prefix command bot.", color=GECKOCLR)
     embed.set_thumbnail(url=BOT_ICON)
     embed.add_field(name="Total Servers", value=f"```{total_servers}```")
     embed.add_field(name="Total Users", value=f"```{total_users}```")
     embed.add_field(name="Total Channels", value=f"```{total_channels}```")
+    embed.add_field(name="Shard", value=f"```{len(tbot.shards)}```")
     embed.add_field(name="Ping", value=f"```{int(ping*1000)}ms```")
     embed.set_footer(text="Gecko", icon_url=BOT_ICON)
     await ctx.send(embed=embed)

@@ -1,5 +1,10 @@
 # Gecko Bot Update History
 
+## Update 2022.04.11
+
+**Version v1.17.6**  
+Added sharded bot and stats auto update  
+
 ## Update 2022.04.10
 
 **Version v1.17.5**  

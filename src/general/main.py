@@ -6,6 +6,7 @@
 
 import discord
 import asyncio
+import sys
 
 import general.staff.chat
 import general.crypto
@@ -23,10 +24,11 @@ import general.staff.staff
 import general.staff.stats_display
 import general.staff.vcrecord
 
-from bot import bot
+from bot import bot, shard
 from db import newconn
 from settings import *
 from functions import *
+from ad import UpdateAdStatus
 
 SETUP_MSG = """Gecko is a developing bot that can help you make your community better.
 I'm ready to use slash commands and you type / to see a list of my commands.
@@ -126,11 +128,12 @@ async def stats(ctx):
         total_channels += len(guild.text_channels)
     ping = bot.latency
     
-    embed = discord.Embed(title="Gecko Stats", color=GECKOCLR)
+    embed = discord.Embed(title="Gecko Stats", description="Shard refers to slash command bot.", color=GECKOCLR)
     embed.set_thumbnail(url=BOT_ICON)
     embed.add_field(name="Total Servers", value=f"```{total_servers}```")
     embed.add_field(name="Total Users", value=f"```{total_users}```")
     embed.add_field(name="Total Channels", value=f"```{total_channels}```")
+    embed.add_field(name="Shard", value=f"```{len(bot.shards)}```")
     embed.add_field(name="Ping", value=f"```{int(ping*1000)}ms```")
     embed.set_footer(text="Gecko", icon_url=BOT_ICON)
     await ctx.respond(embed=embed)
@@ -195,20 +198,43 @@ async def UpdateBotStatus():
     cur = conn.cursor()
     await bot.wait_until_ready()
     while 1:
-        cur.execute(f"SELECT sval FROM settings WHERE skey = 'status' AND guildid = 0")
-        t = cur.fetchall()
-        status = "[Gaming] with Charles"
-        if len(t) > 0:
-            status = b64d(t[0][0])
-        if status.startswith("[Gaming]"):
-            await bot.change_presence(activity=discord.Game(name = status[9:]))
-        elif status.startswith("[Streaming]"):
-            await bot.change_presence(activity=discord.Streaming(name = status[12:].split("|")[0], url = status.split("|")[1]))
-        elif status.startswith("[Listening]"):
-            await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=status[12:]))
-        elif status.startswith("[Watching]"):
-            await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status[11:]))
-        await asyncio.sleep(60)
+        try:
+            lastadupd = 0
+            cur.execute(f"SELECT sval FROM settings WHERE skey = 'lastadupd'")
+            t = cur.fetchall()
+            if len(t) == 0:
+                cur.execute(f"INSERT INTO settings VALUES (0, 'lastadupd', 0)")
+            else:
+                lastupd = int(t[0][0])
+            total_servers = len(bot.guilds)
+            total_users = 0
+            for guild in bot.guilds:
+                total_users += len(guild.members)
+            if sys.argv[0].find("test") == -1 and time()-lastadupd > 60*30:
+                UpdateAdStatus(total_servers, len(bot.shards), total_users)
+                cur.execute(f"UPDATE settings SET sval = '{int(time())}' WHERE skey = 'lastadupd'")
+                conn.commit()
+
+            cur.execute(f"SELECT sval FROM settings WHERE skey = 'status' AND guildid = 0")
+            t = cur.fetchall()
+            status = "[Gaming] with Charles"
+            if len(t) > 0:
+                status = b64d(t[0][0])
+            if status.startswith("[Gaming]"):
+                await bot.change_presence(activity=discord.Game(name = status[9:]))
+            elif status.startswith("[Streaming]"):
+                await bot.change_presence(activity=discord.Streaming(name = status[12:].split("|")[0], url = status.split("|")[1]))
+            elif status.startswith("[Listening]"):
+                await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=status[12:]))
+            elif status.startswith("[Watching]"):
+                await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status[11:]))
+
+            await asyncio.sleep(60)
+            
+        except:
+            import traceback
+            traceback.print_exc()
+            await asyncio.sleep(5)
 
 @bot.slash_command(name="purge", description="Staff - Purge messages.")
 async def Purge(ctx, count: discord.Option(int, "Number of messages to delete.", required = True)):

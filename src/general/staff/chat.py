@@ -660,15 +660,19 @@ async def on_message(message):
                     await log("ChatAction", f"[Guild {message.guild} ({message.guild.id})] Unknown error occurred on {action} {user}: {str(e)}", message.guild.id)
 
     if updlvl > 0:
+        # if bot can send message in the channel
+        botuser = message.guild.get_member(bot.user.id)
         cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'level'")
         t = cur.fetchall()
         if len(t) == 0 or t[0][0] == 0:
-            await message.channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
+            if message.channel.permissions_for(botuser).send_messages:
+                await message.channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
         else:
             channel = bot.get_channel(int(t[0][0]))
             if channel != None:
                 try:
-                    await channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
+                    if channel.permissions_for(botuser).send_messages:
+                        await channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
                 except:
                     pass
 

@@ -958,6 +958,10 @@ async def MusicLoop():
                     guildsong[guildid] = ""
 
                 guild = bot.get_guild(guildid)
+                if guild is None: # bot is kicked
+                    cur.execute(f"DELETE FROM vcbind WHERE guildid = {guildid}")
+                    conn.commit()
+                    continue
                 voice_client = guild.voice_client
                             
                 if CheckVCLock(guildid):
