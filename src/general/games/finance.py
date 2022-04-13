@@ -10,7 +10,6 @@ from discord.ext import commands
 from time import time, gmtime, strftime
 from datetime import datetime
 from random import randint
-from base64 import b64encode, b64decode
 
 from bot import bot
 from settings import *

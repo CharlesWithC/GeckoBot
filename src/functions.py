@@ -46,7 +46,7 @@ async def log(func, text, guildid = None):
         if not guildid is None:
             conn = newconn()
             cur = conn.cursor()
-            cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'log'")
+            cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'botlog'")
             t = cur.fetchall()
             if len(t) > 0:
                 chn = t[0][0]
@@ -91,13 +91,22 @@ def betterStrftime(s):
     ret = strftime(s, t)
     return ret
 
-def isStaff(guild, user):
+def isAdmin(guild, user):
     if guild.owner.id == user.id:
         return True
     
     for permission in user.guild_permissions:
         if permission[0] == "administrator" and permission[1]:
             return True
+
+    if user.id == BOTOWNER:
+        return True
+    
+    return False
+
+def isStaff(guild, user):
+    if isAdmin(guild, user):
+        return True
         
     conn = newconn()
     cur = conn.cursor()
@@ -111,9 +120,6 @@ def isStaff(guild, user):
     cur.execute(f"SELECT * FROM staffuser WHERE guildid = {guild.id} AND userid = {user.id}")
     t = cur.fetchall()
     if len(t) > 0:
-        return True
-
-    if user.id == BOTOWNER:
         return True
         
     return False

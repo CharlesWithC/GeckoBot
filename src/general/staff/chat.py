@@ -8,7 +8,6 @@ import os, asyncio
 import discord
 from discord.commands import CommandPermission, SlashCommandGroup
 from discord.ext import commands
-from base64 import b64encode, b64decode
 from datetime import datetime
 import requests, io
 from random import randint
@@ -676,73 +675,5 @@ async def on_message(message):
                         await channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
                 except:
                     pass
-
-dlconn = newconn()
-@bot.event
-async def on_message_delete(message):
-    if message.author.id == BOTID or message.author.bot == True:
-        return
-    global dlconn
-    try:
-        cur = dlconn.cursor()
-    except:
-        dlconn = newconn()
-        cur = dlconn.cursor()
-        
-    guildid = message.guild.id
-    cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'deleted'")
-    t = cur.fetchall()
-    if len(t) > 0:
-        channel = bot.get_channel(t[0][0])
-        if channel != None:
-            try:
-                tot = len(message.attachments)
-                if tot == 0:
-                    embed=discord.Embed(title=f"Message deleted at #{message.channel}", description=message.content, color = GECKOCLR)
-                    
-                    icon_url = None
-                    if not message.author.avatar is None:
-                        icon_url = message.author.avatar.url
-                    embed.set_author(name=message.author, icon_url=icon_url)
-                    embed.set_footer(text=f"Gecko Message Recovery", icon_url = BOT_ICON)
-                    await channel.send(embed = embed)
-                
-                else:
-                    embeds = []
-                    files = []
-                    embed = discord.Embed(title=f"Message deleted at #{message.channel}", description=message.content, color = GECKOCLR)
-                    icon_url = None
-                    if not message.author.avatar is None:
-                        icon_url = message.author.avatar.url
-                    embed.set_author(name=message.author, icon_url=icon_url)
-                    embed.set_footer(text=f"Gecko Message Recovery (Message content)", icon_url = BOT_ICON)
-                    embeds.append(embed)
-
-                    for i in range(0,tot):
-                        if len(embeds) == 10 or len(files) == 10:
-                            await channel.send(embeds = embeds, files = files)
-                            embeds = []
-                            files = []
-                        isimage = message.attachments[i].content_type.startswith("image")
-                        if isimage:
-                            embed = discord.Embed(title=f"Message deleted at #{message.channel}", description="*Attachment*", color = GECKOCLR)
-                            icon_url = None
-                            if not message.author.avatar is None:
-                                icon_url = message.author.avatar.url
-                            embed.set_author(name=message.author, icon_url=icon_url)
-                            embed.set_image(url=message.attachments[i].url)
-                            embed.set_footer(text=f"Gecko Message Recovery (Attachment {i+1}/{tot})", icon_url = BOT_ICON)
-                            embeds.append(embed)
-                        else:
-                            response = requests.get(message.attachments[i].url)
-                            data = io.BytesIO(response.content)
-                            files.append(discord.File(data, filename = f"Attachment {i+1} "+message.attachments[i].filename))
-
-                    if len(embeds) + len(files) > 0:
-                        await channel.send(embeds = embeds, files = files)
-            except:
-                import traceback
-                traceback.print_exc()
-                pass
 
 bot.add_cog(ManageChat(bot))

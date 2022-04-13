@@ -84,13 +84,29 @@ async def stats(ctx):
         total_channels += len(guild.text_channels)
     ping = tbot.latency
     
-    embed = discord.Embed(title="Gecko Stats", description="Shard refers to prefix command bot.", color=GECKOCLR)
+    btncnt = 0
+    formcnt = 0
+    embedcnt = 0
+    cur.execute(f"SELECT COUNT(*) FROM button")
+    btncnt = cur.fetchone()[0]
+    cur.execute(f"SELECT COUNT(*) FROM form")
+    formcnt = cur.fetchone()[0]
+    cur.execute(f"SELECT COUNT(*) FROM embed")
+    embedcnt = cur.fetchone()[0]
+    
+    embed = discord.Embed(title="Gecko Stats", description="Shard refers to slash command bot.", color=GECKOCLR)
     embed.set_thumbnail(url=BOT_ICON)
-    embed.add_field(name="Total Servers", value=f"```{total_servers}```")
-    embed.add_field(name="Total Users", value=f"```{total_users}```")
-    embed.add_field(name="Total Channels", value=f"```{total_channels}```")
-    embed.add_field(name="Shard", value=f"```{len(tbot.shards)}```")
+    embed.add_field(name="Servers", value=f"```{total_servers}```")
+    embed.add_field(name="Users", value=f"```{total_users}```")
+    embed.add_field(name="Channels", value=f"```{total_channels}```")
+
+    embed.add_field(name="Buttons", value=f"```{btncnt}```")
+    embed.add_field(name="Forms", value=f"```{formcnt}```")
+    embed.add_field(name="Embeds", value=f"```{embedcnt}```")
+    
+    embed.add_field(name="Shard", value=f"```{len(bot.shards)}```")
     embed.add_field(name="Ping", value=f"```{int(ping*1000)}ms```")
+
     embed.set_footer(text="Gecko", icon_url=BOT_ICON)
     await ctx.send(embed=embed)
 
@@ -148,8 +164,10 @@ async def Purge(ctx, count: int):
         await ctx.send("You can only delete at most 100 messages at a time.")
         return
 
-    await ctx.message.delete()
-    await ctx.channel.purge(limit=count)
+    try:
+        await ctx.channel.purge(limit = count + 1)
+    except:
+        await ctx.respond("I don't have permission to delete messages.", ephemeral = True)
 
 @tbot.command(name="ping", description="Get the bot's ping to discord API.")
 async def tping(ctx):

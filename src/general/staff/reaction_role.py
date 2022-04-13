@@ -8,7 +8,6 @@ import os, asyncio
 import discord
 from discord.commands import CommandPermission, SlashCommandGroup
 from discord.ext import commands
-from base64 import b64encode, b64decode
 import validators
 
 from bot import bot

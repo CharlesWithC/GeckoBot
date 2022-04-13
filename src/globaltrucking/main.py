@@ -6,7 +6,6 @@
 
 import os, asyncio, io
 import discord
-from base64 import b64encode, b64decode
 from PIL import Image
 from PIL import ImageFont, ImageDraw, ImageOps, ImageColor
 from random import randint

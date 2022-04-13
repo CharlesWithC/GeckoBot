@@ -9,7 +9,6 @@ import discord
 from discord.commands import CommandPermission, SlashCommandGroup
 from discord.ext import commands
 from discord.ui import Modal, InputText
-from base64 import b64encode, b64decode
 from time import time
 from random import randint
 import io

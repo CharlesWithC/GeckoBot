@@ -19,6 +19,7 @@ import general.games.finance
 import general.games.four
 import general.staff.button
 import general.staff.embed
+import general.staff.eventlog
 import general.staff.form
 import general.staff.reaction_role
 import general.staff.staff
@@ -36,16 +37,16 @@ I'm ready to use slash commands and you type / to see a list of my commands.
 Use /about for basic information about Gecko and /help for help.
 
 You should set up dedicated channels for specific functions, tell me by using `/setchannel`.
-Form    - Where notifications will be sent when a user submit an entry.
-Four    - Where players will play connect four games.
-Finance - Where players will play finance games.
-Music   - Where players will request for songs. If you don't set this up, only staff will be allowed to play music.
-          If you want the bot to stick to a radio station and not being interrupted, then do not set it.
-          *A bot can only be in one voice channel at the same time*
-Level   - Where level updates will be posted.
-Deleted - Where deleted messages will be posted.
-Log     - Where bot audit log will be sent.
-Error   - Where important error notifications will be sent. (This should be rare)
+Form     - Where notifications will be sent when a user submit an entry.
+Four     - Where players will play connect four games.
+Finance  - Where players will play finance games.
+Music    - Where players will request for songs. If you don't set this up, only staff will be allowed to play music.
+           If you want the bot to stick to a radio station and not being interrupted, then do not set it.
+           *A bot can only be in one voice channel at the same time*
+Level    - Where level updates will be posted.
+Eventlog - Where server events (messages / members etc) will be logged.
+Botlog   - Where bot audit log will be sent.
+Error    - Where important error notifications will be sent. (This should be rare)
 **NOTE** 
 1.For four, finance and music, you can set channel to "all" so that player can use related commands in any channels.
 2.For level, if you set channel to "all", the level update will be posted at the channel where the user sent the last message before upgrading.
@@ -157,13 +158,29 @@ async def stats(ctx):
         total_channels += len(guild.text_channels)
     ping = bot.latency
     
+    btncnt = 0
+    formcnt = 0
+    embedcnt = 0
+    cur.execute(f"SELECT COUNT(*) FROM button")
+    btncnt = cur.fetchone()[0]
+    cur.execute(f"SELECT COUNT(*) FROM form")
+    formcnt = cur.fetchone()[0]
+    cur.execute(f"SELECT COUNT(*) FROM embed")
+    embedcnt = cur.fetchone()[0]
+    
     embed = discord.Embed(title="Gecko Stats", description="Shard refers to slash command bot.", color=GECKOCLR)
     embed.set_thumbnail(url=BOT_ICON)
-    embed.add_field(name="Total Servers", value=f"```{total_servers}```")
-    embed.add_field(name="Total Users", value=f"```{total_users}```")
-    embed.add_field(name="Total Channels", value=f"```{total_channels}```")
+    embed.add_field(name="Servers", value=f"```{total_servers}```")
+    embed.add_field(name="Users", value=f"```{total_users}```")
+    embed.add_field(name="Channels", value=f"```{total_channels}```")
+
+    embed.add_field(name="Buttons", value=f"```{btncnt}```")
+    embed.add_field(name="Forms", value=f"```{formcnt}```")
+    embed.add_field(name="Embeds", value=f"```{embedcnt}```")
+    
     embed.add_field(name="Shard", value=f"```{len(bot.shards)}```")
     embed.add_field(name="Ping", value=f"```{int(ping*1000)}ms```")
+
     embed.set_footer(text="Gecko", icon_url=BOT_ICON)
     await ctx.respond(embed=embed)
 
@@ -182,8 +199,9 @@ async def BotSetup(ctx):
         await ctx.respond(f"Hi, {ctx.author.name}\n" + SETUP_MSG)
 
 @bot.slash_command(name="setchannel", description="Staff - Set default channels where specific messages will be dealt with.")
-async def SetChannel(ctx, category: discord.Option(str, "The category of message.", required = True, choices = ["form", "four", "finance", "music", "level", "deleted", "log", "error"]),
-    channel: discord.Option(str, "Channel for messages, type 'all' for four / finance / music to allow all channels", required = True)):
+async def SetChannel(ctx, category: discord.Option(str, "The category of message.", required = True, choices = ["form", "four", "finance", "music", "level", "eventlog", "botlog", "error"]),
+    channel: discord.Option(str, "Channel for messages, type 'all' for four / finance / music to allow all channels", required = True),
+    remove: discord.Option(str, "Whether to unbind the category and the channel", required = False, choices = ["Yes", "No"])):
     
     await ctx.defer()
     guild = ctx.guild
@@ -198,33 +216,42 @@ async def SetChannel(ctx, category: discord.Option(str, "The category of message
     conn = newconn()
     cur = conn.cursor()
 
-    if not category in ["form", "four", "finance", "music", "level", "error", "log", "deleted"]:
+    if not category in ["form", "four", "finance", "music", "level", "error", "botlog", "eventlog"]:
         await ctx.respond(f"{category} is not a valid category.", ephemeral = True)
         return
 
-    if category in ["four", "finance", "music", "level"] and channel == "all":
-        channel = 0
+    if remove == "Yes":
+        cur.execute(f"DELETE FROM channelbind WHERE guildid = {guild.id} AND category = '{category}'")
+        conn.commit()
+        await ctx.respond(f"{category} channel bind removed.")
     else:
-        if not channel.startswith("<#") or not channel.endswith(">"):
-            await ctx.respond(f"{channel} is not a valid channel.", ephemeral = True)
-            return
-        channel = int(channel[2:-1])
-    
-    cur.execute(f"SELECT * FROM channelbind WHERE guildid = {guild.id} AND category = '{category}'")
-    t = cur.fetchall()
-    if len(t) == 0:
-        cur.execute(f"INSERT INTO channelbind VALUES ({guild.id}, '{category}', {channel})")
-    else:
-        cur.execute(f"UPDATE channelbind SET channelid = {channel} WHERE guildid = {guild.id} AND category = '{category}'")
-    conn.commit()
-    if channel != 0:
-        await ctx.respond(f"<#{channel}> has been configured as {category} channel.\nMake sure I always have access to it.\nUnless you want to stop dealing with those messages, then delete the channel.")
-    else:
-        await ctx.respond(f"Members can use {category} commands in any channels.")
+        if category in ["four", "finance", "music", "level"] and channel == "all":
+            channel = 0
+        else:
+            if not channel.startswith("<#") or not channel.endswith(">"):
+                await ctx.respond(f"{channel} is not a valid channel.", ephemeral = True)
+                return
+            channel = int(channel[2:-1])
+            chn = bot.get_channel(channel)
+            if chn is None:
+                await ctx.respond(f"{channel} is not a valid channel.", ephemeral = True)
+                return
+        cur.execute(f"SELECT * FROM channelbind WHERE guildid = {guild.id} AND category = '{category}'")
+        t = cur.fetchall()
+        if len(t) == 0:
+            cur.execute(f"INSERT INTO channelbind VALUES ({guild.id}, '{category}', {channel})")
+        else:
+            cur.execute(f"UPDATE channelbind SET channelid = {channel} WHERE guildid = {guild.id} AND category = '{category}'")
+        conn.commit()
+        if channel != 0:
+            await ctx.respond(f"<#{channel}> has been configured as {category} channel.\nMake sure I always have access to it.\nUnless you want to stop dealing with those messages, then delete the channel.")
+        else:
+            await ctx.respond(f"Members can use {category} commands in any channels.")
 
 async def UpdateBotStatus():
     await bot.wait_until_ready()
-    while 1:
+    await asyncio.sleep(10)
+    while not bot.is_closed():
         conn = newconn()
         cur = conn.cursor()
         try:
@@ -282,12 +309,10 @@ async def Purge(ctx, count: discord.Option(int, "Number of messages to delete.",
         await ctx.respond("You can only delete at most 100 messages at a time.", ephemeral = True)
         return
 
-    botuser = guild.get_member(BOTID)
-    if not botuser.guild_permissions.manage_messages:
+    try:
+        await ctx.channel.purge(limit = count + 1)
+    except:
         await ctx.respond("I don't have permission to delete messages.", ephemeral = True)
-        return  
-
-    await ctx.channel.purge(limit = count + 1)
 
 @bot.slash_command(name="ping", description="Get the bot's ping to discord API.")
 async def Ping(ctx):

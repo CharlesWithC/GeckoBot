@@ -8,7 +8,6 @@ import os, asyncio
 import discord
 from discord.commands import CommandPermission, SlashCommandGroup
 from discord.ext import commands
-from base64 import b64encode, b64decode
 
 from bot import bot
 from settings import *
@@ -28,7 +27,6 @@ class ManageStaff(commands.Cog):
         await ctx.defer()    
         conn = newconn()
         cur = conn.cursor()
-        
         
         guild = ctx.guild
 
@@ -150,8 +148,8 @@ class ManageStaff(commands.Cog):
             await ctx.respond("You can only use this command in guilds, not in DMs.")
             return
             
-        if ctx.author.id != ctx.guild.owner.id and ctx.author.id != BOTOWNER:
-            await ctx.respond(f"{ctx.author.name}, only the server owner {ctx.guild.owner.nick} can use this command!", ephemeral = True)
+        if not isAdmin(ctx.guild, ctx.author):
+            await ctx.respond(f"{ctx.author.name}, only the server owner / administrator can use this command!", ephemeral = True)
             return
 
         conn = newconn()

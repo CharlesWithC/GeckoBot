@@ -2,6 +2,9 @@
 
 ## Update 2022.04.13
 
+**Version v1.17.8**  
+Added event log function  
+
 **Version v1.17.7**  
 Bug fixes and minor improvements  
 

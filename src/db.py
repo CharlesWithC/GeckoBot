@@ -36,6 +36,7 @@ cur.execute(f"CREATE TABLE IF NOT EXISTS nastaffuser (guildid BIGINT, userid BIG
 cur.execute(f"CREATE TABLE IF NOT EXISTS serverstats (guildid BIGINT, categoryid BIGINT)")
 cur.execute(f"CREATE TABLE IF NOT EXISTS statsconfig (guildid BIGINT, categoryid BIGINT, channelid BIGINT, conf TEXT)")
 cur.execute(f"CREATE TABLE IF NOT EXISTS channelbind (guildid BIGINT, category VARCHAR(32), channelid BIGINT)")
+cur.execute(f"CREATE TABLE IF NOT EXISTS eventlog (guildid BIGINT, events TEXT)")
 
 # USER MANAGEMENT
 cur.execute(f"CREATE TABLE IF NOT EXISTS level (guildid BIGINT, userid BIGINT, level BIGINT, xp BIGINT, lastmsg BIGINT)")
