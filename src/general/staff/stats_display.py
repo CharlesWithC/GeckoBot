@@ -453,11 +453,11 @@ bot.add_cog(ManageStatsDisplay(bot))
 
 ss_get_channel_fail = []
 async def StatsDisplayUpdate():
-    conn = newconn()
-    cur = conn.cursor()
     await bot.wait_until_ready()
     
     while not bot.is_closed():
+        conn = newconn()
+        cur = conn.cursor()
         cur.execute(f"SELECT guildid, categoryid FROM serverstats")
         d = cur.fetchall()
         for dd in d:

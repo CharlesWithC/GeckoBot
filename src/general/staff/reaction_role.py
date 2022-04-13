@@ -257,12 +257,12 @@ class ReactionRole(commands.Cog):
 bot.add_cog(ReactionRole(bot))
 
 async def ReactionRoleUpdate():
-    conn = newconn()
-    cur = conn.cursor()
     await bot.wait_until_ready()
     
     reactionrole_fail = [] # (channelid, msgid)
     while not bot.is_closed():
+        conn = newconn()
+        cur = conn.cursor()
         # Self role
         try:
             cur.execute(f"SELECT guildid, channelid, msgid FROM reactionrole")

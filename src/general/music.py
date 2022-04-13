@@ -937,8 +937,6 @@ def postupdate(guildid):
         return False
 
 async def MusicLoop():
-    conn = newconn()
-    cur = conn.cursor()
     await bot.wait_until_ready()
     await asyncio.sleep(5)
 
@@ -948,6 +946,8 @@ async def MusicLoop():
     autopause = []
 
     while not bot.is_closed():
+        conn = newconn()
+        cur = conn.cursor()
         cur.execute(f"SELECT guildid, channelid FROM vcbind")
         t = cur.fetchall()
         for tt in t:

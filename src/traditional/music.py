@@ -29,7 +29,7 @@ def search(arg):
             video = ydl.extract_info(arg, download=False)
     return video
 
-from bot import tbot
+from bot import bot, tbot
 from settings import *
 from functions import *
 from db import newconn
@@ -123,7 +123,8 @@ async def leave(ctx):
         await ctx.send("Only staff are allowed to run the command!")
         return
     
-    voice_client = ctx.guild.voice_client
+    guild = bot.get_guild(ctx.guild.id)
+    voice_client = guild.voice_client
     if not voice_client is None and voice_client.is_connected():
         await voice_client.disconnect()
         conn = newconn()

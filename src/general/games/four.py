@@ -286,11 +286,11 @@ class ConnectFour(commands.Cog):
         await ctx.respond(embed = embed)
 
 async def ClearExpiredGame():
-    conn = newconn()
-    cur = conn.cursor()
     await bot.wait_until_ready()
     
     while not bot.is_closed():
+        conn = newconn()
+        cur = conn.cursor()
         cur.execute(f"SELECT gameid, chnid, msgid FROM connectfour WHERE lastop < {int(time())-300} AND gameid > 0")
         t = cur.fetchall()
         for tt in t:
@@ -354,13 +354,13 @@ def UpdateLeaderboard(won, lost, bet, draw = False):
     conn.commit()
 
 async def ConnectFourUpdate():
-    conn = newconn()
-    cur = conn.cursor()
     await bot.wait_until_ready()
     await asyncio.sleep(5)
     channel = None
     gameid = 0
-    while not bot.is_closed():        
+    while not bot.is_closed():    
+        conn = newconn()
+        cur = conn.cursor()    
         cur.execute(f"SELECT gameid, red, blue, guildid, chnid, msgid, state, bet FROM connectfour WHERE gameid > 0 AND msgid != ''")
         d = cur.fetchall()
         for dd in d:

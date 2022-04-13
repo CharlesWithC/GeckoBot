@@ -444,3 +444,22 @@ async def xprate(ctx, rate: discord.Option(float, "XP rate", required = True)):
         cur.execute(f"UPDATE settings SET sval = '{rate}' WHERE guildid = {guildid} AND skey='xprate'")
     conn.commit()
     await ctx.respond(f"XP rate set to {rate}.")
+
+@bot.slash_command(name="reset", description="Reset everyone's XP")
+async def reset(ctx):
+    if ctx.guild is None:
+        await ctx.respond("You can only run this command in guilds!")
+        return
+    
+    if not isStaff(ctx.guild, ctx.author):
+        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+        return
+    
+    await ctx.defer()
+    conn = newconn()
+    cur = conn.cursor()
+    guild = ctx.guild
+    guildid = guild.id
+    cur.execute(f"DELETE FROM level WHERE guildid = {guildid}")
+    conn.commit()
+    await ctx.respond("All XP reset.")

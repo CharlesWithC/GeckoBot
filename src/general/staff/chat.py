@@ -530,45 +530,46 @@ async def on_message(message):
 
     updlvl = 0
 
-    if len(msg) > 3:
-        cur.execute(f"SELECT xp, level, lastmsg FROM level WHERE guildid = {guildid} AND userid = {userid}")
-        t = cur.fetchall()
-        if len(t) == 0:
-            cur.execute(f"INSERT INTO level VALUES ({guildid}, {userid}, 0, 15, {int(time())})")
-            conn.commit()
-        else:
-            xp = t[0][0]
-            oldlvl = t[0][1]
-            lastmsg = t[0][2]
-            if time() - lastmsg >= 60:
-                cur.execute(f"SELECT sval FROM settings WHERE guildid = {guildid} AND skey = 'xprate'")
-                xprate = 1
-                t = cur.fetchall()
-                if len(t) > 0:
-                    xprate = float(t[0][0])
-                xp += randint(15, 25) * xprate
-                level = CalcLevel(xp)
-                cur.execute(f"UPDATE level SET xp = {xp}, level = {level}, lastmsg = {int(time())} WHERE guildid = {guildid} AND userid = {userid}")
+    if not user.bot:
+        if len(msg) > 3:
+            cur.execute(f"SELECT xp, level, lastmsg FROM level WHERE guildid = {guildid} AND userid = {userid}")
+            t = cur.fetchall()
+            if len(t) == 0:
+                cur.execute(f"INSERT INTO level VALUES ({guildid}, {userid}, 0, 15, {int(time())})")
                 conn.commit()
-                if level > oldlvl:
-                    updlvl = level
-    if updlvl > 0:
-        cur.execute(f"SELECT roleid FROM levelrole WHERE guildid = {guildid} AND level = {updlvl}")
-        t = cur.fetchall()
-        if len(t) > 0:
-            role = guild.get_role(t[0][0])
-            try:
-                await user.add_roles(role, reason = "Gecko Rank Role")
-            except:
-                pass
-            cur.execute(f"SELECT roleid FROM levelrole WHERE guildid = {guildid} AND level < {updlvl} ORDER BY level DESC LIMIT 1")
+            else:
+                xp = t[0][0]
+                oldlvl = t[0][1]
+                lastmsg = t[0][2]
+                if time() - lastmsg >= 60:
+                    cur.execute(f"SELECT sval FROM settings WHERE guildid = {guildid} AND skey = 'xprate'")
+                    xprate = 1
+                    t = cur.fetchall()
+                    if len(t) > 0:
+                        xprate = float(t[0][0])
+                    xp += randint(15, 25) * xprate
+                    level = CalcLevel(xp)
+                    cur.execute(f"UPDATE level SET xp = {xp}, level = {level}, lastmsg = {int(time())} WHERE guildid = {guildid} AND userid = {userid}")
+                    conn.commit()
+                    if level > oldlvl:
+                        updlvl = level
+        if updlvl > 0:
+            cur.execute(f"SELECT roleid FROM levelrole WHERE guildid = {guildid} AND level = {updlvl}")
             t = cur.fetchall()
             if len(t) > 0:
                 role = guild.get_role(t[0][0])
                 try:
-                    await user.remove_roles(role, reason = "Gecko Rank Role")
+                    await user.add_roles(role, reason = "Gecko Rank Role")
                 except:
                     pass
+                cur.execute(f"SELECT roleid FROM levelrole WHERE guildid = {guildid} AND level < {updlvl} ORDER BY level DESC LIMIT 1")
+                t = cur.fetchall()
+                if len(t) > 0:
+                    role = guild.get_role(t[0][0])
+                    try:
+                        await user.remove_roles(role, reason = "Gecko Rank Role")
+                    except:
+                        pass
 
     haveresp = False
     cur.execute(f"SELECT keywords, action FROM chataction WHERE guildid = {message.guild.id}")

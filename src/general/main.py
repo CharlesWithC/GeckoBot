@@ -7,6 +7,7 @@
 import discord
 import asyncio
 import sys
+from time import time
 
 import general.staff.chat
 import general.crypto
@@ -56,13 +57,41 @@ Have a nice day!"""
 async def on_guild_join(guild):
     try:
         channel = bot.get_channel(GUILDUPD[1])
-        await channel.send(f"{guild.name} (`{guild.id}`) - Owner: {str(guild.owner)}")
+        await channel.send(f"**Join** {guild.name} (`{guild.id}`) - Owner: {str(guild.owner)}")
     except:
         import traceback
         traceback.print_exc()
         pass
     
     await guild.text_channels[0].send(f"Gecko's here!\nYou are suggested to check `/setup` and `/help`.")
+
+@bot.event
+async def on_guild_remove(guild):
+    try:
+        channel = bot.get_channel(GUILDUPD[1])
+        await channel.send(f"**Leave** {guild.name} (`{guild.id}`) - Owner: {str(guild.owner)}")
+    except:
+        import traceback
+        traceback.print_exc()
+        pass
+    
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT buttonid FROM button WHERE guildid = {guild.id}")
+    t = cur.fetchall()
+    for tt in t:
+        try:
+            cur.execute(f"DELETE FROM buttonview WHERE buttonid = {tt[0]}")
+        except:
+            pass
+    cur.execute(f"SHOW TABLES")
+    t = cur.fetchall()
+    for tt in t:
+        try:
+            cur.execute(f"DELETE FROM {tt[0]} WHERE guildid = {guild.id}")
+        except:
+            pass
+    conn.commit()
 
 @bot.slash_command(name="user", description="Get information of a user")
 async def getuser(ctx, user: discord.Option(discord.User, "User", required = True)):
@@ -194,18 +223,19 @@ async def SetChannel(ctx, category: discord.Option(str, "The category of message
         await ctx.respond(f"Members can use {category} commands in any channels.")
 
 async def UpdateBotStatus():
-    conn = newconn()
-    cur = conn.cursor()
     await bot.wait_until_ready()
     while 1:
+        conn = newconn()
+        cur = conn.cursor()
         try:
             lastadupd = 0
             cur.execute(f"SELECT sval FROM settings WHERE skey = 'lastadupd'")
             t = cur.fetchall()
             if len(t) == 0:
-                cur.execute(f"INSERT INTO settings VALUES (0, 'lastadupd', 0)")
+                cur.execute(f"INSERT INTO settings VALUES (0, 'lastadupd', '0')")
+                conn.commit()
             else:
-                lastupd = int(t[0][0])
+                lastadupd = int(t[0][0])
             total_servers = len(bot.guilds)
             total_users = 0
             for guild in bot.guilds:

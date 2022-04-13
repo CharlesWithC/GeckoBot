@@ -18,8 +18,8 @@ for arg in sys.argv:
     except:
         pass
 
-print(f"Starting main bot with {shard} shards, traditional bot with {int(shard / 2)} shards.")
+print(f"Starting main bot with {shard} shards, traditional bot with {max(int(shard / 2), 1)} shards.")
     
 intents = discord.Intents().all()
 bot = commands.AutoShardedBot(command_prefix='/', intents=intents, shard_count=shard, auto_sync_commands = synccmd)
-tbot = commands.AutoShardedBot(command_prefix=('g?','G?','g!','G!'), intents=intents, shard_count=max(int(shard / 2), 2), auto_sync_commands = False)
+tbot = commands.AutoShardedBot(command_prefix=('g?','G?','g!','G!'), intents=intents, shard_count=max(int(shard / 2), 1), auto_sync_commands = False)
