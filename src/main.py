@@ -13,6 +13,10 @@ import json, asyncio
 import general.main
 import traditional.main
 import globaltrucking.main
+import truckersmp.main
+from truckersmp.tmp import UpdateTMPMap, UpdateTMPTraffic
+
+import threading
 
 @bot.event
 async def on_ready():
@@ -26,6 +30,8 @@ async def on_ready():
 config_txt = open("./bot.conf","r").read()
 config = json.loads(config_txt)
 
+threading.Thread(target=UpdateTMPMap).start()
+threading.Thread(target=UpdateTMPTraffic).start()
 loop = asyncio.get_event_loop()
 loop.create_task(bot.start(config["token"]))
 loop.create_task(tbot.start(config["token"]))

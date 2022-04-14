@@ -36,6 +36,7 @@ Includes: button, embed, form, chat action, reaction role, staff management, ser
 **Server Stats** - Based on variables, fully customizable!  
 **Staff Management** - Administrative and non-administrative staff, and a staff list for users to know the real staff.  
 **Message recovery** - Not only text messages, but also images, and all attachments!  
+**Logging** - Log all kinds of events happening in your server.  
 
 ---
 

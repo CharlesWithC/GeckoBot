@@ -72,6 +72,10 @@ cur.execute(f"CREATE TABLE IF NOT EXISTS connectfour (gameid BIGINT, red BIGINT,
     guildid BIGINT, chnid BIGINT, msgid BIGINT, bet BIGINT, state TEXT, customid TEXT, lastop BIGINT)")
 cur.execute(f"CREATE TABLE IF NOT EXISTS connectfour_leaderboard (userid BIGINT, won BIGINT, lost BIGINT, draw BIGINT, earning BIGINT)")
 
+# TRUCKERSMP
+cur.execute(f"CREATE TABLE IF NOT EXISTS truckersmp (mpid BIGINT, name TEXT, tmpdata TEXT, lastupd BIGINT)")
+cur.execute(f"CREATE TABLE IF NOT EXISTS steam (steamid BIGINT, name TEXT, steamdata TEXT, lastupd BIGINT)")
+
 # GENERAL SETTINGS
 cur.execute(f"CREATE TABLE IF NOT EXISTS settings (guildid BIGINT, skey TEXT, sval TEXT)")
 del cur

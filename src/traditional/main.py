@@ -87,6 +87,8 @@ async def stats(ctx):
     btncnt = 0
     formcnt = 0
     embedcnt = 0
+    conn = newconn()
+    cur = conn.cursor()
     cur.execute(f"SELECT COUNT(*) FROM button")
     btncnt = cur.fetchone()[0]
     cur.execute(f"SELECT COUNT(*) FROM form")
@@ -172,3 +174,7 @@ async def Purge(ctx, count: int):
 @tbot.command(name="ping", description="Get the bot's ping to discord API.")
 async def tping(ctx):
     await ctx.send(f"Pong! {int(tbot.latency * 1000)}ms.")
+
+@tbot.command(name="parse", description="Get original text message", guild_ids = [DEVGUILD])
+async def ParseMsg(ctx, msg: str):
+    await ctx.send(f"```{msg}```")

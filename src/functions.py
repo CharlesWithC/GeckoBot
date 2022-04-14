@@ -15,6 +15,8 @@ import urllib.request
 import re
 import ssl
 import discord
+import requests
+import json
 
 def TimeDelta(timestamp): # returns human-readable delta
     delta = abs(time() - timestamp)

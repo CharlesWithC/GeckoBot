@@ -73,7 +73,6 @@ class EmbedModal(Modal):
 
         if footer.startswith("["):
             footer_icon_url = footer[footer.find("[") + 1: footer.find("]")].replace(" ","")
-            footer = footer[footer.find("]") + 1:]
         
         if url != "" and validators.url(url) != True:
             await interaction.response.send_message(f"URL {url} is not a valid url.", ephemeral = True)

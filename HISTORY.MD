@@ -1,5 +1,10 @@
 # Gecko Bot Update History
 
+## Update 2022.04.14
+
+**Version v1.18a**  
+Added TruckersMP Player & Traffic Function  
+
 ## Update 2022.04.13
 
 **Version v1.17.8**  

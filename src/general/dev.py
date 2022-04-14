@@ -55,3 +55,61 @@ async def UpdStatus(ctx, stype: Option(str, "Status type:", required = True, cho
         await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=status[12:]))
     elif status.startswith("[Watching]"):
         await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=status[11:]))
+
+@bot.slash_command(name="block", description="Bot Owner - Block a guild", guild_ids = [DEVGUILD])
+@commands.is_owner()
+async def BlockGuild(ctx, guild: Option(str, "Guild ID", required = True),
+        reason: Option(str, "Reason for blocking", required = False)):
+    if ctx.author.id != BOTOWNER:
+        return
+    guild = int(guild)
+    await ctx.defer()
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT * FROM settings WHERE guildid = {guild} AND skey = 'block'")
+    if cur.fetchone():
+        await ctx.respond("Guild is already blocked.")
+        return
+    cur.execute(f"INSERT INTO settings VALUES ({guild}, 'block', '1')")
+    conn.commit()
+    guild = bot.get_guild(guild)
+    try:
+        if reason is None:
+            await guild.text_channels[0].send(f"The guild has been blocked by Gecko Moderator.\nGecko has left the server and it will leave automatically if you invite again.\nTo appeal the ban, join Gecko support server.")
+        else:
+            await guild.text_channels[0].send(f"The guild has been blocked by Gecko Moderator.\nReason: {reason}\nGecko has left the server and it will leave automatically if you invite again.")
+    except:
+        pass
+    await guild.leave()
+    await ctx.respond("Guild blocked.")
+    try:
+        channel = bot.get_channel(GUILDUPD[1])
+        await channel.send(f"**Block** {guild.name} (`{guild.id}`) - Owner: {str(guild.owner)}")
+    except:
+        import traceback
+        traceback.print_exc()
+        pass
+
+@bot.slash_command(name="unblock", description="Bot Owner - Unblock a guild", guild_ids = [DEVGUILD])
+@commands.is_owner()
+async def UnblockGuild(ctx, guild: Option(str, "Guild ID", required = True)):
+    if ctx.author.id != BOTOWNER:
+        return
+    guild = int(guild)
+    await ctx.defer()
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT * FROM settings WHERE guildid = {guild} AND skey = 'block'")
+    if not cur.fetchone():
+        await ctx.respond("Guild not blocked.")
+        return
+    cur.execute(f"DELETE FROM settings WHERE guildid = {guild} AND skey = 'block'")
+    conn.commit()
+    await ctx.respond("Guild unblocked.")
+    try:
+        channel = bot.get_channel(GUILDUPD[1])
+        await channel.send(f"**Unblock** `{guild}`")
+    except:
+        import traceback
+        traceback.print_exc()
+        pass

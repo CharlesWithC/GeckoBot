@@ -63,6 +63,21 @@ async def on_guild_join(guild):
         import traceback
         traceback.print_exc()
         pass
+
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT * FROM settings WHERE guildid = {guild.id} AND skey = 'block'")
+    if cur.fetchone():
+        try:
+            channel = bot.get_channel(GUILDUPD[1])
+            await channel.send(f"**Blocked** {guild.name} (`{guild.id}`) - Owner: {str(guild.owner)}")
+        except:
+            import traceback
+            traceback.print_exc()
+            pass
+        await guild.text_channels[0].send(f"The guild has been blocked by Gecko Moderator.\nTo appeal the ban, join Gecko support server. You have to find the link on your own to show your will to get unblocked.")
+        await guild.leave()
+        return
     
     await guild.text_channels[0].send(f"Gecko's here!\nYou are suggested to check `/setup` and `/help`.")
 
@@ -78,6 +93,11 @@ async def on_guild_remove(guild):
     
     conn = newconn()
     cur = conn.cursor()
+    blocked = False
+    cur.execute(f"SELECT * FROM settings WHERE guildid = {guild.id} AND skey = 'block'")
+    t = cur.fetchall()
+    if len(t) > 0:
+        blocked = True
     cur.execute(f"SELECT buttonid FROM button WHERE guildid = {guild.id}")
     t = cur.fetchall()
     for tt in t:
@@ -92,6 +112,8 @@ async def on_guild_remove(guild):
             cur.execute(f"DELETE FROM {tt[0]} WHERE guildid = {guild.id}")
         except:
             pass
+    if blocked:
+        cur.execute(f"INSERT INTO settings VALUES ({guild.id}, 'block', '1')")
     conn.commit()
 
 @bot.slash_command(name="user", description="Get information of a user")
@@ -161,6 +183,8 @@ async def stats(ctx):
     btncnt = 0
     formcnt = 0
     embedcnt = 0
+    conn = newconn()
+    cur = conn.cursor()
     cur.execute(f"SELECT COUNT(*) FROM button")
     btncnt = cur.fetchone()[0]
     cur.execute(f"SELECT COUNT(*) FROM form")
@@ -317,5 +341,9 @@ async def Purge(ctx, count: discord.Option(int, "Number of messages to delete.",
 @bot.slash_command(name="ping", description="Get the bot's ping to discord API.")
 async def Ping(ctx):
     await ctx.respond(f"Pong! {int(bot.latency * 1000)}ms.")
+
+@bot.slash_command(name="parse", description="Get original text message", guild_ids = [DEVGUILD])
+async def ParseMsg(ctx, msg: discord.Option(str, "Message", required = True)):
+    await ctx.respond(f"```{msg}```")
     
 bot.loop.create_task(UpdateBotStatus())
