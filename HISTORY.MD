@@ -1,5 +1,10 @@
 # Gecko Bot Update History
 
+## Update 2022.04.15
+
+**Version v1.18b**  
+Added TruckersMP VTC Event Function  
+
 ## Update 2022.04.14
 
 **Version v1.18a**  

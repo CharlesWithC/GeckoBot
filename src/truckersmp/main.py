@@ -8,6 +8,8 @@
 import os, asyncio
 import discord
 from discord.ext import commands
+from discord.ui import Button, View
+from discord.enums import ButtonStyle
 import time
 from datetime import datetime
 import requests
@@ -59,6 +61,7 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
         country: discord.Option(str, "Traffic of all locations in a specific country, require server argument.", required = False, autocomplete = CountryAutocomplete),
         hrmode: discord.Option(str, "HR Mode, to get play hour and ban history", required = False, choices = ["Yes", "No"])):
     
+    await ctx.defer()
     if hrmode == "Yes":
         if name is None and mpid is None:
             await ctx.respond(f"Please specify a player name or TruckersMP ID.")
@@ -363,11 +366,13 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
             server = d[dd]
             if type(server) != dict:
                 continue
+            name = dd
+            name = name.replace(" ", "\n", 1)
             if "offline" in server.keys() and server["offline"]:
-                embed.add_field(name = dd, value = "```Offline```", inline = True)
+                embed.add_field(name = name, value = "```Offline```", inline = True)
                 continue
             players = server["players"]
-            embed.add_field(name = dd, value = f"```{players} Online```", inline = True)
+            embed.add_field(name = name, value = f"```{players} Online```", inline = True)
             lastupd = server["lastupd"]
         
         embed.timestamp = datetime.fromtimestamp(lastupd)
@@ -375,3 +380,370 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
         embed.set_footer(text = f"TruckersMP • traffic.krashnz.com ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
 
         await ctx.respond(embed = embed)
+
+@bot.slash_command(name="vtcbind", description="Bind your VTC to this guild.")
+async def vtcbind(ctx, vtcid: discord.Option(int, "The ID of your VTC", required = True),
+        unbind: discord.Option(str, "Unbind VTC from this guild", required = False, choices = ["Yes", "No"])):
+    if ctx.guild is None:
+        await ctx.respond("You can only run this command in guilds!")
+        return
+    guildid = ctx.guild.id
+    if not isStaff(ctx.guild, ctx.author):
+        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+        return
+
+    await ctx.defer()
+
+    conn = newconn()
+    cur = conn.cursor()
+    if unbind == "Yes":
+        cur.execute(f"SELECT name FROM vtcbind WHERE guildid = {ctx.guild.id}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond("This guild is not bound to a VTC!", ephemeral = True)
+            return
+        name = b64d(t[0][0])
+        cur.execute(f"DELETE FROM vtcbind WHERE guildid = {ctx.guild.id}")
+        conn.commit()
+        await ctx.respond(f"This guild is no longer boung to VTC **{name}**.", ephemeral = True)
+        return
+
+    r = requests.get(f"https://api.truckersmp.com/v2/vtc/{vtcid}")
+    if r.status_code != 200:
+        await ctx.respond(f"TruckersMP API request failed. Please try again later...", ephemeral = True)
+        return
+    d = json.loads(r.text)
+    if d["error"]:
+        await ctx.respond(f"TruckersMP API error: {d['response']}", ephemeral = True)
+        return
+    d = d["response"]
+    name = d["name"]
+    invitelink = d["socials"]["discord"]
+    if invitelink is None:
+        await ctx.respond(f"Discord invite link not found for **{name}**. Make sure there's a valid invite link to this guild on TruckersMP.", ephemeral = True)
+        return
+    try:
+        invites = await ctx.guild.invites()
+    except:
+        await ctx.respond(f"Failed to get invites for this guild. Please make sure I have permission to do that.", ephemeral = True)
+        return
+    found = False
+    for invite in invites:
+        if invite.url == invitelink:
+            found = True
+            break
+    if not found:
+        await ctx.respond(f"Discord invite link for **{name}** on TruckersMP doesn't link to this guild.", ephemeral = True)
+        return
+    cur.execute(f"INSERT INTO vtcbind VALUES ({ctx.guild.id}, {vtcid}, '{b64e(name)}')")
+    conn.commit()
+    await ctx.respond(f"Successfully bound the guild to VTC **{name}**!")
+
+class EventButton(Button):
+    def __init__(self, label, vtcid, eid, btntype, style, url = None):
+        self.vtcid = vtcid
+        self.eid = eid
+        self.btntype = btntype
+        super().__init__(
+            label=label,
+            url=url,
+            style=style
+        )  
+
+    async def callback(self, interaction: discord.Interaction):    
+        btntype = self.btntype
+        vtcid = self.vtcid
+        d = None
+        if btntype == "close":
+            await interaction.message.delete()
+            return
+        else:
+            t = GetEvents(vtcid)
+            if btntype == "next":
+                for i in range(len(t)):
+                    if t[i]["id"] == self.eid:
+                        if i + 1 < len(t):
+                            d = t[i+1]
+                        else:
+                            d = t[0]
+                        break
+            elif btntype == "previous":
+                for i in range(len(t)):
+                    if t[i]["id"] == self.eid:
+                        if i - 1 >= 0:
+                            d = t[i-1]
+                        else:
+                            d = t[-1]
+                        break
+
+        eid = d["id"]
+        name = d["name"]
+        server = d["server"]
+        vtc = d["vtc"]
+        creator = d["creator"]
+
+        game = d["game"]
+        emap = d["map"]
+        departure = d["departure"]
+        arrive = d["arrive"]
+        ts = d["startat"]
+
+        confirmed = d["confirmed"]
+        unsure = d["unsure"]
+
+        dlc = d["dlc"]
+        dlcs = "*None*"
+        if dlc != []:
+            dlcs = ""
+            for dd in dlc.keys():
+                dlcs += f"{dlc[dd]}, "
+            dlcs = dlcs[:-2]
+
+        embed = discord.Embed(title = f"{name}", url=f"https://truckersmp.com{d['url']}", color = TMPCLR)
+        embed.add_field(name = "Hosting VTC", value = f"{vtc}", inline = True)
+        embed.add_field(name = "Created by", value = f"{creator}", inline = True)
+
+        embed.add_field(name = "Server", value = f"{game} {server}", inline = False)
+
+        embed.add_field(name = "From", value = f"{departure['city']}", inline = True)
+        embed.add_field(name = "To", value = f"{arrive['city']}", inline = True)
+
+        embed.add_field(name = "DLC Required", value = dlcs, inline = False)
+
+        embed.add_field(name = "Starting time", value = f"<t:{ts}> (<t:{ts}:R>)", inline = False)
+
+        embed.add_field(name = "Attendance", value = f"**{confirmed}** confirmed, **{unsure}** unsure", inline = False)
+
+        embed.timestamp = datetime.fromtimestamp(ts)
+        embed.set_thumbnail(url = "https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+        if emap != None:
+            embed.set_image(url = emap)
+        embed.set_footer(text = f"TruckersMP • Event #{eid} ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+        
+        view = View(timeout = None)
+        button1 = EventButton("<< Previous <<", vtcid, eid, "previous", ButtonStyle.blurple)
+        button2 = EventButton("Open on TruckersMP", vtcid, eid, "url", ButtonStyle.grey, f"https://truckersmp.com{d['url']}")
+        button3 = EventButton(">> Next >>", vtcid, eid, "next", ButtonStyle.blurple)
+        button4 = EventButton("X Close X", vtcid, eid, "close", ButtonStyle.red)
+        view.add_item(button1)
+        view.add_item(button2)
+        view.add_item(button3)
+        view.add_item(button4)
+
+        await interaction.response.edit_message(embed = embed, view = view)    
+
+@bot.slash_command(name="vtcevents", description="Get events the VTC is attending.")
+async def vtcevents(ctx, vtcid: discord.Option(int, "Specify a VTC ID (optional if the guild is bound to a VTC)", required = False)):
+    conn = newconn()
+    cur = conn.cursor()
+    if vtcid is None:
+        cur.execute(f"SELECT vtcid, name FROM vtcbind WHERE guildid = {ctx.guild.id}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond("This guild is not bound to a VTC!\nUse `/vtcbind` to bind it first.", ephemeral = True)
+            return
+        vtcid = t[0][0]
+        name = b64d(t[0][1])
+    
+    await ctx.defer()
+    d = GetEvents(vtcid)
+    if d is None:
+        await ctx.respond(f"TruckersMP API request failed, or there's no events the VTC is attending.", ephemeral = True)
+        return
+    d = d[0]
+    eid = d["id"]
+    name = d["name"]
+    server = d["server"]
+    vtc = d["vtc"]
+    creator = d["creator"]
+
+    game = d["game"]
+    emap = d["map"]
+    departure = d["departure"]
+    arrive = d["arrive"]
+    ts = d["startat"]
+
+    confirmed = d["confirmed"]
+    unsure = d["unsure"]
+
+    dlc = d["dlc"]
+    dlcs = "*None*"
+    if dlc != []:
+        dlcs = ""
+        for dd in dlc.keys():
+            dlcs += f"{dlc[dd]}, "
+        dlcs = dlcs[:-2]
+
+    embed = discord.Embed(title = f"{name}", url=f"https://truckersmp.com{d['url']}", color = TMPCLR)
+    embed.add_field(name = "Hosting VTC", value = f"{vtc}", inline = True)
+    embed.add_field(name = "Created by", value = f"{creator}", inline = True)
+
+    embed.add_field(name = "Server", value = f"{game} {server}", inline = False)
+
+    embed.add_field(name = "From", value = f"{departure['city']}", inline = True)
+    embed.add_field(name = "To", value = f"{arrive['city']}", inline = True)
+
+    embed.add_field(name = "DLC Required", value = dlcs, inline = False)
+
+    embed.add_field(name = "Starting time", value = f"<t:{ts}> (<t:{ts}:R>)", inline = False)
+
+    embed.add_field(name = "Attendance", value = f"**{confirmed}** confirmed, **{unsure}** unsure", inline = False)
+
+    embed.timestamp = datetime.fromtimestamp(ts)
+    embed.set_thumbnail(url = "https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+    if emap != None:
+        embed.set_image(url = emap)
+    embed.set_footer(text = f"TruckersMP • Event #{eid} ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+
+    view = View(timeout = None)
+    button1 = EventButton("<< Previous <<", vtcid, eid, "previous", ButtonStyle.blurple)
+    button2 = EventButton("Open on TruckersMP", vtcid, eid, "url", ButtonStyle.grey, f"https://truckersmp.com{d['url']}")
+    button3 = EventButton(">> Next >>", vtcid, eid, "next", ButtonStyle.blurple)
+    button4 = EventButton("X Close X", vtcid, eid, "close", ButtonStyle.red)
+    view.add_item(button1)
+    view.add_item(button2)
+    view.add_item(button3)
+    view.add_item(button4)
+
+    await ctx.respond(embed = embed, view = view)
+
+@bot.slash_command(name="vtceventping", description="Send a message one hour before and the time an event starts.")
+async def vtceventping(ctx, channel: discord.Option(discord.TextChannel, "Channel to send the message", required = True),
+        msg: discord.Option(str, "Message to send, can contain @role pings", required = False),
+        disable: discord.Option(str, "Disable event ping", required = False)):
+
+    if ctx.guild is None:
+        await ctx.respond("You can only run this command in guilds!")
+        return
+    guildid = ctx.guild.id
+    if not isStaff(ctx.guild, ctx.author):
+        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+        return
+    
+    await ctx.defer()
+
+    channelid = channel.id
+    if msg is None:
+        msg = ""
+    
+    if disable == "Yes":
+        cur.execute(f"SELECT * FROM eventping WHERE guildid = {ctx.guild.id}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond("Event pings not enabled!")
+            return
+        cur.execute(f"DELETE FROM eventping WHERE guildid = {ctx.guild.id}")
+        conn.commit()
+    else:
+        cur.execute(f"SELECT vtcid FROM vtcbind WHERE guildid = {ctx.guild.id}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond("This guild is not bound to a VTC!\nUse `/vtcbind` to bind it first.", ephemeral = True)
+            return
+        vtcid = t[0][0]
+
+        cur.execute(f"SELECT * FROM eventping WHERE guildid = {ctx.guild.id}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            cur.execute(f"INSERT INTO eventping VALUES ({ctx.guild.id}, {vtcid}, {channelid}, '{b64e(msg)}')")
+        else:
+            cur.execute(f"UPDATE eventping SET vtcid = {vtcid}, channelid = {channelid}, msg = '{b64e(msg)}' WHERE guildid = {ctx.guild.id}")
+        conn.commit()
+        
+        await ctx.respond("Event pings enabled!")
+
+async def EventPing():
+    await bot.wait_until_ready()
+    await asyncio.sleep(5)
+    
+    while not bot.is_closed():
+        conn = newconn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT guildid, vtcid, channelid, msg, lastping FROM eventping")
+        t = cur.fetchall()
+        for tt in t:
+            try:
+                guildid = tt[0]
+                vtcid = tt[1]
+                channelid = tt[2]
+                channel = bot.get_channel(channelid)
+                if channel is None:
+                    continue
+                msg = b64d(tt[3])
+                d = GetEvents(vtcid)
+                if d is None:
+                    continue
+                d = d[0]
+                eid = d["id"]
+                name = d["name"]
+                server = d["server"]
+                vtc = d["vtc"]
+                creator = d["creator"]
+
+                game = d["game"]
+                emap = d["map"]
+                departure = d["departure"]
+                arrive = d["arrive"]
+                ts = d["startat"]
+
+                if ts > int(time()) - 3600:
+                    cur.execute(f"SELECT * FROM eventpinged WHERE vtcid = {vtcid} AND eventid = {eid}")
+                    t = cur.fetchall()
+                    if len(t) > 0:
+                        continue
+                    cur.execute(f"INSERT INTO eventpinged VALUES ({vtcid}, {eid})")
+                    conn.commit()
+                    msg = f"An event is starting in one hour!\n{msg}"
+                elif ts > int(time()) - 300: 
+                    cur.execute(f"SELECT * FROM eventpinged WHERE vtcid = {vtcid} AND eventid = {eid}")
+                    t = cur.fetchall()
+                    if len(t) > 1:
+                        continue
+                    cur.execute(f"INSERT INTO eventpinged VALUES ({vtcid}, {eid})")
+                    conn.commit()
+                    msg = f"An event is starting very soon!\n{msg}"
+                else:
+                    continue
+
+                confirmed = d["confirmed"]
+                unsure = d["unsure"]
+
+                dlc = d["dlc"]
+                dlcs = "*None*"
+                if dlc != []:
+                    dlcs = ""
+                    for dd in dlc.keys():
+                        dlcs += f"{dlc[dd]}, "
+                    dlcs = dlcs[:-2]
+
+                embed = discord.Embed(title = f"{name}", url=f"https://truckersmp.com{d['url']}", color = TMPCLR)
+                embed.add_field(name = "Hosting VTC", value = f"{vtc}", inline = True)
+                embed.add_field(name = "Created by", value = f"{creator}", inline = True)
+
+                embed.add_field(name = "Server", value = f"{game} {server}", inline = False)
+
+                embed.add_field(name = "From", value = f"{departure['city']}", inline = True)
+                embed.add_field(name = "To", value = f"{arrive['city']}", inline = True)
+
+                embed.add_field(name = "DLC Required", value = dlcs, inline = False)
+
+                embed.add_field(name = "Starting time", value = f"<t:{ts}> (<t:{ts}:R>)", inline = False)
+
+                embed.add_field(name = "Attendance", value = f"**{confirmed}** confirmed, **{unsure}** unsure", inline = False)
+
+                embed.timestamp = datetime.fromtimestamp(ts)
+                embed.set_thumbnail(url = "https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+                if emap != None:
+                    embed.set_image(url = emap)
+                embed.set_footer(text = f"TruckersMP • Event #{eid} ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+
+                await channel.send(content = msg, embed = embed)
+            
+            except:
+                import traceback
+                traceback.print_exc()
+                continue
+
+        await asyncio.sleep(30)
+
+bot.loop.create_task(EventPing())

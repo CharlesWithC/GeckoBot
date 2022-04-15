@@ -10,6 +10,7 @@ from db import newconn
 from functions import *
 import time
 from settings import *
+from datetime import datetime
 
 nameid = {}
 traffic = {}
@@ -283,4 +284,46 @@ def UpdateTMPTraffic():
             
             traffic[name] = {"players": totplayer, "traffic": straffic, "ctraffic": ctraffic, "top": stop, "lastupd": int(time.time())}
         traffic["allplayer"] = allplayer
-        time.sleep(90)
+        time.sleep(180)
+
+def GetEvents(vtcid):
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT data FROM eventcache WHERE vtcid = {vtcid} AND lastupd > {int(time.time()) - 10800}")
+    t = cur.fetchall()
+    if len(t) > 0:
+        return json.loads(b64d(t[0][0]))
+    
+    r = requests.get(f"https://api.truckersmp.com/v2/vtc/{vtcid}/events/attending")
+    if r.status_code != 200:
+        return None
+    d = json.loads(r.text)
+    if d["error"]:
+        return None
+    d = d["response"]
+    t = []
+    for dd in d:
+        eid = dd["id"]
+        name = dd["name"]
+        server = dd["server"]["name"]
+        vtc = dd["vtc"]["name"]
+        creator = dd["user"]["username"]
+        url = dd["url"]
+
+        game = dd["game"]
+        emap = dd["map"]
+        departure = dd["departure"]
+        arrive = dd["arrive"]
+        startat = dd["start_at"]
+        dt=datetime.strptime(startat, '%Y-%m-%d %H:%M:%S')
+        ts=int(dt.timestamp())
+        dlc = dd["dlcs"]
+
+        confirmed = dd["attendances"]["confirmed"]
+        unsure = dd["attendances"]["unsure"]
+        t.append({"id": eid, "name": name, "server": server, "url": url, "vtc": vtc, "creator": creator, "game": game, "map": emap, "departure": departure, "arrive": arrive, "startat": ts, "dlc": dlc, "confirmed": confirmed, "unsure": unsure})
+    
+    cur.execute(f"DELETE FROM eventcache WHERE vtcid = {vtcid}")
+    cur.execute(f"INSERT INTO eventcache VALUES ({vtcid}, '{b64e(json.dumps(t))}', {int(time.time())})")
+    conn.commit()
+    return t
