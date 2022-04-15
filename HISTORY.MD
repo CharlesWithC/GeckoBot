@@ -2,6 +2,9 @@
 
 ## Update 2022.04.15
 
+**Version v1.18b2**  
+Bug fixes of v1.18b
+
 **Version v1.18b**  
 Added TruckersMP VTC Event Function  
 

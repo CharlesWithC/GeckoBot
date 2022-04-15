@@ -550,6 +550,9 @@ async def vtcevents(ctx, vtcid: discord.Option(int, "Specify a VTC ID (optional 
     if d is None:
         await ctx.respond(f"TruckersMP API request failed, or there's no events the VTC is attending.", ephemeral = True)
         return
+    if len(d) == 0:
+        await ctx.respond(f"The VTC is not attending any events.", ephemeral = True)
+        return
     d = d[0]
     eid = d["id"]
     name = d["name"]
@@ -610,7 +613,7 @@ async def vtcevents(ctx, vtcid: discord.Option(int, "Specify a VTC ID (optional 
 @bot.slash_command(name="vtceventping", description="Send a message one hour before and the time an event starts.")
 async def vtceventping(ctx, channel: discord.Option(discord.TextChannel, "Channel to send the message", required = True),
         msg: discord.Option(str, "Message to send, can contain @role pings", required = False),
-        disable: discord.Option(str, "Disable event ping", required = False)):
+        disable: discord.Option(str, "Disable event ping", required = False, choices = ["Yes", "No"])):
 
     if ctx.guild is None:
         await ctx.respond("You can only run this command in guilds!")
@@ -621,6 +624,9 @@ async def vtceventping(ctx, channel: discord.Option(discord.TextChannel, "Channe
         return
     
     await ctx.defer()
+
+    conn = newconn()
+    cur = conn.cursor()
 
     channelid = channel.id
     if msg is None:
@@ -634,6 +640,8 @@ async def vtceventping(ctx, channel: discord.Option(discord.TextChannel, "Channe
             return
         cur.execute(f"DELETE FROM eventping WHERE guildid = {ctx.guild.id}")
         conn.commit()
+
+        await ctx.respond("Event pings disabled!")
     else:
         cur.execute(f"SELECT vtcid FROM vtcbind WHERE guildid = {ctx.guild.id}")
         t = cur.fetchall()
@@ -659,7 +667,7 @@ async def EventPing():
     while not bot.is_closed():
         conn = newconn()
         cur = conn.cursor()
-        cur.execute(f"SELECT guildid, vtcid, channelid, msg, lastping FROM eventping")
+        cur.execute(f"SELECT guildid, vtcid, channelid, msg FROM eventping")
         t = cur.fetchall()
         for tt in t:
             try:
@@ -686,15 +694,7 @@ async def EventPing():
                 arrive = d["arrive"]
                 ts = d["startat"]
 
-                if ts > int(time()) - 3600:
-                    cur.execute(f"SELECT * FROM eventpinged WHERE vtcid = {vtcid} AND eventid = {eid}")
-                    t = cur.fetchall()
-                    if len(t) > 0:
-                        continue
-                    cur.execute(f"INSERT INTO eventpinged VALUES ({vtcid}, {eid})")
-                    conn.commit()
-                    msg = f"An event is starting in one hour!\n{msg}"
-                elif ts > int(time()) - 300: 
+                if ts - int(time.time()) <= 300: 
                     cur.execute(f"SELECT * FROM eventpinged WHERE vtcid = {vtcid} AND eventid = {eid}")
                     t = cur.fetchall()
                     if len(t) > 1:
@@ -702,6 +702,14 @@ async def EventPing():
                     cur.execute(f"INSERT INTO eventpinged VALUES ({vtcid}, {eid})")
                     conn.commit()
                     msg = f"An event is starting very soon!\n{msg}"
+                elif ts - int(time.time()) <= 3600:
+                    cur.execute(f"SELECT * FROM eventpinged WHERE vtcid = {vtcid} AND eventid = {eid}")
+                    t = cur.fetchall()
+                    if len(t) > 0:
+                        continue
+                    cur.execute(f"INSERT INTO eventpinged VALUES ({vtcid}, {eid})")
+                    conn.commit()
+                    msg = f"An event is starting in one hour!\n{msg}"
                 else:
                     continue
 
