@@ -2,6 +2,9 @@
 
 ## Update 2022.04.15
 
+**Version v1.18c2**  
+Bug fixes of v1.18c
+
 **Version v1.18c**  
 Added Premium Function
 
