@@ -52,6 +52,15 @@ def Name2ID(name):
         return nameid[name]
     return None
 
+def Discord2Mp(discordid):
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT mpid FROM tmpbind WHERE discordid = {discordid}")
+    t = cur.fetchall()
+    if len(t) > 0:
+        return t[0][0]
+    return None
+
 def GetMapLoc(mpid):
     r = requests.get(f"https://api.truckyapp.com/v3/map/online?playerID={mpid}")
     if r.status_code != 200:
@@ -122,13 +131,14 @@ def GetHRData(mpid):
         "banned": banned, "bannedUntil": bannedUntil, "bansCount": bansCount, \
         "displayBans": displayBans, "bans": bans, "ets2hour": ets2hour, "atshour": atshour}
 
-def GetTMPData(mpid):
+def GetTMPData(mpid, clearcache = False):
     conn = newconn()
     cur = conn.cursor()
-    cur.execute(f"SELECT tmpdata FROM truckersmp WHERE mpid = {mpid} AND lastupd > {int(time.time()) - 10800}")
-    t = cur.fetchall()
-    if len(t) > 0:
-        return json.loads(b64d(t[0][0])) # cache for three hours
+    if not clearcache:
+        cur.execute(f"SELECT tmpdata FROM truckersmp WHERE mpid = {mpid} AND lastupd > {int(time.time()) - 10800}")
+        t = cur.fetchall()
+        if len(t) > 0:
+            return json.loads(b64d(t[0][0])) # cache for three hours
     global nameid
     r = requests.get(f"https://api.truckersmp.com/v2/player/{mpid}")
     if r.status_code == 200:
@@ -137,6 +147,7 @@ def GetTMPData(mpid):
             d = d["response"]
             name = d["name"]
             steamid = d["steamID"]
+            discordid = d["discordSnowflake"]
             patreon = d["patreon"]["isPatron"]
             avatar = d["avatar"]
             joinDate = d["joinDate"]
@@ -145,7 +156,7 @@ def GetTMPData(mpid):
             vtc = d["vtc"]["name"]
             vtctag = d["vtc"]["tag"]
             lastupd = int(time.time())
-            res = {"mpid": mpid, "steamid": steamid, "name":name, "patreon": patreon, "avatar": avatar, "joinDate": joinDate, "group": group, \
+            res = {"mpid": mpid, "steamid": steamid, "discordid": discordid, "name":name, "patreon": patreon, "avatar": avatar, "joinDate": joinDate, "group": group, \
                 "vtcid": vtcid, "vtc": vtc, "vtctag": vtctag, "vtcpos": GetVTCPosition(d["vtc"]["id"], d["vtc"]["memberID"]),\
                     "lastupd": lastupd}
             nameid[f'{name} ({mpid})'] = mpid

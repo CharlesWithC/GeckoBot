@@ -10,6 +10,7 @@ import discord
 from discord.ext import commands
 from discord.ui import Button, View
 from discord.enums import ButtonStyle
+from discord.ext.commands import CooldownMapping, Cooldown, BucketType
 import time
 from datetime import datetime
 import requests
@@ -53,12 +54,13 @@ async def CountryAutocomplete(ctx: discord.AutocompleteContext):
         return country[server][:10]
     return SearchCountry(server, ctx.value)
 
-@bot.slash_command(name="truckersmp", alias=["tmp"], description="TruckersMP")
+@bot.slash_command(name="truckersmp", alias=["tmp"], description="TruckersMP (30 attempt / 10 min)", cooldown = CooldownMapping(Cooldown(30, 600), BucketType.user))
 async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline players are cached when they were online and might not update / show up)", required = False, autocomplete = PlayerAutocomplete),
         mpid: discord.Option(int, "TruckersMP ID (This can retrieve all info about the player)", required = False),
-        server: discord.Option(str, "TruckersMP Server (To get the top traffic locations)", required = False, autocomplete = ServerAutocomplete),
-        location: discord.Option(str, "Traffic of a specific location, require server argument.", required = False, autocomplete = LocationAutocomplete),
-        country: discord.Option(str, "Traffic of all locations in a specific country, require server argument.", required = False, autocomplete = CountryAutocomplete),
+        mention: discord.Option(discord.User, "Discord Mention (This require the user to /tmpbind their account)", required = False),
+        server: discord.Option(str, "TruckersMP Server", required = False, autocomplete = ServerAutocomplete),
+        location: discord.Option(str, "To get traffic of a specific location, require server argument.", required = False, autocomplete = LocationAutocomplete),
+        country: discord.Option(str, "To get traffic of all locations in a specific country, require server argument.", required = False, autocomplete = CountryAutocomplete),
         hrmode: discord.Option(str, "HR Mode, to get play hour and ban history", required = False, choices = ["Yes", "No"])):
     
     await ctx.defer()
@@ -80,7 +82,7 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
         avatar = d["avatar"]
         joinDate = d["joinDate"]
         group = d["group"]
-        vtc = f"**{d['vtc']}**{d['vtcpos']}"
+        vtc = f"**[{d['vtc']}](https://truckersmp.com/vtc/{d['vtcid']})**{d['vtcpos']}"
 
         embed.set_thumbnail(url = avatar)
         if not patreon:
@@ -97,6 +99,16 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
             embed.add_field(name = "Steam", value = f'[{steamname}]({steamurl}) (`{steamid}`)', inline = False)
         else:
             embed.add_field(name = "Steam ID", value = f"[{steamid}](https://steamcommunity.com/profiles/{steamid})", inline = False)
+        
+        discordid = d["discordid"]
+        if discordid != None:
+            user = bot.get_user(int(discordid))
+            if user != None:
+                if await ctx.guild.fetch_member(user.id) != None:
+                    embed.add_field(name = "Discord", value = f"<@{discordid}> (`{discordid}`)")
+                else:
+                    embed.add_field(name = "Discord", value = f"{user.name}#{user.discriminator} (`{discordid}`)")
+                
         if d["vtcid"] != 0:
             embed.add_field(name = "Virtual Trucking Company", value = vtc, inline = False)
         else:
@@ -161,7 +173,7 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
             avatar = d["avatar"]
             joinDate = d["joinDate"]
             group = d["group"]
-            vtc = f"**{d['vtc']}**{d['vtcpos']}"
+            vtc = f"**[{d['vtc']}](https://truckersmp.com/vtc/{d['vtcid']})**{d['vtcpos']}"
 
             embed.set_thumbnail(url = avatar)
             if not patreon:
@@ -178,6 +190,16 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
                 embed.add_field(name = "Steam", value = f'[{steamname}]({steamurl}) (`{steamid}`)', inline = False)
             else:
                 embed.add_field(name = "Steam ID", value = f"[{steamid}](https://steamcommunity.com/profiles/{steamid})", inline = False)
+            
+            discordid = d["discordid"]
+            if discordid != None:
+                user = bot.get_user(int(discordid))
+                if user != None:
+                    if await ctx.guild.fetch_member(user.id) != None:
+                        embed.add_field(name = "Discord", value = f"<@{discordid}> (`{discordid}`)")
+                    else:
+                        embed.add_field(name = "Discord", value = f"{user.name}#{user.discriminator} (`{discordid}`)")
+
             if d["vtcid"] != 0:
                 embed.add_field(name = "Virtual Trucking Company", value = vtc, inline = False)
         else:
@@ -218,7 +240,7 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
         avatar = d["avatar"]
         joinDate = d["joinDate"]
         group = d["group"]
-        vtc = f"**{d['vtc']}**{d['vtcpos']}"
+        vtc = f"**[{d['vtc']}](https://truckersmp.com/vtc/{d['vtcid']})**{d['vtcpos']}"
 
         embed.set_thumbnail(url = avatar)
         if not patreon:
@@ -235,6 +257,84 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
             embed.add_field(name = "Steam", value = f'[{steamname}]({steamurl}) (`{steamid}`)', inline = False)
         else:
             embed.add_field(name = "Steam ID", value = f"[{steamid}](https://steamcommunity.com/profiles/{steamid})", inline = False)
+        
+        discordid = d["discordid"]
+        if discordid != None:
+            user = bot.get_user(int(discordid))
+            if user != None:
+                if await ctx.guild.fetch_member(user.id) != None:
+                    embed.add_field(name = "Discord", value = f"<@{discordid}> (`{discordid}`)")
+                else:
+                    embed.add_field(name = "Discord", value = f"{user.name}#{user.discriminator} (`{discordid}`)")
+        
+        if d["vtcid"] != 0:
+            embed.add_field(name = "Virtual Trucking Company", value = vtc, inline = False)
+            
+        player = GetMapLoc(mpid)
+        if player != None:
+            if embed is None:
+                embed = discord.Embed(title = f"{player['name']}", color = TMPCLR)
+            embed.add_field(name = "Server", value = player["server"], inline = True)
+            embed.add_field(name = "Player ID", value = player["playerid"], inline = True)
+            location = player["city"] + ", " + player["country"]
+            if player["distance"] != 0:
+                dis = player['distance']
+                if dis > 10:
+                    dis = int(dis)
+                location = f"Near **{location}**"
+            embed.add_field(name = "Location", value = location, inline = False)
+            embed.timestamp = datetime.fromtimestamp(player["time"])
+        else:
+            embed.timestamp = datetime.now()
+
+        embed.timestamp = datetime.fromtimestamp(d["lastupd"])
+        embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+
+        await ctx.respond(embed = embed)
+    
+    elif mention != None:
+        discordid = mention.id
+        mpid = Discord2Mp(discordid)
+        if mpid is None:
+            await ctx.respond(f"{mention} has not bound their Discord account with TruckersMP Profile.")
+            return
+        d = GetTMPData(mpid)
+        if d is None:
+            await ctx.respond(f"Player not found.")
+            return
+
+        embed = discord.Embed(title = f"{d['name']}", color = TMPCLR)
+        patreon = d["patreon"]
+        avatar = d["avatar"]
+        joinDate = d["joinDate"]
+        group = d["group"]
+        vtc = f"**[{d['vtc']}](https://truckersmp.com/vtc/{d['vtcid']})**{d['vtcpos']}"
+
+        embed.set_thumbnail(url = avatar)
+        if not patreon:
+            embed.add_field(name = "TruckersMP ID", value = f'[{d["mpid"]}](https://truckersmp.com/user/{d["mpid"]})', inline = True)
+        else:
+            embed.add_field(name = "TruckersMP ID", value = f'[{d["mpid"]}](https://truckersmp.com/user/{d["mpid"]})' + " <:patreon:963787835637399602>", inline = True)
+        embed.add_field(name = "Join Date", value = joinDate, inline = True)
+        embed.add_field(name = "Group", value = group, inline = True)
+        steam = GetSteamUser(d["steamid"])
+        if steam != None:
+            steamname = steam["personaname"]
+            steamurl = steam["profileurl"]
+            steamid = d["steamid"]
+            embed.add_field(name = "Steam", value = f'[{steamname}]({steamurl}) (`{steamid}`)', inline = False)
+        else:
+            embed.add_field(name = "Steam ID", value = f"[{steamid}](https://steamcommunity.com/profiles/{steamid})", inline = False)
+        
+        discordid = d["discordid"]
+        if discordid != None:
+            user = bot.get_user(int(discordid))
+            if user != None:
+                if await ctx.guild.fetch_member(user.id) != None:
+                    embed.add_field(name = "Discord", value = f"<@{discordid}> (`{discordid}`)")
+                else:
+                    embed.add_field(name = "Discord", value = f"{user.name}#{user.discriminator} (`{discordid}`)")
+        
         if d["vtcid"] != 0:
             embed.add_field(name = "Virtual Trucking Company", value = vtc, inline = False)
             
@@ -381,7 +481,45 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
 
         await ctx.respond(embed = embed)
 
-@bot.slash_command(name="vtcbind", description="Bind your VTC to this guild.")
+@bot.slash_command(name="tmpbind", description="Bind your TruckersMP profile to your Discord account (3 attempt / 10 min)", cooldown = CooldownMapping(Cooldown(3, 600), BucketType.user))
+async def tmpbind(ctx, mpid: discord.Option(int, "Your TruckersMP User ID"),
+        unbind: discord.Option(str, "Unbind your TruckersMP profile", required = False, choices = ["Yes", "No"])):
+    await ctx.defer()
+    conn = newconn()
+    cur = conn.cursor()
+    if unbind == "Yes":
+        cur.execute(f"SELECT * FROM tmpbind WHERE discordid = {discordid}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond("You are not bound to any TruckersMP profile.")
+            return
+        cur.execute(f"DELETE FROM tmpbind WHERE discordid = {discordid}")
+        conn.commit()
+        await ctx.respond("You have successfully unbound your TruckersMP profile.")
+        return
+
+    d = GetTMPData(mpid, clearcache = True)
+    if d is None:
+        await ctx.respond("TruckersMP user not found.")
+        return
+    if d["discordid"] is None:
+        await ctx.respond("Please bind your Discord account on TruckersMP, and make it public visible.")
+        return
+
+    discordid = int(d["discordid"])
+    if discordid == ctx.author.id:
+        cur.execute(f"SELECT * FROM tmpbind WHERE discordid = {discordid}")
+        t = cur.fetchall()
+        if len(t) > 0:
+            await ctx.respond("You are already bound to a TruckersMP profile.")
+            return
+        cur.execute(f"INSERT INTO tmpbind VALUES ({mpid}, {discordid})")
+        conn.commit()
+        await ctx.respond(f"Successfully bound to [{d['name']}](https://truckersmp.com/user/{mpid})")
+    else:
+        await ctx.respond(f"[{d['name']}](https://truckersmp.com/user/{mpid})'s Discord is not you!")
+
+@bot.slash_command(name="vtcbind", description="Bind your VTC to this guild (3 attempt / 60 min)", cooldown = CooldownMapping(Cooldown(3, 3600), BucketType.guild))
 async def vtcbind(ctx, vtcid: discord.Option(int, "The ID of your VTC", required = True),
         unbind: discord.Option(str, "Unbind VTC from this guild", required = False, choices = ["Yes", "No"])):
     if ctx.guild is None:

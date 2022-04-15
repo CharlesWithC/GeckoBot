@@ -608,6 +608,59 @@ Set `remove` to `Yes` to remove the level role.
 Usage: `/levelrole {required: level} {required: @role} {optional: remove}`"""
     },
 
+    "truckersmp": {
+        "description": """<:truckersmp:964343306626662430> **TruckersMP**
+Gecko supports various **TruckersMP** functions, including **traffic / player / vtc lookup**, **HR mode** and **VTC events**.
+**Note** There's a cooldown as noted in the command description, if Gecko doesn't repond, it's probably because you are being cooled down.
+
+**Traffic lookup** 
+`/truckersmp` - General server information.
+`/truckersmp {required: server}` - Get top traffic location in the server.
+`/truckersmp {required: server} {optional: location} {optional: country}` - Get traffic information for a specific location / country.
+
+**Player lookup**
+`/truckersmp {optional: name} {optional: mpid} {optional: mention}` - Get player information, and if player is online, their location.
+**NOTE** Gecko caches online players when they are online, if the player doesn't show up when you enter the {name}, it's probably because the player isn't cached, and you have to use {mpid}.
+If you want to look up a player using {mention}, they must have first bound the Discord account and TruckersMP account on Gecko using `/tmpbind`.
+
+**HR mode**
+`/truckersmp {optional: name} {optional: mpid} {required: hrmode = Yes}` - In addition to all the basic player information, get their steam play hour of ETS2 and ATS, as well as their TruckersMP ban count and history.
+
+**VTC Events**
+`/vtcevents {optional: vtcid}` - Get the events a VTC is attending, if {vtcid} is not specified, get the events of the VTC the guild is bound to.
+
+To bind the guild to a VTC, make sure Gecko can see all the invite links, and there's a valid invite link on TruckersMP. Then use `/vtcbind {required: vtcid}` to bind your VTC.
+Gecko also supports sending a message when an event is starting (1 hour before and 5 minutes before), check `/help truckersmp - vtceventping` for more information.""",
+
+        "tmpbind": """<:truckersmp:964343306626662430> **TruckersMP**
+Bind your Discord account with TruckersMP account.
+
+Make sure you have bound it on TruckersMP first, and made it public visible, or Gecko cannot verify you!
+
+To unbind, set {unbind} to "Yes".
+
+**Note** This command has a cooldown of 3 attempts / 10 minutes, if exceeded, you will be cooled down and Gecko will not respond.
+
+Usage: `/tmpbind {required: mpid} {optional: unbind}`""",
+
+        "vtcbind": """<:truckersmp:964343306626662430> **TruckersMP**
+Bind a VTC with the guild.
+
+Make sure you Gecko can see all invite links the guild has, and there's a valid invite link on TruckersMP page!
+
+To unbind, set {unbind} to "Yes".
+
+**Note** This command has a cooldown of 3 attempts / 60 minutes, if exceeded, you will be cooled down and Gecko will not respond.
+
+Usage: `/vtcbind {required: vtcid} {optional: unbind}`""",
+
+        "vtceventping": """<:truckersmp:964343306626662430> **TruckersMP**
+Send a (custom) message before 1 hour and 5 minutes an event is starting.
+The custom message is optional, and it can contain mentions to ping members.
+
+Usage: `/vtceventping {required: channel} {optional: msg} {optional: disable}`"""
+    },
+
     "user": """Get user information of given user.
 
 Usage: `/user {required: user}`""",
