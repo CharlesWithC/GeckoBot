@@ -133,6 +133,21 @@ class ManageEmbed(commands.Cog):
         if not isStaff(ctx.guild, ctx.author):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
+
+        cur.execute(f"SELECT COUNT(*) FROM embed WHERE guildid = {guildid}")
+        c = cur.fetchall()
+        if len(c) > 0:
+            premium = GetPremium(ctx.guild)
+            cnt = c[0][0]
+            if cnt >= 100 and premium >= 2:
+                await ctx.respond("Max embeds: 100.\n\nIf you are looking for more embeds, contact Gecko Moderator in support server", ephemeral = True)
+                return
+            elif cnt >= 30 and premium == 1:
+                await ctx.respond("Premium Tier 1: 30 embeds.\nPremium Tier 2: 100 embeds.\n\nCheck out more by using `/premium`", ephemeral = True)
+                return
+            elif cnt >= 10 and premium == 0:
+                await ctx.respond("Free guilds: 10 embeds.\nPremium Tier 1: 30 embeds.\nPremium Tier 2: 100 embeds.\n\nCheck out more by using `/premium`", ephemeral = True)
+                return
         
         if color is None:
             color = "158 132 46"

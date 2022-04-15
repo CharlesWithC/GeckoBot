@@ -2,6 +2,9 @@
 
 ## Update 2022.04.15
 
+**Version v1.18c**  
+Added Premium Function
+
 **Version v1.18**  
 Added TruckersMP player bind and help message.  
 

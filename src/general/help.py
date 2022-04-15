@@ -664,6 +664,10 @@ The custom message is optional, and it can contain mentions to ping members.
 Usage: `/vtceventping {required: channel} {optional: msg} {optional: disable}`"""
     },
 
+    "premium": """Get Gecko Premium subscription status, and information about premium.
+
+Usage: `/premium`""",
+
     "user": """Get user information of given user.
 
 Usage: `/user {required: user}`""",
@@ -678,7 +682,7 @@ Usage: `/encrypt {required: @receiver} {required: content}`
 
 **NOTE** The command support Gecko prefix (non-slash, like `g?` `g!`), but you are suggested to use slash commands as they are easier to use.""",
 
-    "encrypt": """Decrypt a message sent to you.
+    "decrypt": """Decrypt a message sent to you.
 
 Usage: `/decrypt {required: content}`
 

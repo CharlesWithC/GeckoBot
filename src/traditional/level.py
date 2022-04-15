@@ -86,7 +86,8 @@ async def rank(ctx, member: discord.Member = None):
             bg = b64d(t[0][0])
     
     # background
-    if validators.url(bg) == True:
+    premium = GetPremium(ctx.guild)
+    if validators.url(bg) == True and (premium > 0 or ctx.author.id == BOTOWNER):
         try:
             bg = requests.get(bg)
             bg = Image.open(io.BytesIO(bg.content))

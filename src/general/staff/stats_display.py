@@ -117,6 +117,13 @@ class ManageStatsDisplay(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
             
+        cur.execute(f"SELECT COUNT(*) FROM statsconfig WHERE guildid = {guildid}")
+        c = cur.fetchall()
+        if len(c) > 0:
+            cnt = c[0][0]
+            if cnt >= 10:
+                await ctx.respond(f"Max stats channel: 10\nThat's the limit, you cannot unlock more.", ephemeral = True)
+                return
         
         try:
             guild = ctx.guild

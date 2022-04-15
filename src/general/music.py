@@ -879,6 +879,11 @@ async def Radio(ctx, station: discord.Option(str, "Radio station (274 stations a
     if voice_client is None or voice_client.channel is None:
         await ctx.respond(f"I'm not in a voice channel. Use /join command to join me in.", ephemeral = True)
         return
+    
+    premium = GetPremium(ctx.guild)
+    if premium == 0:
+        await ctx.respond(f"Radio function is premium only.", ephemeral = True)
+        return
 
     station = SearchRadio(station)
     idx = radioname.index(station)

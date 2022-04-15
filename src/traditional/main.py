@@ -19,6 +19,8 @@ from bot import tbot, shard
 from db import newconn
 from settings import *
 from functions import *
+from time import time
+from datetime import datetime
 
 @tbot.command(name="user", description="Get user information")
 async def getuser(ctx, user: discord.Member):
@@ -178,3 +180,36 @@ async def tping(ctx):
 @tbot.command(name="parse", description="Get original text message", guild_ids = [DEVGUILD])
 async def ParseMsg(ctx, msg: str):
     await ctx.send(f"```{msg}```")
+
+@tbot.command(name="premium", description="Get Gecko Premium subscription status, and information about premium.")
+async def Premium(ctx):
+    await ctx.channel.trigger_typing()
+    conn = newconn()
+    cur = conn.cursor()
+
+    current = f"**{ctx.guild.name}** is not subscribed Gecko Premium."
+    cur.execute(f"SELECT tier, expire FROM premium WHERE guildid = {ctx.guild.id}")
+    t = cur.fetchall()
+    if len(t) > 0:
+        tier = t[0][0]
+        expire = t[0][1]
+        if tier > 0:
+            if expire > time():
+                current = f"**{ctx.guild.name}**: Gecko Premium Tier **{tier}**.\nExpires on: {datetime.fromtimestamp(expire).strftime('%Y-%m-%d')}"
+            else:
+                current = f"**{ctx.guild.name}**: **Expired** Gecko Premium Tier **{tier}**.\nExpired on: {datetime.fromtimestamp(expire).strftime('%Y-%m-%d')}"
+
+    embed = discord.Embed(title = "Gecko Premium", description = current, color = GECKOCLR)
+    embed.add_field(name = "Buttons", value = "Free: **10**\nTier 1: **30**\nTier 2: **100**", inline = True)
+    embed.add_field(name = "Embeds", value = "Free: **10**\nTier 1: **30**\nTier 2: **100**", inline = True)
+    embed.add_field(name = "Forms", value = "Free: **5**\nTier 1: **30**\nTier 2: **50**", inline = True)
+    embed.add_field(name = "Reaction Role (Messages)", value = "Free: **10**\nTier 1: **30**\nTier 2: **50**", inline = True)
+    embed.add_field(name = "Voice Channel Recorder", value = "Free: **10 hours / month**\nTier 1: **30 hours / month**\nTier 2: **100 hours / month**", inline = True)
+    embed.add_field(name = "Other", value = "Any Permium Tier: **Radio** **Rank Card with image background**", inline = False)
+    embed.add_field(name = "Note", value = f"Gecko is giving away **Free Premium** to the first 100 guilds!\nIf your guild isn't given premium ,join [support server]({SUPPORT}) and ask for it!", inline = False)
+
+    embed.timestamp = datetime.now()
+    embed.set_thumbnail(url = BOT_ICON)
+    embed.set_footer(text = f"Gecko Premium ", icon_url = BOT_ICON)
+
+    await ctx.send(embed = embed)

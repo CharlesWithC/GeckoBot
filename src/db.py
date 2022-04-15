@@ -37,6 +37,7 @@ cur.execute(f"CREATE TABLE IF NOT EXISTS serverstats (guildid BIGINT, categoryid
 cur.execute(f"CREATE TABLE IF NOT EXISTS statsconfig (guildid BIGINT, categoryid BIGINT, channelid BIGINT, conf TEXT)")
 cur.execute(f"CREATE TABLE IF NOT EXISTS channelbind (guildid BIGINT, category VARCHAR(32), channelid BIGINT)")
 cur.execute(f"CREATE TABLE IF NOT EXISTS eventlog (guildid BIGINT, events TEXT)")
+cur.execute(f"CREATE TABLE IF NOT EXISTS vcrecord (guildid BIGINT, minutes BIGINT, laststart BIGINT)") # clear each month
 
 # USER MANAGEMENT
 cur.execute(f"CREATE TABLE IF NOT EXISTS level (guildid BIGINT, userid BIGINT, level BIGINT, xp BIGINT, lastmsg BIGINT)")
@@ -81,8 +82,14 @@ cur.execute(f"CREATE TABLE IF NOT EXISTS eventping (guildid BIGINT, vtcid BIGINT
 cur.execute(f"CREATE TABLE IF NOT EXISTS eventpinged (vtcid BIGINT, eventid BIGINT)")
 cur.execute(f"CREATE TABLE IF NOT EXISTS eventcache (vtcid BIGINT, data MEDIUMTEXT, lastupd BIGINT)")
 
+# PREMIUM
+cur.execute(f"CREATE TABLE IF NOT EXISTS premium (guildid BIGINT, tier BIGINT, expire BIGINT)")
+
 # GENERAL SETTINGS
 cur.execute(f"CREATE TABLE IF NOT EXISTS settings (guildid BIGINT, skey TEXT, sval TEXT)")
+
+cur.execute(f"UPDATE vcrecord SET laststart = 0")
+conn.commit()
 del cur
 
 def newconn():

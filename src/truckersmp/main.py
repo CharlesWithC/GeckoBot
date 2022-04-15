@@ -104,7 +104,7 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
         if discordid != None:
             user = bot.get_user(int(discordid))
             if user != None:
-                if await ctx.guild.fetch_member(user.id) != None:
+                if ctx.guild != None and await ctx.guild.fetch_member(user.id) != None:
                     embed.add_field(name = "Discord", value = f"<@{discordid}> (`{discordid}`)")
                 else:
                     embed.add_field(name = "Discord", value = f"{user.name}#{user.discriminator} (`{discordid}`)")
@@ -195,7 +195,7 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
             if discordid != None:
                 user = bot.get_user(int(discordid))
                 if user != None:
-                    if await ctx.guild.fetch_member(user.id) != None:
+                    if ctx.guild != None and await ctx.guild.fetch_member(user.id) != None:
                         embed.add_field(name = "Discord", value = f"<@{discordid}> (`{discordid}`)")
                     else:
                         embed.add_field(name = "Discord", value = f"{user.name}#{user.discriminator} (`{discordid}`)")
@@ -262,7 +262,7 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
         if discordid != None:
             user = bot.get_user(int(discordid))
             if user != None:
-                if await ctx.guild.fetch_member(user.id) != None:
+                if ctx.guild != None and await ctx.guild.fetch_member(user.id) != None:
                     embed.add_field(name = "Discord", value = f"<@{discordid}> (`{discordid}`)")
                 else:
                     embed.add_field(name = "Discord", value = f"{user.name}#{user.discriminator} (`{discordid}`)")
@@ -330,7 +330,7 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
         if discordid != None:
             user = bot.get_user(int(discordid))
             if user != None:
-                if await ctx.guild.fetch_member(user.id) != None:
+                if ctx.guild != None and await ctx.guild.fetch_member(user.id) != None:
                     embed.add_field(name = "Discord", value = f"<@{discordid}> (`{discordid}`)")
                 else:
                     embed.add_field(name = "Discord", value = f"{user.name}#{user.discriminator} (`{discordid}`)")

@@ -169,3 +169,21 @@ def CalcLevel(xp):
 
 def CalcXP(i):
     return 5 / 6 * i * (2 * i * i + 27 * i + 91)
+
+def GetPremium(guild):
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT tier FROM premium WHERE guildid = {guild.id} AND expire > {int(time())}")
+    t = cur.fetchall()
+    if len(t) > 0:
+        return t[0][0]
+    return 0
+
+def CheckPremium(guild, tier):
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT * FROM premium WHERE guildid = {guild.id} AND tier >= {tier} AND expire > {int(time())}")
+    t = cur.fetchall()
+    if len(t) > 0:
+        return True
+    return False

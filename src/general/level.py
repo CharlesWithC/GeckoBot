@@ -86,7 +86,8 @@ async def rank(ctx, member: discord.Option(discord.User, "@member", required = F
             bg = b64d(t[0][0])
     
     # background
-    if validators.url(bg) == True:
+    premium = GetPremium(ctx.guild)
+    if validators.url(bg) == True and (premium > 0 or ctx.author.id == BOTOWNER):
         try:
             bg = requests.get(bg)
             bg = Image.open(io.BytesIO(bg.content))
@@ -268,6 +269,12 @@ async def card(ctx, background: discord.Option(str, "Backgroun image, supports R
                 await ctx.respond("The URL does not point to a png / jpeg image.", ephemeral = True)
                 return
             background = b64e(background)
+            
+            premium = GetPremium(ctx.guild)
+            if premium == 0:
+                await ctx.respond("Premium is required to use image backgrounds.", ephemeral = True)
+                return
+
             notice = "\nYou have set a web image as background, make sure the URL is always valid or Gecko will not be able to display it."
         cur.execute(f"UPDATE rankcard SET bgcolor = '{background}' WHERE guildid = {guildid} AND userid = {ctx.author.id}")
     

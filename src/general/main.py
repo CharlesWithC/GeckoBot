@@ -8,6 +8,7 @@ import discord
 import asyncio
 import sys
 from time import time
+from datetime import datetime
 
 import general.staff.chat
 import general.crypto
@@ -79,7 +80,32 @@ async def on_guild_join(guild):
         await guild.leave()
         return
     
-    await guild.text_channels[0].send(f"Gecko's here!\nYou are suggested to check `/setup` and `/help`.")
+    expire = 0
+    tier = 1
+    guildid = guild.id
+    if len(bot.guilds) <= 100:
+        expire = int(time())+6*30*86400
+        try:
+            await guild.text_channels[0].send(f"Gecko's here!\nYou are suggested to check `/setup` and `/help`.\n\nAs **{guild.name}** is within the first 100 guilds to invite **Gecko**, premium of 180 days is rewarded!")
+        except:
+            pass
+    else:
+        expire = int(time())+7*86400
+        try:
+            await guild.text_channels[0].send(f"Gecko's here!\nYou are suggested to check `/setup` and `/help`.\n\nPremium of one week is rewarded and you can try out all premium functions including custom rank card, voice channel recorder etc.")
+        except:
+            pass
+
+    cur.execute(f"INSERT INTO premium VALUES ({guildid}, {tier}, {expire})")
+    conn.commit()
+    dt = datetime.datetime.fromtimestamp(expire)
+    try:
+        channel = bot.get_channel(GUILDUPD[1])
+        await channel.send(f"**Premium** `{guildid}` Tier **{tier}** Expire **{datetime.fromtimestamp(expire).strftime('%Y-%m-%d')}** *Auto*")
+    except:
+        import traceback
+        traceback.print_exc()
+        pass
 
 @bot.event
 async def on_guild_remove(guild):
@@ -345,5 +371,38 @@ async def Ping(ctx):
 @bot.slash_command(name="parse", description="Get original text message", guild_ids = [DEVGUILD])
 async def ParseMsg(ctx, msg: discord.Option(str, "Message", required = True)):
     await ctx.respond(f"```{msg}```")
-    
+
+@bot.slash_command(name="premium", description="Get Gecko Premium subscription status, and information about premium.")
+async def Premium(ctx):
+    await ctx.defer()
+    conn = newconn()
+    cur = conn.cursor()
+
+    current = f"**{ctx.guild.name}** is not subscribed Gecko Premium."
+    cur.execute(f"SELECT tier, expire FROM premium WHERE guildid = {ctx.guild.id}")
+    t = cur.fetchall()
+    if len(t) > 0:
+        tier = t[0][0]
+        expire = t[0][1]
+        if tier > 0:
+            if expire > time():
+                current = f"**{ctx.guild.name}**: Gecko Premium Tier **{tier}**.\nExpires on: {datetime.fromtimestamp(expire).strftime('%Y-%m-%d')}"
+            else:
+                current = f"**{ctx.guild.name}**: **Expired** Gecko Premium Tier **{tier}**.\nExpired on: {datetime.fromtimestamp(expire).strftime('%Y-%m-%d')}"
+
+    embed = discord.Embed(title = "Gecko Premium", description = current, color = GECKOCLR)
+    embed.add_field(name = "Buttons", value = "Free: **10**\nTier 1: **30**\nTier 2: **100**", inline = True)
+    embed.add_field(name = "Embeds", value = "Free: **10**\nTier 1: **30**\nTier 2: **100**", inline = True)
+    embed.add_field(name = "Forms", value = "Free: **5**\nTier 1: **30**\nTier 2: **50**", inline = True)
+    embed.add_field(name = "Reaction Role (Messages)", value = "Free: **10**\nTier 1: **30**\nTier 2: **50**", inline = True)
+    embed.add_field(name = "Voice Channel Recorder", value = "Free: **10 hours / month**\nTier 1: **30 hours / month**\nTier 2: **100 hours / month**", inline = True)
+    embed.add_field(name = "Other", value = "Any Permium Tier: **Radio** **Rank Card with image background**", inline = False)
+    embed.add_field(name = "Note", value = f"Gecko is giving away **Free Premium** to the first 100 guilds!\nIf your guild isn't given premium ,join [support server]({SUPPORT}) and ask for it!", inline = False)
+
+    embed.timestamp = datetime.now()
+    embed.set_thumbnail(url = BOT_ICON)
+    embed.set_footer(text = f"Gecko Premium ", icon_url = BOT_ICON)
+
+    await ctx.respond(embed = embed)
+
 bot.loop.create_task(UpdateBotStatus())

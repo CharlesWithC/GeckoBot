@@ -176,6 +176,21 @@ class ManageButton(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
 
+        cur.execute(f"SELECT COUNT(*) FROM button WHERE guildid = {guildid}")
+        c = cur.fetchall()
+        if len(c) > 0:
+            premium = GetPremium(ctx.guild)
+            cnt = c[0][0]
+            if cnt >= 100 and premium >= 2:
+                await ctx.respond("Max buttons: 100.\n\nIf you are looking for more buttons, contact Gecko Moderator in support server", ephemeral = True)
+                return
+            elif cnt >= 30 and premium == 1:
+                await ctx.respond("Premium Tier 1: 30 buttons.\nPremium Tier 2: 100 buttons.\n\nCheck out more by using `/premium`", ephemeral = True)
+                return
+            elif cnt >= 10 and premium == 0:
+                await ctx.respond("Free guilds: 10 buttons.\nPremium Tier 1: 30 buttons.\nPremium Tier 2: 100 buttons.\n\nCheck out more by using `/premium`", ephemeral = True)
+                return
+            
         data = {}
 
         if label != None and len(label) > 75:

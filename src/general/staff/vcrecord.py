@@ -14,6 +14,7 @@ from bot import bot
 from settings import *
 from functions import *
 from db import newconn
+import time
 
 # do block music function
 
@@ -121,6 +122,11 @@ class VCRecord(commands.Cog):
                 pass
             await voice_client.disconnect()
             await ctx.respond("I have left the voice channel.")
+            cur.execute(f"SELECT laststart FROM vcrecord WHERE guildid = {guildid}")
+            c = cur.fetchall()
+            laststart = c[0][0]
+            cur.execute(f"UPDATE vcrecord SET minutes = minutes + {int((int(time.time()) - laststart)/60)}, laststart = 0 WHERE guildid = {guildid}")
+            conn.commit()
         except:
             await ctx.respond("I cannot leave the voice channel by myself due to unknown error. The VC lock is released.")            
     
@@ -156,6 +162,26 @@ class VCRecord(commands.Cog):
         if not isStaff(ctx.guild, ctx.author):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
+
+        conn = newconn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT minutes FROM vcrecord WHERE guildid = {guildid}")
+        c = cur.fetchall()
+        if len(c) > 0:
+            premium = GetPremium(ctx.guild)
+            cnt = c[0][0]
+            if cnt >= 100*60 and premium >= 2:
+                await ctx.respond("Max hours / month: 100.\n\nIf you are looking for more hours / month, contact Gecko Moderator in support server", ephemeral = True)
+                return
+            elif cnt >= 30*60 and premium == 1:
+                await ctx.respond("Premium Tier 1: 30 hours / month.\nPremium Tier 2: 100 hours / month.\n\nCheck out more by using `/premium`", ephemeral = True)
+                return
+            elif cnt >= 10*60 and premium == 0:
+                await ctx.respond("Free guilds: 10 hours / month.\nPremium Tier 1: 30 hours / month.\nPremium Tier 2: 100 hours / month.\n\nCheck out more by using `/premium`", ephemeral = True)
+                return
+        else:
+            cur.execute(f"INSERT INTO vcrecord VALUES ({guildid}, 0, 0)")
+            conn.commit()
             
         if not CheckVCLock(ctx.guild.id):
             await ctx.respond("Gecko VC is not locked meaning voice recorder is inactive.", ephemeral = True)
@@ -178,7 +204,17 @@ class VCRecord(commands.Cog):
             await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = True, self_deaf = False)
             voice_client.start_recording(discord.sinks.MP3Sink(), self.callback, channel)
             await ctx.respond("I have started recording the voice channel.")
+            cur.execute(f"SELECT laststart FROM vcrecord WHERE guildid = {guildid}")
+            c = cur.fetchall()
+            laststart = c[0][0]
+            dur = 0
+            if laststart != 0 :
+                dur = int(time.time()) - laststart
+            cur.execute(f"UPDATE vcrecord SET minutes = minutes + {int(dur/60)}, laststart = {int(time.time())} WHERE guildid = {guildid}")
+            conn.commit()
         except:
+            import traceback
+            traceback.print_exc()
             await ctx.respond("Failed to start recording, probably it already started.", ephemeral = True)
         
     @vcrecord.command(name="stop", description="Staff - Stop recording the voice channel.")
@@ -207,6 +243,13 @@ class VCRecord(commands.Cog):
             voice_client.stop_recording()
             await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = True, self_deaf = True)
             await ctx.respond("I have stopped recording the voice channel.")
+            conn = newconn()
+            cur = conn.cursor()
+            cur.execute(f"SELECT laststart FROM vcrecord WHERE guildid = {guildid}")
+            c = cur.fetchall()
+            laststart = c[0][0]
+            cur.execute(f"UPDATE vcrecord SET minutes = minutes + {int((int(time.time()) - laststart)/60)}, laststart = 0 WHERE guildid = {guildid}")
+            conn.commit()
         except:
             await ctx.respond("Failed to stop recording, probably not recording.", ephemeral = True)
 
