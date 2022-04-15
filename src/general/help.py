@@ -21,9 +21,10 @@ from fuzzywuzzy import process
 
 ABOUT = """Gecko is a **general purpose bot** which can help you moderate community and create fun.  
 
-Games, Music and a lot of staff functions are supported.  
-More functions are planned and being added.  
-Use `/help` in bot for detailed help.
+<:truckersmp:964343306626662430> **TruckersMP**
+
+Various **TruckersMP** functions are supported for VTCs!
+Check out more using `/help truckersmp`
 
 **Gecko Ranking**
 
@@ -32,8 +33,8 @@ Use `/help` in bot for detailed help.
 
 **Gecko Games**
 
-**Finance** - earn coins by checking in daily and working  
-**Connect Four** - chess game where two players battle  
+- **Finance**
+- **Connect Four**
 
 **Gecko Music**
 
@@ -51,7 +52,9 @@ Includes: button, embed, form, chat action, reaction role, staff management, ser
 **Server Stats** - Based on variables, fully customizable!  
 **Staff Management** - Administrative and non-administrative staff, and a staff list for users to know the real staff.  
 
-Join [Gecko Community](https://discord.gg/wNTaaBZ5qd) for help / discussion."""
+Join [Gecko Community](https://discord.gg/wNTaaBZ5qd) for help / discussion.
+
+Use `/help` for detailed help."""
 
 HELP = {
     "about": ABOUT,
@@ -610,7 +613,7 @@ Usage: `/levelrole {required: level} {required: @role} {optional: remove}`"""
 
     "truckersmp": {
         "description": """<:truckersmp:964343306626662430> **TruckersMP**
-Gecko supports various **TruckersMP** functions, including **traffic / player / vtc lookup**, **HR mode** and **VTC events**.
+Gecko supports various **TruckersMP** functions, including **traffic / player lookup**, **HR mode** and **VTC events**.
 **Note** There's a cooldown as noted in the command description, if Gecko doesn't repond, it's probably because you are being cooled down.
 
 **Traffic lookup** 

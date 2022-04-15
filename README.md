@@ -8,6 +8,12 @@ Use `/help` in bot for detailed help.
 
 **NOTE** Gecko supports non-slash commands for non-staff commands only, such as games and music. Staff commands usually contain a lot of arguments and it will be very hard to use non-slash commands.
 
+## TruckersMP
+
+Various **TruckersMP** functions are supported for VTCs!  
+Including **traffic / player lookup**, **HR mode** and **VTC events**  
+Check out more using `/help truckersmp`
+
 ## Gecko Ranking  
 
 *Rankcard supports any background image from the web! For free!*  
