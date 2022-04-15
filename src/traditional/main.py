@@ -205,7 +205,7 @@ async def Premium(ctx):
     embed.add_field(name = "Forms", value = "Free: **5**\nTier 1: **30**\nTier 2: **50**", inline = True)
     embed.add_field(name = "Reaction Role (Messages)", value = "Free: **10**\nTier 1: **30**\nTier 2: **50**", inline = True)
     embed.add_field(name = "Voice Channel Recorder", value = "Free: **10 hours / month**\nTier 1: **30 hours / month**\nTier 2: **100 hours / month**", inline = True)
-    embed.add_field(name = "Other", value = "Any Permium Tier: **Radio** **Rank Card with image background**", inline = False)
+    embed.add_field(name = "Other", value = "Any Permium Tier: **Radio**, **Rank Card with image background**", inline = False)
     embed.add_field(name = "Note", value = f"Gecko is giving away **Free Premium** to the first 100 guilds!\nIf your guild isn't given premium ,join [support server]({SUPPORT}) and ask for it!", inline = False)
 
     embed.timestamp = datetime.now()

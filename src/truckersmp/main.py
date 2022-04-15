@@ -57,112 +57,53 @@ async def CountryAutocomplete(ctx: discord.AutocompleteContext):
 @bot.slash_command(name="truckersmp", alias=["tmp"], description="TruckersMP (30 attempt / 10 min)", cooldown = CooldownMapping(Cooldown(30, 600), BucketType.user))
 async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline players are cached when they were online and might not update / show up)", required = False, autocomplete = PlayerAutocomplete),
         mpid: discord.Option(int, "TruckersMP ID (This can retrieve all info about the player)", required = False),
-        mention: discord.Option(discord.User, "Discord Mention (This require the user to /tmpbind their account)", required = False),
+        mention: discord.Option(discord.User, "Discord Mention (This require at least one look up of other options to cache Discord if public)", required = False),
+        playerid: discord.Option(int, "Player In-game ID, require server argument", required = False),
+        steamid: discord.Option(str, "Steam ID (This require at least one look up of other options to cache the steam id)", required = False),
         server: discord.Option(str, "TruckersMP Server", required = False, autocomplete = ServerAutocomplete),
         location: discord.Option(str, "To get traffic of a specific location, require server argument.", required = False, autocomplete = LocationAutocomplete),
         country: discord.Option(str, "To get traffic of all locations in a specific country, require server argument.", required = False, autocomplete = CountryAutocomplete),
         hrmode: discord.Option(str, "HR Mode, to get play hour and ban history", required = False, choices = ["Yes", "No"])):
     
     await ctx.defer()
-    if hrmode == "Yes":
-        if name is None and mpid is None:
-            await ctx.respond(f"Please specify a player name or TruckersMP ID.")
-            return
-        if mpid is None:
-            name = SearchName(name)[0]
-            mpid = Name2ID(name)
-
-        d = GetTMPData(mpid)
-        if d is None:
-            await ctx.respond(f"Player not found.")
-            return
-
-        embed = discord.Embed(title = f"{d['name']}", color = TMPCLR)
-        patreon = d["patreon"]
-        avatar = d["avatar"]
-        joinDate = d["joinDate"]
-        group = d["group"]
-        vtc = f"**[{d['vtc']}](https://truckersmp.com/vtc/{d['vtcid']})**{d['vtcpos']}"
-
-        embed.set_thumbnail(url = avatar)
-        if not patreon:
-            embed.add_field(name = "TruckersMP ID", value = f'[{d["mpid"]}](https://truckersmp.com/user/{d["mpid"]})', inline = True)
-        else:
-            embed.add_field(name = "TruckersMP ID", value = f'[{d["mpid"]}](https://truckersmp.com/user/{d["mpid"]})' + " <:patreon:963787835637399602>", inline = True)
-        embed.add_field(name = "Join Date", value = joinDate, inline = True)
-        embed.add_field(name = "Group", value = group, inline = True)
-        steam = GetSteamUser(d["steamid"])
-        if steam != None:
-            steamname = steam["personaname"]
-            steamurl = steam["profileurl"]
-            steamid = d["steamid"]
-            embed.add_field(name = "Steam", value = f'[{steamname}]({steamurl}) (`{steamid}`)', inline = False)
-        else:
-            embed.add_field(name = "Steam ID", value = f"[{steamid}](https://steamcommunity.com/profiles/{steamid})", inline = False)
+    if name != None or mpid != None or mention != None or playerid != None or steamid != None:
+        player = None
+        if name != None:
+            player = name.replace(" ", "")
+            if player == "":
+                await ctx.respond(PNF)
+                return
+            player = SearchName(player)[0]
+            mpid = Name2ID(player)
+            if mpid is None:
+                await ctx.respond(PNF)
+                return
         
-        discordid = d["discordid"]
-        if discordid != None:
-            user = bot.get_user(int(discordid))
-            if user != None:
-                if ctx.guild != None and await ctx.guild.fetch_member(user.id) != None:
-                    embed.add_field(name = "Discord", value = f"<@{discordid}> (`{discordid}`)")
-                else:
-                    embed.add_field(name = "Discord", value = f"{user.name}#{user.discriminator} (`{discordid}`)")
-                
-        if d["vtcid"] != 0:
-            embed.add_field(name = "Virtual Trucking Company", value = vtc, inline = False)
-        else:
-            embed.add_field(name = "Virtual Trucking Company", value = "*Not in any VTC*", inline = False)
+        elif mention != None:
+            discordid = mention.id
+            mpid = Discord2Mp(discordid)
+            if mpid is None:
+                await ctx.respond(f"{mention} has not bound their Discord account with TruckersMP Profile, and Gecko has not cached their profile.")
+                return
+            d = GetTMPData(mpid)
+            if d is None:
+                await ctx.respond(f"Player not found.")
+                return
+
+        elif playerid != None:
+            if server is None:
+                await ctx.respond(f"You need to specify a server.")
+                return
+            mpid = PlayerID2Mp(playerid, server)
+            if mpid is None:
+                await ctx.respond(f"Player not online or wrong server.")
+                return
         
-        data = GetHRData(mpid)
-        if data != None:
-            ets2hour = data["ets2hour"]
-            atshour = data["atshour"]
-            if ets2hour == -1 or atshour == -1:
-                embed.add_field(name = "Play hour", value = f"*Steam profile is private*", inline = False)
-            else:
-                embed.add_field(name = "ETS2", value = f"{ets2hour} hours", inline = True)
-                embed.add_field(name = "ATS", value = f"{atshour} hours", inline = True)
-                embed.add_field(name = "Total", value = f"{ets2hour + atshour} hours", inline = True)
-
-            embed.add_field(name = "Active bans", value = data["bansCount"], inline = True)
-            if data["banned"]:
-                bannedUntil = data["bannedUntil"]
-                if bannedUntil == None:
-                    bannedUntil = "Permanently banned"
-                else:
-                    bannedUntil = f"Banned until {bannedUntil}"
-                embed.add_field(name = "Status", value = bannedUntil, inline = True)
-            else:
-                embed.add_field(name = "Status", value = f"Not banned", inline = True)
-
-            if not data["displayBans"]:
-                embed.add_field(name = "History bans (latest 5)", value = "*Private*", inline = False)
-            else:
-                historyban = ""
-                if len(data["bans"]) == 0:
-                    historyban = "*Player has not been banned before*"
-                else:
-                    for ban in data["bans"]:
-                        historyban += f"{ban['timeAdded']} ~ {ban['expiration']}\nFor `{ban['reason']}` by **{ban['adminName']}**\n\n"
-                embed.add_field(name = "History bans (latest 5)", value = historyban, inline = False)
-                
-        embed.timestamp = datetime.now()
-        embed.set_footer(text = f"TruckersMP • HR Mode ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
-
-        await ctx.respond(embed = embed)
-    
-    elif name != None:
-        player = name.replace(" ", "")
-        if player == "":
-            await ctx.respond(PNF)
-            return
-        player = SearchName(player)[0]
-        mpid = Name2ID(player)
-        if mpid is None:
-            await ctx.respond(PNF)
-            return
-        player = GetMapLoc(mpid)
+        elif steamid != None:
+            mpid = Steam2Mp(steamid)
+            if mpid is None:
+                await ctx.respond(f"Gecko has not cached the player's steam profile.\nAt least one normal lookup is needed to cache and enable steam ID lookup.")
+                return
 
         embed = None
 
@@ -182,7 +123,7 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
                 embed.add_field(name = "TruckersMP ID", value = f'[{d["mpid"]}](https://truckersmp.com/user/{d["mpid"]})' + " <:patreon:963787835637399602>", inline = True)
             embed.add_field(name = "Join Date", value = joinDate, inline = True)
             embed.add_field(name = "Group", value = group, inline = True)
-            steam = GetSteamUser(d["steamid"])
+            steam = GetSteamUser(mpid, d["steamid"])
             if steam != None:
                 steamname = steam["personaname"]
                 steamurl = steam["profileurl"]
@@ -206,163 +147,73 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
             if embed is None:
                 embed = discord.Embed(title = f"{name}", color = TMPCLR)
             embed.add_field(name = "TruckersMP ID", value = f'[{d["mpid"]}](https://truckersmp.com/user/{d["mpid"]})', inline = True)
-
-        if player != None:
-            if embed is None:
-                embed = discord.Embed(title = f"{player['name']}", color = TMPCLR)
-            embed.add_field(name = "Server", value = player["server"], inline = True)
-            embed.add_field(name = "Player ID", value = player["playerid"], inline = True)
-            location = player["city"] + ", " + player["country"]
-            if player["distance"] != 0:
-                dis = player['distance']
-                if dis > 10:
-                    dis = int(dis)
-                location = f"Near **{location}**"
-            embed.add_field(name = "Location", value = location, inline = False)
-            embed.timestamp = datetime.fromtimestamp(player["time"])
-        else:
-            embed.timestamp = datetime.now()
-
-        if player != None:
-            embed.set_footer(text = f"TruckersMP • TruckyApp ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
-        else:
-            embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
-        await ctx.respond(embed = embed)
-
-    elif mpid != None:
-        d = GetTMPData(mpid)
-        if d is None:
-            await ctx.respond(f"Player not found.")
-            return
-
-        embed = discord.Embed(title = f"{d['name']}", color = TMPCLR)
-        patreon = d["patreon"]
-        avatar = d["avatar"]
-        joinDate = d["joinDate"]
-        group = d["group"]
-        vtc = f"**[{d['vtc']}](https://truckersmp.com/vtc/{d['vtcid']})**{d['vtcpos']}"
-
-        embed.set_thumbnail(url = avatar)
-        if not patreon:
-            embed.add_field(name = "TruckersMP ID", value = f'[{d["mpid"]}](https://truckersmp.com/user/{d["mpid"]})', inline = True)
-        else:
-            embed.add_field(name = "TruckersMP ID", value = f'[{d["mpid"]}](https://truckersmp.com/user/{d["mpid"]})' + " <:patreon:963787835637399602>", inline = True)
-        embed.add_field(name = "Join Date", value = joinDate, inline = True)
-        embed.add_field(name = "Group", value = group, inline = True)
-        steam = GetSteamUser(d["steamid"])
-        if steam != None:
-            steamname = steam["personaname"]
-            steamurl = steam["profileurl"]
-            steamid = d["steamid"]
-            embed.add_field(name = "Steam", value = f'[{steamname}]({steamurl}) (`{steamid}`)', inline = False)
-        else:
-            embed.add_field(name = "Steam ID", value = f"[{steamid}](https://steamcommunity.com/profiles/{steamid})", inline = False)
         
-        discordid = d["discordid"]
-        if discordid != None:
-            user = bot.get_user(int(discordid))
-            if user != None:
-                if ctx.guild != None and await ctx.guild.fetch_member(user.id) != None:
-                    embed.add_field(name = "Discord", value = f"<@{discordid}> (`{discordid}`)")
+        if hrmode != "Yes":
+            player = GetMapLoc(mpid)
+            if player != None:
+                if embed is None:
+                    embed = discord.Embed(title = f"{player['name']}", color = TMPCLR)
+                embed.add_field(name = "Server", value = player["server"], inline = True)
+                embed.add_field(name = "Player ID", value = player["playerid"], inline = True)
+                location = player["city"] + ", " + player["country"]
+                if player["distance"] != 0:
+                    dis = player['distance']
+                    if dis > 10:
+                        dis = int(dis)
+                    location = f"Near **{location}**"
+                embed.add_field(name = "Location", value = location, inline = False)
+                embed.timestamp = datetime.fromtimestamp(player["time"])
+            else:
+                embed.timestamp = datetime.now()
+
+            if player != None:
+                embed.set_footer(text = f"TruckersMP • TruckyApp ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+            else:
+                embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+            await ctx.respond(embed = embed)
+
+        else:
+            data = GetHRData(mpid)
+            if data != None:
+                ets2hour = data["ets2hour"]
+                atshour = data["atshour"]
+                if ets2hour == -1 or atshour == -1:
+                    embed.add_field(name = "Play hour", value = f"*Steam profile is private*", inline = False)
                 else:
-                    embed.add_field(name = "Discord", value = f"{user.name}#{user.discriminator} (`{discordid}`)")
-        
-        if d["vtcid"] != 0:
-            embed.add_field(name = "Virtual Trucking Company", value = vtc, inline = False)
-            
-        player = GetMapLoc(mpid)
-        if player != None:
-            if embed is None:
-                embed = discord.Embed(title = f"{player['name']}", color = TMPCLR)
-            embed.add_field(name = "Server", value = player["server"], inline = True)
-            embed.add_field(name = "Player ID", value = player["playerid"], inline = True)
-            location = player["city"] + ", " + player["country"]
-            if player["distance"] != 0:
-                dis = player['distance']
-                if dis > 10:
-                    dis = int(dis)
-                location = f"Near **{location}**"
-            embed.add_field(name = "Location", value = location, inline = False)
-            embed.timestamp = datetime.fromtimestamp(player["time"])
-        else:
-            embed.timestamp = datetime.now()
+                    embed.add_field(name = "ETS2", value = f"{ets2hour} hours", inline = True)
+                    embed.add_field(name = "ATS", value = f"{atshour} hours", inline = True)
+                    embed.add_field(name = "Total", value = f"{ets2hour + atshour} hours", inline = True)
 
-        embed.timestamp = datetime.fromtimestamp(d["lastupd"])
-        embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
-
-        await ctx.respond(embed = embed)
-    
-    elif mention != None:
-        discordid = mention.id
-        mpid = Discord2Mp(discordid)
-        if mpid is None:
-            await ctx.respond(f"{mention} has not bound their Discord account with TruckersMP Profile.")
-            return
-        d = GetTMPData(mpid)
-        if d is None:
-            await ctx.respond(f"Player not found.")
-            return
-
-        embed = discord.Embed(title = f"{d['name']}", color = TMPCLR)
-        patreon = d["patreon"]
-        avatar = d["avatar"]
-        joinDate = d["joinDate"]
-        group = d["group"]
-        vtc = f"**[{d['vtc']}](https://truckersmp.com/vtc/{d['vtcid']})**{d['vtcpos']}"
-
-        embed.set_thumbnail(url = avatar)
-        if not patreon:
-            embed.add_field(name = "TruckersMP ID", value = f'[{d["mpid"]}](https://truckersmp.com/user/{d["mpid"]})', inline = True)
-        else:
-            embed.add_field(name = "TruckersMP ID", value = f'[{d["mpid"]}](https://truckersmp.com/user/{d["mpid"]})' + " <:patreon:963787835637399602>", inline = True)
-        embed.add_field(name = "Join Date", value = joinDate, inline = True)
-        embed.add_field(name = "Group", value = group, inline = True)
-        steam = GetSteamUser(d["steamid"])
-        if steam != None:
-            steamname = steam["personaname"]
-            steamurl = steam["profileurl"]
-            steamid = d["steamid"]
-            embed.add_field(name = "Steam", value = f'[{steamname}]({steamurl}) (`{steamid}`)', inline = False)
-        else:
-            embed.add_field(name = "Steam ID", value = f"[{steamid}](https://steamcommunity.com/profiles/{steamid})", inline = False)
-        
-        discordid = d["discordid"]
-        if discordid != None:
-            user = bot.get_user(int(discordid))
-            if user != None:
-                if ctx.guild != None and await ctx.guild.fetch_member(user.id) != None:
-                    embed.add_field(name = "Discord", value = f"<@{discordid}> (`{discordid}`)")
+                embed.add_field(name = "Active bans", value = data["bansCount"], inline = True)
+                if data["banned"]:
+                    bannedUntil = data["bannedUntil"]
+                    if bannedUntil == None:
+                        bannedUntil = "Permanently banned"
+                    else:
+                        bannedUntil = f"Banned until {bannedUntil}"
+                    embed.add_field(name = "Status", value = bannedUntil, inline = True)
                 else:
-                    embed.add_field(name = "Discord", value = f"{user.name}#{user.discriminator} (`{discordid}`)")
-        
-        if d["vtcid"] != 0:
-            embed.add_field(name = "Virtual Trucking Company", value = vtc, inline = False)
+                    embed.add_field(name = "Status", value = f"Not banned", inline = True)
+
+                if not data["displayBans"]:
+                    embed.add_field(name = "History bans (latest 5)", value = "*Private*", inline = False)
+                else:
+                    historyban = ""
+                    if len(data["bans"]) == 0:
+                        historyban = "*Player has not been banned before*"
+                    else:
+                        for ban in data["bans"]:
+                            historyban += f"{ban['timeAdded']} ~ {ban['expiration']}\nFor `{ban['reason']}` by **{ban['adminName']}**\n\n"
+                    embed.add_field(name = "History bans (latest 5)", value = historyban, inline = False)
             
-        player = GetMapLoc(mpid)
-        if player != None:
-            if embed is None:
-                embed = discord.Embed(title = f"{player['name']}", color = TMPCLR)
-            embed.add_field(name = "Server", value = player["server"], inline = True)
-            embed.add_field(name = "Player ID", value = player["playerid"], inline = True)
-            location = player["city"] + ", " + player["country"]
-            if player["distance"] != 0:
-                dis = player['distance']
-                if dis > 10:
-                    dis = int(dis)
-                location = f"Near **{location}**"
-            embed.add_field(name = "Location", value = location, inline = False)
-            embed.timestamp = datetime.fromtimestamp(player["time"])
-        else:
             embed.timestamp = datetime.now()
+            embed.set_footer(text = f"TruckersMP • HR Mode ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
 
-        embed.timestamp = datetime.fromtimestamp(d["lastupd"])
-        embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
-
-        await ctx.respond(embed = embed)
+            await ctx.respond(embed = embed)
     
     elif location != None:
         if server is None:
-            await ctx.respond(f"Server is required.")
+            await ctx.respond(f"You need to specify a server.")
             return
         server = SearchServer(server)[0]
         servername = server
@@ -395,7 +246,7 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
     
     elif country != None:
         if server is None:
-            await ctx.respond(f"Server is required.")
+            await ctx.respond(f"You need to specify a server.")
             return
         server = SearchServer(server)[0]
         servername = server

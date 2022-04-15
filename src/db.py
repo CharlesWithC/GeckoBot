@@ -75,7 +75,7 @@ cur.execute(f"CREATE TABLE IF NOT EXISTS connectfour_leaderboard (userid BIGINT,
 
 # TRUCKERSMP
 cur.execute(f"CREATE TABLE IF NOT EXISTS truckersmp (mpid BIGINT, name TEXT, tmpdata TEXT, lastupd BIGINT)")
-cur.execute(f"CREATE TABLE IF NOT EXISTS steam (steamid BIGINT, name TEXT, steamdata TEXT, lastupd BIGINT)")
+cur.execute(f"CREATE TABLE IF NOT EXISTS steam (mpid BIGINT, steamid BIGINT, name TEXT, steamdata TEXT, lastupd BIGINT)")
 cur.execute(f"CREATE TABLE IF NOT EXISTS tmpbind (mpid BIGINT, discordid BIGINT)")
 cur.execute(f"CREATE TABLE IF NOT EXISTS vtcbind (guildid BIGINT, vtcid BIGINT, name TEXT)")
 cur.execute(f"CREATE TABLE IF NOT EXISTS eventping (guildid BIGINT, vtcid BIGINT, channelid BIGINT, msg TEXT)")

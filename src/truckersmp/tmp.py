@@ -13,6 +13,8 @@ from settings import *
 from datetime import datetime
 
 nameid = {}
+playerid = {}
+serverid = {}
 traffic = {}
 location = {}
 country = {}
@@ -25,7 +27,7 @@ elif sys.argv[0].endswith("test.py"):
 config = json.loads(config_txt)
 STEAMKEY = config["steam"]
 
-def GetSteamUser(steamid):
+def GetSteamUser(mpid, steamid):
     conn = newconn()
     cur = conn.cursor()
     cur.execute(f"SELECT steamdata FROM steam WHERE steamid = {steamid} AND lastupd > {int(time.time())-10800}")
@@ -36,7 +38,7 @@ def GetSteamUser(steamid):
     r = requests.get(f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={STEAMKEY}&steamids={steamid}")
     d = json.loads(r.text)["response"]["players"][0]
     cur.execute(f"DELETE FROM steam WHERE steamid = {steamid}")
-    cur.execute(f"INSERT INTO steam VALUES ({steamid}, '{d['personaname']}', '{b64e(json.dumps(d))}', {int(time.time())})")
+    cur.execute(f"INSERT INTO steam VALUES ({mpid}, {steamid}, '{d['personaname']}', '{b64e(json.dumps(d))}', {int(time.time())})")
     conn.commit()
     return d
 
@@ -56,6 +58,22 @@ def Discord2Mp(discordid):
     conn = newconn()
     cur = conn.cursor()
     cur.execute(f"SELECT mpid FROM tmpbind WHERE discordid = {discordid}")
+    t = cur.fetchall()
+    if len(t) > 0:
+        return t[0][0]
+    return None
+
+def PlayerID2Mp(server, pid):
+    sid = serverid[server]
+    if not (sid, pid) in playerid.keys():
+        return None
+    return playerid[(sid, pid)]
+
+def Steam2Mp(steamid):
+    conn = newconn()
+    cur = conn.cursor()
+    steamid = int(steamid)
+    cur.execute(f"SELECT mpid FROM steam WHERE steamid = {steamid}")
     t = cur.fetchall()
     if len(t) > 0:
         return t[0][0]
@@ -156,6 +174,17 @@ def GetTMPData(mpid, clearcache = False):
             vtc = d["vtc"]["name"]
             vtctag = d["vtc"]["tag"]
             lastupd = int(time.time())
+            if discordid != None:
+                cur.execute(f"SELECT mpid FROM tmpbind WHERE discordid = {discordid}")
+                t = cur.fetchall()
+                if len(t) > 0:
+                    tmpid = t[0][0]
+                    if tmpid != mpid:
+                        cur.execute(f"UPDATE tmpbind SET mpid = {mpid} WHERE discordid = {discordid}")
+                        conn.commit()
+                else:
+                    cur.execute(f"INSERT INTO tmpbind VALUES ({discordid}, {mpid})")
+                    conn.commit()
             res = {"mpid": mpid, "steamid": steamid, "discordid": discordid, "name":name, "patreon": patreon, "avatar": avatar, "joinDate": joinDate, "group": group, \
                 "vtcid": vtcid, "vtc": vtc, "vtctag": vtctag, "vtcpos": GetVTCPosition(d["vtc"]["id"], d["vtc"]["memberID"]),\
                     "lastupd": lastupd}
@@ -177,6 +206,7 @@ def GetTMPData(mpid, clearcache = False):
 
 def UpdateTMPMap():
     global nameid
+    global playerid
     while 1:
         conn = newconn()
         cur = conn.cursor()
@@ -185,7 +215,9 @@ def UpdateTMPMap():
             time.sleep(10)
             continue
         d = json.loads(r.text)["Data"]
+        playerid = {}
         for dd in d:
+            playerid[(dd['ServerId'], dd['PlayerId'])] = dd['MpId']
             cur.execute(f"SELECT name FROM truckersmp WHERE mpid = {dd['MpId']}")
             t = cur.fetchall()
             if len(t) == 0:
@@ -271,6 +303,7 @@ def UpdateTMPTraffic():
                 location[name] = []
             if not name in country.keys():
                 country[name] = []
+            serverid[name] = name
             for place in d["response"]["traffic"]:
                 loc = place["name"] + ", " + place["country"]
                 if not loc in location[name]:
