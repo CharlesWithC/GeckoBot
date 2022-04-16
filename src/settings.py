@@ -24,3 +24,11 @@ BTNSTYLE = {"blurple": ButtonStyle.blurple, "grey": ButtonStyle.grey, "gray": Bu
 BOT_ICON = "https://cdn.discordapp.com/app-icons/954034331230285838/4ba646d5c588bb44787e5f4b93a86da9.png"
 MUSIC_ICON = "https://cdn.discordapp.com/app-assets/954034331230285838/958539534830796851.png"
 FFMPEG_OPTIONS = "-reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2"
+
+
+import pyttsx3
+VOICES = []
+tts = pyttsx3.init()
+voices = tts.getProperty('voices')
+for voice in voices:
+    VOICES.append(voice.id)

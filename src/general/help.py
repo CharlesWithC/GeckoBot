@@ -461,12 +461,13 @@ Subcommands of `/music` group
 Music commands without group (no `/music` prefix is needed)
 `play` `next` `queue` `dequeue` `playlist` `current` `radio` `radiolist`
 
-**NOTE** Music commands support Gecko prefix (non-slash, like `g?` `g!`), but you are suggested to use slash commands as they are easier to use.""",
+**NOTE** Music commands support Gecko prefix (non-slash, like `g?` `g!`), but you are suggested to use slash commands as they are easier to use.
+Also we do not guanrantee that prefix commands will work.""",
 
         "join": """**Staff only command**
 Join the voice channel you are in and start playing the songs in the playlist, if there are.
 
-Usage: `/music join`""",
+Usage: ``/join``""",
 
         "leave": """**Staff only command**
 Leave the voice channel and save the playlist.
@@ -699,7 +700,11 @@ Usage: `/purge {required: count}`""",
 
 DM a member through Gecko.
 
-Usage: `/dm {required: @member} {required: msg} {optional: showauthor}`"""
+Usage: `/dm {required: @member} {required: msg} {optional: showauthor}`""",
+
+    "tts": """Turn text into speech and speak it in voice channel.
+
+Usage: `/tts {required: text} {optional: gender, default male} {optional: speed, default 1}`"""
 }
 
 cmdlist = discord.Embed(title = "All commands", description = "Use `/help {category} - {command}` to check detailed help, you can use the autocomplete results.", color = GECKOCLR)

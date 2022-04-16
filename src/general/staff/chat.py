@@ -664,16 +664,17 @@ async def on_message(message):
         botuser = message.guild.get_member(bot.user.id)
         cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'level'")
         t = cur.fetchall()
-        if len(t) == 0 or t[0][0] == 0:
-            if message.channel.permissions_for(botuser).send_messages:
-                await message.channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
-        else:
-            channel = bot.get_channel(int(t[0][0]))
-            if channel != None:
-                try:
-                    if channel.permissions_for(botuser).send_messages:
-                        await channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
-                except:
-                    pass
+        if len(t) > 0:
+            if t[0][0] == 0:
+                if message.channel.permissions_for(botuser).send_messages:
+                    await message.channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
+            else:
+                channel = bot.get_channel(int(t[0][0]))
+                if channel != None:
+                    try:
+                        if channel.permissions_for(botuser).send_messages:
+                            await channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
+                    except:
+                        pass
 
 bot.add_cog(ManageChat(bot))

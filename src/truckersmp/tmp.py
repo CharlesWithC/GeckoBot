@@ -303,7 +303,7 @@ def UpdateTMPTraffic():
                 location[name] = []
             if not name in country.keys():
                 country[name] = []
-            serverid[name] = name
+            serverid[name] = server["id"]
             for place in d["response"]["traffic"]:
                 loc = place["name"] + ", " + place["country"]
                 if not loc in location[name]:

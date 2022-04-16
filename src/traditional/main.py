@@ -15,12 +15,18 @@ import traditional.music
 import traditional.games.finance
 import traditional.games.four
 
-from bot import tbot, shard
+import os
+from bot import bot, tbot, shard
 from db import newconn
 from settings import *
 from functions import *
-from time import time
+from time import time, sleep
 from datetime import datetime
+
+from io import BytesIO
+
+import pyttsx3
+import importlib
 
 @tbot.command(name="user", description="Get user information")
 async def getuser(ctx, user: discord.Member):

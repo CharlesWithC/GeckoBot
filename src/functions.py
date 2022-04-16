@@ -17,6 +17,7 @@ import ssl
 import discord
 import requests
 import json
+from fuzzywuzzy import process
 
 def TimeDelta(timestamp): # returns human-readable delta
     delta = abs(time() - timestamp)
@@ -187,3 +188,10 @@ def CheckPremium(guild, tier):
     if len(t) > 0:
         return True
     return False
+
+def SearchVoice(inp):
+    res = process.extract(inp, VOICES, limit = 10)
+    ret = []
+    for t in res:
+        ret.append(t[0])
+    return ret

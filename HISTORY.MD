@@ -1,5 +1,10 @@
 # Gecko Bot Update History
 
+## Update 2022.04.16  
+
+**Version v1.18d**  
+Improved VC and `/tts`
+
 ## Update 2022.04.15
 
 **Version v1.18c.2**  

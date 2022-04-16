@@ -56,138 +56,6 @@ class ManageMusic(commands.Cog):
     
     manage = SlashCommandGroup("music", "Manage music")
 
-    @manage.command(name="join", description = "Staff - Music - Join the voice channel you are in.")
-    async def join(self, ctx):
-        await ctx.defer()
-        if ctx.guild is None:
-            await ctx.respond("You can only run this command in guilds!")
-            return
-
-        if not isStaff(ctx.guild, ctx.author):
-            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
-            return
-
-        if ctx.author.voice is None or ctx.author.voice.channel is None:
-            await ctx.respond("You are not in a voice channel!", ephemeral = True)
-            return
-        
-        voice_client = ctx.guild.voice_client
-        if not voice_client is None and voice_client.is_connected():
-            await voice_client.disconnect()
-        try:
-            channel = ctx.author.voice.channel
-            await channel.connect(timeout = 5)
-        except:
-            await ctx.respond(f"I cannot join the voice channel you are in. Maybe I don't have access or I'm rate limited. Please try again later.", ephemeral = True)
-            return
-
-        conn = newconn()
-        cur = conn.cursor()
-        guildid = ctx.guild.id
-        voice_client = ctx.guild.voice_client
-        cur.execute(f"DELETE FROM vcbind WHERE guildid = {guildid}")
-        cur.execute(f"INSERT INTO vcbind VALUES ({guildid}, {voice_client.channel.id})")
-        conn.commit()
-        
-        await ctx.respond(f"I've joined the voice channel.")
-
-        cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
-        p = cur.fetchall()
-        if len(p) > 0:
-            guild = bot.get_guild(guildid)
-            voice_client = guild.voice_client
-
-            url = ""
-            if p[0][0] != -1:
-                try:
-                    ydl = search(b64d(p[0][1]))
-                    url = ydl['formats'][0]['url']
-                except:
-                    await voice_client.disconnect()
-                    # failed to connect, try again using loop
-                    return
-            else:
-                title = p[0][1].split("-")[1]
-                url = p[0][1].split("-")[2]
-            
-            try:
-                player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
-                voice_client.play(player)
-                await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = False)
-            except:
-                await voice_client.disconnect()
-                # failed to play, try again using loop
-                return
-        
-        voice_client = ctx.guild.voice_client
-        if not voice_client.is_playing() and not voice_client.is_paused():
-            await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = True)
-
-    @manage.command(name="leave", description = "Staff - Music - Join the voice channel you are in.")
-    async def leave(self, ctx):
-        await ctx.defer()
-        if ctx.guild is None:
-            await ctx.respond("You can only run this command in guilds!")
-            return
-
-        if not isStaff(ctx.guild, ctx.author):
-            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
-            return
-        
-        voice_client = ctx.guild.voice_client
-        if not voice_client is None and voice_client.is_connected():
-            await voice_client.disconnect()
-            conn = newconn()
-            cur = conn.cursor()
-            guildid = ctx.guild.id
-            cur.execute(f"DELETE FROM vcbind WHERE guildid = {guildid}")
-            conn.commit()
-            await ctx.respond(f"I've left the voice channel.")
-        else:
-            await ctx.respond(f"I'm not connected to a voice channel.", ephemeral = True)
-
-    @manage.command(name="pause", description="Staff - Music - Pause music.")
-    async def pause(self, ctx):  
-        await ctx.defer()
-        if ctx.guild is None:
-            await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
-            return
-
-        if not isStaff(ctx.guild, ctx.author):
-            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
-            return
-
-        voice_client = ctx.guild.voice_client
-        if voice_client is None or not voice_client.is_playing():
-            await ctx.respond(f"Music hasn't even started!", ephemeral = True)
-            return
-
-        voice_client.pause()
-        user = ctx.guild.get_member(BOTID)
-        await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = True)
-        await ctx.respond(f"Music paused! You can use /music resume to restart from where it paused.")
-
-    @manage.command(name="resume", description="Staff - Music - Resume music.")
-    async def resume(self, ctx): 
-        await ctx.defer()
-        if ctx.guild is None:
-            await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
-            return
-
-        if not isStaff(ctx.guild, ctx.author):
-            await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
-            return
-
-        voice_client = ctx.guild.voice_client
-        if voice_client.is_playing():
-            await ctx.respond(f"Music is already playing.", ephemeral = True)
-            return
-
-        voice_client.resume()
-        user = ctx.guild.get_member(BOTID)
-        await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = False)
-        await ctx.respond(f"Music resumed!")
-
     @manage.command(name="toggle", description="Staff - Music - Toggle 'Now Playing' auto post, whether Gecko should send it or not.")
     async def toggle(self, ctx): 
         await ctx.defer()
@@ -261,8 +129,48 @@ class ManageMusic(commands.Cog):
             conn.commit()
             await ctx.respond(f"Loop playback disabled for playlist!")
 
+@bot.slash_command(name="pause", description="Staff - Music - Pause music.")
+async def pause(ctx):  
+    await ctx.defer()
+    if ctx.guild is None:
+        await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
+        return
+
+    if not isStaff(ctx.guild, ctx.author):
+        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+        return
+
+    voice_client = ctx.guild.voice_client
+    if voice_client is None or not voice_client.is_playing():
+        await ctx.respond(f"Music hasn't even started!", ephemeral = True)
+        return
+
+    voice_client.pause()
+    await ctx.guild.change_voice_state(channel = voice_client.channel, self_mute = True)
+    await ctx.respond(f"Music paused! You can use /music resume to restart from where it paused.")
+
+@bot.slash_command(name="resume", description="Staff - Music - Resume music.")
+async def resume(ctx): 
+    await ctx.defer()
+    if ctx.guild is None:
+        await ctx.respond(f"Music commands can only be used in guilds!", ephemeral = True)
+        return
+
+    if not isStaff(ctx.guild, ctx.author):
+        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+        return
+
+    voice_client = ctx.guild.voice_client
+    if voice_client.is_playing():
+        await ctx.respond(f"Music is already playing.", ephemeral = True)
+        return
+
+    voice_client.resume()
+    await ctx.guild.change_voice_state(channel = voice_client.channel, self_mute = False)
+    await ctx.respond(f"Music resumed!")
+
 @bot.slash_command(name="play", description="Staff - Music - Play a song.")
-async def PlayMusic(ctx, song: discord.Option(str, "Keywords for searching", required = True, autocomplete = suggest)):
+async def PlayMusic(ctx, song: discord.Option(str, "Keywords for searching, if not specified, play the music on last quit", required = False, autocomplete = suggest)):
     await ctx.defer()    
     guildid = 0
     if ctx.guild is None:
@@ -283,8 +191,42 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords for searching", req
 
     voice_client = ctx.guild.voice_client
     if voice_client is None or voice_client.channel is None:
-        await ctx.respond(f"I'm not in a voice channel. Use /join command to join me in.", ephemeral = True)
+        await ctx.respond(f"I'm not in a voice channel. Use `/join` command to join me in.", ephemeral = True)
         return
+    
+    if song is None:
+        cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
+        p = cur.fetchall()
+        if len(p) > 0:
+            guild = bot.get_guild(guildid)
+            voice_client = guild.voice_client
+
+            url = ""
+            if p[0][0] != -1:
+                try:
+                    ydl = search(b64d(p[0][1]))
+                    url = ydl['formats'][0]['url']
+                except:
+                    await voice_client.disconnect()
+                    # failed to connect, try again using loop
+                    return
+            else:
+                title = p[0][1].split("-")[1]
+                url = p[0][1].split("-")[2]
+            
+            try:
+                player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
+                if voice_client.is_playing():
+                    voice_client.stop()
+                voice_client.play(player)
+                await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = False)
+            except:
+                await ctx.respond(f"Unknown error.", ephemeral = True)
+                return
+    
+    voice_client = ctx.guild.voice_client
+    if not voice_client.is_playing() and not voice_client.is_paused():
+        await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = True)
 
     try:
         ydl = search(song)
@@ -365,7 +307,7 @@ async def NextSong(ctx):
     
     voice_client = ctx.guild.voice_client
     if voice_client is None or voice_client.channel is None:
-        await ctx.respond(f"I'm not in a voice channel. Tell staff to use /join command to join me in.", ephemeral = True)
+        await ctx.respond(f"I'm not in a voice channel. Tell staff to use `/join` command to join me in.", ephemeral = True)
         return
 
     guildid = ctx.guild.id
@@ -449,7 +391,7 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords for searching", req
 
     voice_client = ctx.guild.voice_client
     if voice_client is None or voice_client.channel is None:
-        await ctx.respond(f"I'm not in a voice channel. Tell staff to use /join command to join me in.", ephemeral = True)
+        await ctx.respond(f"I'm not in a voice channel. Tell staff to use `/join` command to join me in.", ephemeral = True)
         return
 
     try:
@@ -686,7 +628,7 @@ async def Queuefavourite(ctx, song: discord.Option(str, "Song, must be one from 
 
     voice_client = ctx.guild.voice_client
     if voice_client is None or voice_client.channel is None:
-        await ctx.respond(f"I'm not in a voice channel. Tell staff to use /join command to join me in.", ephemeral = True)
+        await ctx.respond(f"I'm not in a voice channel. Tell staff to use `/join` command to join me in.", ephemeral = True)
         return
 
     try:
@@ -877,7 +819,7 @@ async def Radio(ctx, station: discord.Option(str, "Radio station (274 stations a
     guild = ctx.guild
     voice_client = ctx.guild.voice_client
     if voice_client is None or voice_client.channel is None:
-        await ctx.respond(f"I'm not in a voice channel. Use /join command to join me in.", ephemeral = True)
+        await ctx.respond(f"I'm not in a voice channel. Use `/join` command to join me in.", ephemeral = True)
         return
     
     premium = GetPremium(ctx.guild)
@@ -971,6 +913,11 @@ async def MusicLoop():
                 if CheckVCLock(guildid):
                     continue
 
+                cur.execute(f"SELECT * FROM playlist WHERE guildid = {guildid} AND userid < 0")
+                t = cur.fetchall()
+                if len(t) == 0:
+                    continue
+
                 if voice_client is None or voice_client.channel is None:
                     # bot is disconnected - then play current / previous song
                     cur.execute(f"SELECT channelid FROM vcbind WHERE guildid = {guildid}")
@@ -1016,6 +963,9 @@ async def MusicLoop():
                     if not voice_client.is_playing() and not voice_client.is_paused():
                         await guild.change_voice_state(channel = voice_client.channel, self_mute = True)
                         
+                    continue
+                
+                if voice_client.is_paused():
                     continue
                 
                 # Get music text channel to post updates

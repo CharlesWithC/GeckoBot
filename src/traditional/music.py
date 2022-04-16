@@ -57,58 +57,39 @@ async def join(ctx):
     if ctx.author.voice is None or ctx.author.voice.channel is None:
         await ctx.send("You are not in a voice channel!")
         return
+    guildid = ctx.guild.id
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT userid FROM playlist WHERE guildid = {guildid} AND userid < 0")
+    t = cur.fetchall()    
+    if not onloop(guildid) or len(t) > 0 and t[0][0] == -1:
+        cur.execute(f"DELETE FROM playlist WHERE userid < 0 AND guildid = {guildid}")
+    else:
+        cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
+        q = cur.fetchall()
+        if len(q) > 0:
+            cur.execute(f"INSERT INTO playlist VALUES ({guildid}, {-q[0][0]}, '{q[0][1]}')")
+        cur.execute(f"DELETE FROM playlist WHERE userid < 0 AND guildid = {guildid}")
+    conn.commit()
     
-    voice_client = ctx.guild.voice_client
+    guild = bot.get_guild(ctx.guild.id)
+    voice_client = guild.voice_client
     if not voice_client is None and voice_client.is_connected():
         await voice_client.disconnect()
     try:
         channel = ctx.author.voice.channel
         await channel.connect(timeout = 5)
+        await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = True)
     except:
         await ctx.send(f"I cannot join the voice channel you are in. Maybe I don't have access or I'm rate limited. Please try again later.")
         return
 
-    conn = newconn()
-    cur = conn.cursor()
     guildid = ctx.guild.id
-    voice_client = ctx.guild.voice_client
     cur.execute(f"DELETE FROM vcbind WHERE guildid = {guildid}")
     cur.execute(f"INSERT INTO vcbind VALUES ({guildid}, {voice_client.channel.id})")
     conn.commit()
     
     await ctx.send(f"I've joined the voice channel.")
-
-    cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
-    p = cur.fetchall()
-    if len(p) > 0:
-        guild = bot.get_guild(guildid)
-        voice_client = guild.voice_client
-
-        url = ""
-        if p[0][0] != -1:
-            try:
-                ydl = search(b64d(p[0][1]))
-                url = ydl['formats'][0]['url']
-            except:
-                await voice_client.disconnect()
-                # failed to connect, try again using loop
-                return
-        else:
-            title = p[0][1].split("-")[1]
-            url = p[0][1].split("-")[2]
-        
-        try:
-            player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
-            voice_client.play(player)
-            await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = False)
-        except:
-            await voice_client.disconnect()
-            # failed to play, try again using loop
-            return
-    
-    voice_client = ctx.guild.voice_client
-    if not voice_client.is_playing() and not voice_client.is_paused():
-        await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = True)
 
 @tbot.command(name="leave", description = "Staff - Music - Join the voice channel you are in.")
 async def leave(ctx):
@@ -125,10 +106,25 @@ async def leave(ctx):
     guild = bot.get_guild(ctx.guild.id)
     voice_client = guild.voice_client
     if not voice_client is None and voice_client.is_connected():
-        await voice_client.disconnect()
         conn = newconn()
         cur = conn.cursor()
         guildid = ctx.guild.id
+        cur.execute(f"SELECT * FROM playlist WHERE guildid = {guildid} AND userid = -2")
+        t = cur.fetchall()
+        if len(t) > 0:
+            cur.execute(f"DELETE FROM playlist WHERE guildid = {guildid} AND userid = -2")
+            conn.commit()
+            try:
+                voice_client.stop_recording()
+            except:
+                pass
+            cur.execute(f"SELECT laststart FROM vcrecord WHERE guildid = {guildid}")
+            c = cur.fetchall()
+            laststart = c[0][0]
+            cur.execute(f"UPDATE vcrecord SET minutes = minutes + {int((int(time.time()) - laststart)/60)}, laststart = 0 WHERE guildid = {guildid}")
+            conn.commit()
+        await voice_client.disconnect()
+
         cur.execute(f"DELETE FROM vcbind WHERE guildid = {guildid}")
         conn.commit()
         await ctx.send(f"I've left the voice channel.")
@@ -147,7 +143,8 @@ async def pause(ctx):
         await ctx.send("Only staff are allowed to run the command!")
         return
 
-    voice_client = ctx.guild.voice_client
+    guild = bot.get_guild(ctx.guild.id)
+    voice_client = guild.voice_client
     if voice_client is None or not voice_client.is_playing():
         await ctx.send(f"Music hasn't even started!")
         return
@@ -169,7 +166,8 @@ async def resume(ctx):
         await ctx.send("Only staff are allowed to run the command!")
         return
 
-    voice_client = ctx.guild.voice_client
+    guild = bot.get_guild(ctx.guild.id)
+    voice_client = guild.voice_client
     if voice_client.is_playing():
         await ctx.send(f"Music is already playing.")
         return
@@ -258,7 +256,6 @@ async def loop(ctx):
 @tbot.command(name="play", description="Staff - Music - Play a song.")
 async def PlayMusic(ctx):
     await ctx.channel.trigger_typing()
-    song = " ".join(ctx.message.content.split(" ")[1:])
     guildid = 0
     if ctx.guild is None:
         await ctx.send(f"Music commands can only be used in guilds!")
@@ -276,10 +273,45 @@ async def PlayMusic(ctx):
         await ctx.send("Gecko VC is locked. Use `/vcrecord unlock` to unlock it.")
         return
 
-    voice_client = ctx.guild.voice_client
+    guild = bot.get_guild(ctx.guild.id)
+    voice_client = guild.voice_client
     if voice_client is None or voice_client.channel is None:
-        await ctx.send(f"I'm not in a voice channel. Use /join command to join me in.")
+        await ctx.send(f"I'm not in a voice channel. Use `/join` command to join me in.")
         return
+
+    if len(ctx.message.content.split(" ")) == 1:
+        cur.execute(f"SELECT userid, title FROM playlist WHERE guildid = {guildid} AND userid < 0")
+        p = cur.fetchall()
+        if len(p) > 0:
+            guild = bot.get_guild(guildid)
+            voice_client = guild.voice_client
+
+            url = ""
+            if p[0][0] != -1:
+                try:
+                    ydl = search(b64d(p[0][1]))
+                    url = ydl['formats'][0]['url']
+                except:
+                    await voice_client.disconnect()
+                    # failed to connect, try again using loop
+                    return
+            else:
+                title = p[0][1].split("-")[1]
+                url = p[0][1].split("-")[2]
+            
+            try:
+                player = discord.FFmpegPCMAudio(source = url, before_options = FFMPEG_OPTIONS)
+                voice_client.play(player)
+                await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = False)
+            except:
+                await voice_client.disconnect()
+                # failed to play, try again using loop
+                return
+    
+    voice_client = ctx.guild.voice_client
+    if not voice_client.is_playing() and not voice_client.is_paused():
+        await ctx.guild.change_voice_state(channel = ctx.voice_client.channel, self_mute = True)
+    song = " ".join(ctx.message.content.split(" ")[1:])
 
     try:
         ydl = search(song)
@@ -359,9 +391,10 @@ async def NextSong(ctx):
             await ctx.send(f"A radio stream is being played and you cannot override it. Only staff are allowed to run this command during radio streams.")
             return
     
-    voice_client = ctx.guild.voice_client
+    guild = bot.get_guild(ctx.guild.id)
+    voice_client = guild.voice_client
     if voice_client is None or voice_client.channel is None:
-        await ctx.send(f"I'm not in a voice channel. Tell staff to use /join command to join me in.")
+        await ctx.send(f"I'm not in a voice channel. Tell staff to use `/join` command to join me in.")
         return
 
     guildid = ctx.guild.id
@@ -444,9 +477,10 @@ async def PlayMusic(ctx):
             await ctx.send(f"This is not the channel for using music commands.")
             return
 
-    voice_client = ctx.guild.voice_client
+    guild = bot.get_guild(ctx.guild.id)
+    voice_client = guild.voice_client
     if voice_client is None or voice_client.channel is None:
-        await ctx.send(f"I'm not in a voice channel. Tell staff to use /join command to join me in.")
+        await ctx.send(f"I'm not in a voice channel. Tell staff to use `/join` command to join me in.")
         return
 
     try:
@@ -651,9 +685,10 @@ async def Queuefavourite(ctx):
             await ctx.send(f"This is not the channel for using music commands.")
             return
 
-    voice_client = ctx.guild.voice_client
+    guild = bot.get_guild(ctx.guild.id)
+    voice_client = guild.voice_client
     if voice_client is None or voice_client.channel is None:
-        await ctx.send(f"I'm not in a voice channel. Tell staff to use /join command to join me in.")
+        await ctx.send(f"I'm not in a voice channel. Tell staff to use `/join` command to join me in.")
         return
 
     try:
@@ -704,7 +739,8 @@ async def PlayList(ctx):
             await ctx.send(f"This is not the channel for using music commands.")
             return
 
-    voice_client = ctx.guild.voice_client
+    guild = bot.get_guild(ctx.guild.id)
+    voice_client = guild.voice_client
     if voice_client is None or voice_client.channel is None:
         await ctx.send(f"Gecko is not playing music at the moment.")
         return
@@ -773,7 +809,8 @@ async def CurrentSong(ctx):
             await ctx.send(f"This is not the channel for using music commands.")
             return
 
-    voice_client = ctx.guild.voice_client
+    guild = bot.get_guild(ctx.guild.id)
+    voice_client = guild.voice_client
     if voice_client is None or voice_client.channel is None:
         await ctx.send(f"Gecko is not playing music at the moment.")
         return
@@ -839,9 +876,10 @@ async def Radio(ctx):
 
     guildid = ctx.guild.id
     guild = ctx.guild
-    voice_client = ctx.guild.voice_client
+    guild = bot.get_guild(ctx.guild.id)
+    voice_client = guild.voice_client
     if voice_client is None or voice_client.channel is None:
-        await ctx.send(f"I'm not in a voice channel. Use /join command to join me in.")
+        await ctx.send(f"I'm not in a voice channel. Use `/join` command to join me in.")
         return
 
     station = SearchRadio(station)
@@ -864,6 +902,7 @@ async def Radio(ctx):
     cur.execute(f"INSERT INTO playlist VALUES ({guildid}, -1, 'radio-{station}-{link}')")
     conn.commit()
 
+    guild = bot.get_guild(ctx.guild.id)
     voice_client = guild.voice_client
     voice_client.stop()
     player = discord.FFmpegPCMAudio(source = link, before_options = FFMPEG_OPTIONS)

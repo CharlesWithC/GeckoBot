@@ -55,14 +55,14 @@ async def CountryAutocomplete(ctx: discord.AutocompleteContext):
     return SearchCountry(server, ctx.value)
 
 @bot.slash_command(name="truckersmp", alias=["tmp"], description="TruckersMP (30 attempt / 10 min)", cooldown = CooldownMapping(Cooldown(30, 600), BucketType.user))
-async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline players are cached when they were online and might not update / show up)", required = False, autocomplete = PlayerAutocomplete),
-        mpid: discord.Option(int, "TruckersMP ID (This can retrieve all info about the player)", required = False),
-        mention: discord.Option(discord.User, "Discord Mention (This require at least one look up of other options to cache Discord if public)", required = False),
-        playerid: discord.Option(int, "Player In-game ID, require server argument", required = False),
-        steamid: discord.Option(str, "Steam ID (This require at least one look up of other options to cache the steam id)", required = False),
+async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (cache)", required = False, autocomplete = PlayerAutocomplete),
+        mpid: discord.Option(int, "TruckersMP ID", required = False),
+        mention: discord.Option(discord.User, "Discord Mention (cache / manual bind)", required = False),
+        playerid: discord.Option(int, "Player In-game ID, require server argument, this might only work for ETS2 SIM 1", required = False),
+        steamid: discord.Option(str, "Steam ID (cache)", required = False),
         server: discord.Option(str, "TruckersMP Server", required = False, autocomplete = ServerAutocomplete),
-        location: discord.Option(str, "To get traffic of a specific location, require server argument.", required = False, autocomplete = LocationAutocomplete),
-        country: discord.Option(str, "To get traffic of all locations in a specific country, require server argument.", required = False, autocomplete = CountryAutocomplete),
+        location: discord.Option(str, "Get traffic of location, require server argument.", required = False, autocomplete = LocationAutocomplete),
+        country: discord.Option(str, "Get traffic of all locations in the country, require server argument.", required = False, autocomplete = CountryAutocomplete),
         hrmode: discord.Option(str, "HR Mode, to get play hour and ban history", required = False, choices = ["Yes", "No"])):
     
     await ctx.defer()
@@ -94,7 +94,8 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (Offline pl
             if server is None:
                 await ctx.respond(f"You need to specify a server.")
                 return
-            mpid = PlayerID2Mp(playerid, server)
+            server = SearchServer(server)[0]
+            mpid = PlayerID2Mp(server, playerid)
             if mpid is None:
                 await ctx.respond(f"Player not online or wrong server.")
                 return
