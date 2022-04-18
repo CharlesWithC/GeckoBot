@@ -51,10 +51,10 @@ class ReactionRole(commands.Cog):
                 await ctx.respond("Max reaction role messages: 50.\n\nIf you are looking for more reaction role messages, contact Gecko Moderator in support server", ephemeral = True)
                 return
             elif cnt >= 30 and premium == 1:
-                await ctx.respond("Premium Tier 1: 30 reaction role messages.\nPremium Tier 2: 50 reaction role messages.\n\nCheck out more by using `/premium`", ephemeral = True)
+                await ctx.respond("Premium Tier 1: 30 reaction role messages.\nPremium Tier 2: 50 reaction role messages.\n\nFind out more by using `/premium`", ephemeral = True)
                 return
             elif cnt >= 10 and premium == 0:
-                await ctx.respond("Free guilds: 10 reaction role messages.\nPremium Tier 1: 30 reaction role messages.\nPremium Tier 2: 50 reaction role messages.\n\nCheck out more by using `/premium`", ephemeral = True)
+                await ctx.respond("Free guilds: 10 reaction role messages.\nPremium Tier 1: 30 reaction role messages.\nPremium Tier 2: 50 reaction role messages.\n\nFind out more by using `/premium`", ephemeral = True)
                 return
         
         rolebindtxt = rolebind.split()

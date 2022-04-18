@@ -42,6 +42,26 @@ def GetSteamUser(mpid, steamid):
     conn.commit()
     return d
 
+def VTCID2Name(vtcid):
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT name FROM vtcbind WHERE vtcid = {vtcid}")
+    t = cur.fetchall()
+    if len(t) > 0:
+        return b64d(t[0][0])
+    else:
+        r = requests.get(f"https://api.truckersmp.com/v2/vtc/{vtcid}")
+        if r.status_code != 200:
+            return f"VTC #{vtcid}"
+        d = json.loads(r.text)
+        if d["error"]:
+            return f"VTC #{vtcid}"
+        d = d["response"]
+        name = d["name"]
+        cur.execute(f"INSERT INTO vtcbind VALUES (0, {vtcid}, '{b64e(name)}')")
+        conn.commit()
+        return name
+
 def SearchName(name):
     res = process.extract(name, nameid.keys(), limit = 5)
     ret = []

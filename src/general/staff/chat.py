@@ -342,12 +342,37 @@ class ManageChat(commands.Cog):
 conn = newconn()
 @bot.event
 async def on_member_join(member):
-    global gonn
+    global conn
     try:
         cur = conn.cursor()
     except:
         conn = newconn()
         cur = conn.cursor()
+    
+    try:
+        cur.execute(f"SELECT events FROM eventlog WHERE guildid = {member.guild.id}")
+        events = cur.fetchall()
+        if len(events) == 0:
+            return
+        events = events[0][0]
+        if not "member_join" in events:
+            return
+            
+        guildid = member.guild.id
+        cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'eventlog'")
+        t = cur.fetchall()
+        if len(t) > 0:
+            chn = bot.get_channel(t[0][0])
+            if chn != None:
+                try:
+                    embed = discord.Embed(title=f"{member}", description=f"{member.id}", color = GECKOCLR)
+                    embed.set_footer(text=f"Event: member_join", icon_url = BOT_ICON)
+                    await chn.send(embed = embed)
+                except:
+                    pass
+    except:
+        pass
+
     haveresp = False
     guild = member.guild
     guildid = member.guild.id
@@ -436,7 +461,7 @@ async def on_member_join(member):
                     
 @bot.event
 async def on_member_remove(member):
-    global gonn
+    global conn
     try:
         cur = conn.cursor()
     except:
@@ -445,6 +470,30 @@ async def on_member_remove(member):
     guild = member.guild
     guildid = member.guild.id
     userid = member.id
+
+    try:
+        cur.execute(f"SELECT events FROM eventlog WHERE guildid = {member.guild.id}")
+        events = cur.fetchall()
+        if len(events) == 0:
+            return
+        events = events[0][0]
+        if not "member_remove" in events:
+            return
+            
+        guildid = member.guild.id
+        cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'eventlog'")
+        t = cur.fetchall()
+        if len(t) > 0:
+            chn = bot.get_channel(t[0][0])
+            if chn != None:
+                try:
+                    embed = discord.Embed(title=f"{member}", description=f"{member.id}", color = GECKOCLR)
+                    embed.set_footer(text=f"Event: member_remove", icon_url = BOT_ICON)
+                    await chn.send(embed = embed)
+                except:
+                    pass
+    except:
+        pass
 
     cur.execute(f"SELECT * FROM level WHERE guildid = {guildid} AND userid = {userid}")
     t = cur.fetchall()
@@ -509,7 +558,7 @@ async def on_member_remove(member):
 
 @bot.event
 async def on_message(message):
-    global gonn
+    global conn
     try:
         cur = conn.cursor()
     except:
@@ -676,5 +725,80 @@ async def on_message(message):
                             await channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
                     except:
                         pass
+
+@bot.event
+async def on_reaction_add(reaction, user):
+    message = reaction.message
+    if message.guild is None or message.author.id == user.id \
+        or message.author.bot or user.bot or message.author.id == BOTID: # no DM / no self-thumb / no bot
+        return
+    userid = message.author.id
+    guildid = message.guild.id
+    emoji = reaction.emoji
+    THUMBSUP = '👍'
+    if emoji == THUMBSUP:
+        conn = newconn()
+        cur = conn.cursor()
+        # check if thumbsxp enabled
+        cur.execute(f"SELECT * FROM settings WHERE guildid = {guildid} AND skey='thumbxp'")
+        t = cur.fetchall()
+        if len(t) > 0:
+            updlvl = 0
+            
+            cur.execute(f"SELECT xp, level FROM level WHERE guildid = {guildid} AND userid = {userid}")
+            t = cur.fetchall()
+            if len(t) == 0:
+                cur.execute(f"INSERT INTO level VALUES ({guildid}, {userid}, 0, 15, {int(time())})")
+                conn.commit()
+            else:
+                xp = t[0][0]
+                oldlvl = t[0][1]
+
+                cur.execute(f"SELECT sval FROM settings WHERE guildid = {guildid} AND skey = 'xprate'")
+                xprate = 1
+                t = cur.fetchall()
+                if len(t) > 0:
+                    xprate = float(t[0][0])
+                xp += 5 * xprate
+                level = CalcLevel(xp)
+                cur.execute(f"UPDATE level SET xp = {xp}, level = {level}, lastmsg = {int(time())} WHERE guildid = {guildid} AND userid = {userid}")
+                conn.commit()
+                if level > oldlvl:
+                    updlvl = level
+
+            if updlvl > 0:
+                cur.execute(f"SELECT roleid FROM levelrole WHERE guildid = {guildid} AND level = {updlvl}")
+                t = cur.fetchall()
+                if len(t) > 0:
+                    role = guild.get_role(t[0][0])
+                    try:
+                        await user.add_roles(role, reason = "Gecko Rank Role")
+                    except:
+                        pass
+                    cur.execute(f"SELECT roleid FROM levelrole WHERE guildid = {guildid} AND level < {updlvl} ORDER BY level DESC LIMIT 1")
+                    t = cur.fetchall()
+                    if len(t) > 0:
+                        role = guild.get_role(t[0][0])
+                        try:
+                            await user.remove_roles(role, reason = "Gecko Rank Role")
+                        except:
+                            pass
+
+                # if bot can send message in the channel
+                botuser = message.guild.get_member(bot.user.id)
+                cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'level'")
+                t = cur.fetchall()
+                if len(t) > 0:
+                    if t[0][0] == 0:
+                        if message.channel.permissions_for(botuser).send_messages:
+                            await message.channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
+                    else:
+                        channel = bot.get_channel(int(t[0][0]))
+                        if channel != None:
+                            try:
+                                if channel.permissions_for(botuser).send_messages:
+                                    await channel.send(f"GG <@{user.id}>, you have upgraded to level {updlvl}!")
+                            except:
+                                pass
 
 bot.add_cog(ManageChat(bot))

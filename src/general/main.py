@@ -35,28 +35,6 @@ from settings import *
 from functions import *
 from ad import UpdateAdStatus
 
-SETUP_MSG = """Gecko is a developing bot that can help you make your community better.
-I'm ready to use slash commands and you type / to see a list of my commands.
-Use /about for basic information about Gecko and /help for help.
-
-You should set up dedicated channels for specific functions, tell me by using `/setchannel`.
-Form     - Where notifications will be sent when a user submit an entry.
-Four     - Where players will play connect four games.
-Finance  - Where players will play finance games.
-Music    - Where players will request for songs. If you don't set this up, only staff will be allowed to play music.
-           If you want the bot to stick to a radio station and not being interrupted, then do not set it.
-           *A bot can only be in one voice channel at the same time*
-Level    - Where level updates will be posted.
-Eventlog - Where server events (messages / members etc) will be logged.
-Botlog   - Where bot audit log will be sent.
-Error    - Where important error notifications will be sent. (This should be rare)
-**NOTE** 
-1.For four, finance and music, you can set channel to "all" so that player can use related commands in any channels.
-2.For level, if you set channel to "all", the level update will be posted at the channel where the user sent the last message before upgrading.
-3.If the channel got deleted, it will be considered as that the channel hasn't been set up. And users cannot use related commands.
-
-Have a nice day!"""
-
 @bot.event
 async def on_guild_join(guild):
     try:
@@ -137,7 +115,7 @@ async def on_guild_remove(guild):
     t = cur.fetchall()
     for tt in t:
         try:
-            cur.execute(f"DELETE FROM {tt[0]} WHERE guildid = {guild.id}")
+            cur.execute(f"UPDATE {tt[0]} SET guildid = -{guild.id} WHERE guildid = {guild.id}")
         except:
             pass
     if blocked:

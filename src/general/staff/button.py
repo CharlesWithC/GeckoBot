@@ -37,6 +37,8 @@ class GeckoButton(Button):
         if not custom_id.startswith("GeckoButton"):
             return
 
+        user = interaction.user
+        guild = interaction.guild
         userid = interaction.user.id
         buttonid = int(custom_id.split("-")[1])
         guildid = interaction.guild_id
@@ -58,6 +60,9 @@ class GeckoButton(Button):
         content = data["content"]
         embedid = data["embedid"]
         formid = data["formid"]
+        roles = None
+        if "roles" in data.keys(): # as this is an update after release, old buttons might not contain this key
+            roles = data["roles"]  # hence need to do key check to prevent errors
 
         response = []
         
@@ -116,7 +121,32 @@ class GeckoButton(Button):
                         for pp in p:
                             d.append(b64d(pp))
                         response.append({"modal": FormModal(formid, d, "Submit Form"), "ephemeral": ephemeral})
-            
+        
+        if roles != None:
+            ret = ""
+            r = roles.replace(" ","").split(",")
+            for rr in r:
+                rmv = False
+                if rr.find("-") != -1:
+                    rmv = True
+                    rr = rr.replace("-","")
+                try:
+                    rr = int(rr[3:-1])
+                    role = guild.get_role(rr)
+                    if role is None:
+                        continue
+                    if not rmv:
+                        ret += f"{role.mention} has been added.\n"
+                        await user.add_roles(role, reason = "Gecko Button Role")
+                    else:
+                        ret += f"{role.mention} has been removed.\n"
+                        await user.remove_roles(role, reason = "Gecko Button Role")
+                except:
+                    import traceback
+                    traceback.print_exc()
+                    pass
+            response.append({"content": ret, "ephemeral": True})
+
         if len(response) == 0:
             await interaction.response.send_message("I think it's a button for **decoration** use only, as the creator didn't tell me what to do when you click it.", ephemeral = True)
 
@@ -162,7 +192,8 @@ class ManageButton(commands.Cog):
             url: discord.Option(str, "URL to open on click", required = False),
             content: discord.Option(str, "Content of message to send on click", required = False),
             embedid: discord.Option(int, "ID of embed to send on click", required = False),
-            formid: discord.Option(int, "ID of form to display on click", required = False)):
+            formid: discord.Option(int, "ID of form to display on click", required = False),
+            roles: discord.Option(str, "Roles to assign / unassign on click, separate with ',', start with '-' to unassign", required = False)):
         await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -185,10 +216,10 @@ class ManageButton(commands.Cog):
                 await ctx.respond("Max buttons: 100.\n\nIf you are looking for more buttons, contact Gecko Moderator in support server", ephemeral = True)
                 return
             elif cnt >= 30 and premium == 1:
-                await ctx.respond("Premium Tier 1: 30 buttons.\nPremium Tier 2: 100 buttons.\n\nCheck out more by using `/premium`", ephemeral = True)
+                await ctx.respond("Premium Tier 1: 30 buttons.\nPremium Tier 2: 100 buttons.\n\nFind out more by using `/premium`", ephemeral = True)
                 return
             elif cnt >= 10 and premium == 0:
-                await ctx.respond("Free guilds: 10 buttons.\nPremium Tier 1: 30 buttons.\nPremium Tier 2: 100 buttons.\n\nCheck out more by using `/premium`", ephemeral = True)
+                await ctx.respond("Free guilds: 10 buttons.\nPremium Tier 1: 30 buttons.\nPremium Tier 2: 100 buttons.\n\nFind out more by using `/premium`", ephemeral = True)
                 return
             
         data = {}
@@ -270,6 +301,15 @@ class ManageButton(commands.Cog):
                 return
         data["formid"] = formid
 
+        if roles != None:
+            r = roles.replace(" ","").replace("-","").split(",")
+            for rr in r:
+                if not rr.startswith("<@") or not rr.endswith(">"):
+                    await ctx.respond(f"Invalid role {rr}!", ephemeral = True)
+                    return
+
+        data["roles"] = roles
+
         data = b64e(json.dumps(data))
         cur.execute(f"SELECT COUNT(*) FROM button")
         t = cur.fetchall()
@@ -292,7 +332,8 @@ class ManageButton(commands.Cog):
             url: discord.Option(str, "URL to open on click", required = False),
             content: discord.Option(str, "Content of message to send on click", required = False),
             embedid: discord.Option(int, "ID of embed to send on click", required = False),
-            formid: discord.Option(int, "ID of form to display on click", required = False)):
+            formid: discord.Option(int, "ID of form to display on click", required = False),
+            roles: discord.Option(str, "Roles to assign / unassign on click, separate with space, start with '-' to unassign", required = False)):
         await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -410,6 +451,16 @@ class ManageButton(commands.Cog):
                 await ctx.respond("Form not found.", ephemeral = True)
                 return
             data["formid"] = formid
+
+        if roles == "None":
+            data["roles"] = None
+        elif roles != None:
+            r = roles.replace(" ","").replace("-","").split(",")
+            for rr in r:
+                if not rr.startswith("<@") or not rr.endswith(">"):
+                    await ctx.respond(f"Invalid role {rr}!", ephemeral = True)
+                    return
+            data["roles"] = roles
 
         data = b64e(json.dumps(data))
         cur.execute(f"UPDATE button SET data = '{data}' WHERE guildid = {guildid} AND buttonid = {buttonid}")

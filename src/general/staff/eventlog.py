@@ -33,6 +33,9 @@ async def on_message_delete(message):
         econn = newconn()
         cur = econn.cursor()
 
+    if message.author.id == BOTID:
+        return
+
     cur.execute(f"SELECT events FROM eventlog WHERE guildid = {message.guild.id}")
     events = cur.fetchall()
     if len(events) == 0:
@@ -170,6 +173,9 @@ async def on_message_edit(before, after):
     except:
         econn = newconn()
         cur = econn.cursor()
+        
+    if before.author.id == BOTID:
+        return
 
     cur.execute(f"SELECT events FROM eventlog WHERE guildid = {before.guild.id}")
     events = cur.fetchall()
@@ -263,66 +269,6 @@ async def on_guild_channel_delete(channel):
                 pass
 
 @bot.event
-async def on_member_join(member):
-    global econn
-    try:
-        cur = econn.cursor()
-    except:
-        econn = newconn()
-        cur = econn.cursor()
-
-    cur.execute(f"SELECT events FROM eventlog WHERE guildid = {member.guild.id}")
-    events = cur.fetchall()
-    if len(events) == 0:
-        return
-    events = events[0][0]
-    if not "member_join" in events:
-        return
-        
-    guildid = member.guild.id
-    cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'eventlog'")
-    t = cur.fetchall()
-    if len(t) > 0:
-        chn = bot.get_channel(t[0][0])
-        if chn != None:
-            try:
-                embed = discord.Embed(title=f"{member}", description=f"{member.id}", color = GECKOCLR)
-                embed.set_footer(text=f"Event: member_join", icon_url = BOT_ICON)
-                await chn.send(embed = embed)
-            except:
-                pass
-
-@bot.event
-async def on_member_remove(member):
-    global econn
-    try:
-        cur = econn.cursor()
-    except:
-        econn = newconn()
-        cur = econn.cursor()
-
-    cur.execute(f"SELECT events FROM eventlog WHERE guildid = {member.guild.id}")
-    events = cur.fetchall()
-    if len(events) == 0:
-        return
-    events = events[0][0]
-    if not "member_remove" in events:
-        return
-        
-    guildid = member.guild.id
-    cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'eventlog'")
-    t = cur.fetchall()
-    if len(t) > 0:
-        chn = bot.get_channel(t[0][0])
-        if chn != None:
-            try:
-                embed = discord.Embed(title=f"{member}", description=f"{member.id}", color = GECKOCLR)
-                embed.set_footer(text=f"Event: member_remove", icon_url = BOT_ICON)
-                await chn.send(embed = embed)
-            except:
-                pass
-
-@bot.event
 async def on_member_update(before, after):
     global econn
     try:
@@ -330,6 +276,9 @@ async def on_member_update(before, after):
     except:
         econn = newconn()
         cur = econn.cursor()
+    
+    if before.id == BOTID:
+        return
 
     cur.execute(f"SELECT events FROM eventlog WHERE guildid = {after.guild.id}")
     events = cur.fetchall()
@@ -372,6 +321,9 @@ async def on_member_ban(guild, user):
         econn = newconn()
         cur = econn.cursor()
 
+    if user.id == BOTID:
+        return
+
     cur.execute(f"SELECT events FROM eventlog WHERE guildid = {guild.id}")
     events = cur.fetchall()
     if len(events) == 0:
@@ -402,6 +354,9 @@ async def on_member_unban(guild, user):
         econn = newconn()
         cur = econn.cursor()
 
+    if user.id == BOTID:
+        return
+
     cur.execute(f"SELECT events FROM eventlog WHERE guildid = {guild.id}")
     events = cur.fetchall()
     if len(events) == 0:
@@ -431,6 +386,7 @@ async def on_invite_create(invite):
     except:
         econn = newconn()
         cur = econn.cursor()
+
 
     cur.execute(f"SELECT events FROM eventlog WHERE guildid = {invite.guild.id}")
     events = cur.fetchall()

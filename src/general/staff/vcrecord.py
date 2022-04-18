@@ -83,10 +83,10 @@ class VCRecord(commands.Cog):
                 await ctx.respond("Max hours / month: 100.\n\nIf you are looking for more hours / month, contact Gecko Moderator in support server", ephemeral = True)
                 return
             elif cnt >= 30*60 and premium == 1:
-                await ctx.respond("Premium Tier 1: 30 hours / month.\nPremium Tier 2: 100 hours / month.\n\nCheck out more by using `/premium`", ephemeral = True)
+                await ctx.respond("Premium Tier 1: 30 hours / month.\nPremium Tier 2: 100 hours / month.\n\nFind out more by using `/premium`", ephemeral = True)
                 return
             elif cnt >= 10*60 and premium == 0:
-                await ctx.respond("Free guilds: 10 hours / month.\nPremium Tier 1: 30 hours / month.\nPremium Tier 2: 100 hours / month.\n\nCheck out more by using `/premium`", ephemeral = True)
+                await ctx.respond("Free guilds: 10 hours / month.\nPremium Tier 1: 30 hours / month.\nPremium Tier 2: 100 hours / month.\n\nFind out more by using `/premium`", ephemeral = True)
                 return
         else:
             cur.execute(f"INSERT INTO vcrecord VALUES ({guildid}, 0, 0)")

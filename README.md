@@ -12,7 +12,7 @@ Use `/help` in bot for detailed help.
 
 Various **TruckersMP** functions are supported for VTCs!  
 Including **traffic / player lookup**, **HR mode** and **VTC events**  
-Check out more using `/help truckersmp`
+Find out more using `/help truckersmp`
 
 ## Gecko Ranking  
 

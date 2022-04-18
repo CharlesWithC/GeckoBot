@@ -24,7 +24,7 @@ ABOUT = """Gecko is a **general purpose bot** which can help you moderate commun
 <:truckersmp:964343306626662430> **TruckersMP**
 
 Various **TruckersMP** functions are supported for VTCs!
-Check out more using `/help truckersmp`
+Find out more using `/help truckersmp`
 
 **Gecko Ranking**
 
@@ -138,7 +138,8 @@ Usage: `/four statistics`"""}
 ##### STAFF
     "button": {
         "description": """**Gecko Button**, fully **customizable**.
-You can ask the bot to send **embed** or show **form** or just send a **message** to the user who clicked the button.
+You can ask the bot to send **embed** or show **form** or just send a **message** to the member who clicked the button.
+Button roles are supported, members are given / removed from roles on click, use ',' to separate roles, and append a '-' ahead of the role to remove member's role.
 The button **color** and **label** can be customized, and a **url** can be provided so that the clicker would open it.
 Also you can **disable** the button, make the result **ephemeral** so that only the clicker would see it.
 
@@ -154,12 +155,12 @@ Subcommands of `/button` group:
 This will only create the button and store it in database. You need to use `/button send` or `/button attach` to post it.
 You can provide none of the content / embed / form to make the button a decorative one.
 
-Usage: `/button create {required: label} {optional: color, default blurple} {optional: emoji} {optional: disabled, default No} {optional: ephemeral, default Yes} {optional: url} {optional: content} {optional: embedid} {optional: formid}`""",
+Usage: `/button create {required: label} {optional: color, default blurple} {optional: emoji} {optional: disabled, default No} {optional: ephemeral, default Yes} {optional: url} {optional: content} {optional: embedid} {optional: formid} {optional: roles}`""",
 
         "edit": """Edit the button by the given button ID provided when it's created.
 If you forgot the button ID, use `/button get` to get all buttons in a message, or `/button list` to get all buttons created in the server.ButtonStyle()
 
-Usage: `/button edit {required: buttonid} {required: label} {optional: color, default blurple} {optional: emoji} {optional: disabled, default No} {optional: ephemeral, default Yes} {optional: url} {optional: content} {optional: embedid} {optional: formid}`""",
+Usage: `/button edit {required: buttonid} {required: label} {optional: color, default blurple} {optional: emoji} {optional: disabled, default No} {optional: ephemeral, default Yes} {optional: url} {optional: content} {optional: embedid} {optional: formid} {optional: roles}`""",
 
         "delete": """Delete a button from database by the given button ID. 
 **Note** This will only delete the button from database but not any button already posted. Posted buttons will no longer work and needed to be deleted manually.
@@ -564,10 +565,12 @@ Usage: `/radiolist`"""
         "description": """**Gecko Ranking**
 *Rankcard supports any background image from the web! For free!*  
 Staff can set any xp rate, yes, even to 100! Also level roles, members will be given the role when the reach the level.
+There's also thumb XP function, message authors will be given XP if it's reacted with thumb-up by other members.
+
 Maximum level is 100, after reaching maximum level, xp still goes up but level doesn't go up.
 
 Supported slash commands:
-`rank` `card` `leaderboard` `givexp` `xprate` `levelrole`
+`rank` `card` `leaderboard` `givexp` `xprate` `levelrole` `resetxp` `thumbxp`
 Supported traditional commands:
 `g?rank` `g?leaderboard`""",
 
@@ -603,13 +606,29 @@ Usage: `/givexp {required: @member} {required: xp}`""",
 Set the XP rate.
 Higher rate will result in faster level increase.
 
+**NOTE** This also works for `thumbsxp`, find out more with `/help thumbsxp`.
+
 Usage: `/xprate {required: xprate}`""",
 
         "levelrole": """**Staff-only command**
 Set the role to be assigned to members when they reach a certain role.
 Set `remove` to `Yes` to remove the level role.
 
-Usage: `/levelrole {required: level} {required: @role} {optional: remove}`"""
+Usage: `/levelrole {required: level} {required: @role} {optional: remove}`""",
+
+        "resetxp": """**Staff-only command**
+Reset everyone's XP in the guild.
+:warning: **WARNING** this operation cannot be undone.
+
+Usage: `/resetxp`""",
+
+        "thumbxp": """**Staff-only command**
+Enable / Disable thumb XP function.
+Message authors will be given XP if it's reacted with thumb-up by other members.
+
+**NOTE** Message authors won't lose XP if it's reacted with thumb-down (to prevent abuse).
+
+Usage: `/thumbup`"""
     },
 
     "truckersmp": {
@@ -632,7 +651,8 @@ If you want to look up a player using `{steamid}`, a normal lookup is needed to 
 `/truckersmp {optional: name} {optional: mpid} {optional: playerid, require server} {optional: steamid} {required: hrmode = Yes}` - In addition to all the basic player information, get their steam play hour of ETS2 and ATS, as well as their TruckersMP ban count and history.
 
 **VTC Events**
-`/vtcevents {optional: vtcid}` - Get the events a VTC is attending, if `{vtcid}` is not specified, get the events of the VTC the guild is bound to.
+`/vtcevents {optional: vtcid} {optional: listmode}` - Get the events a VTC is attending, if `{vtcid}` is not specified, get the events of the VTC the guild is bound to.
+If {listmode} is set to yes, all the events the VTC is attending will be displayed in a list. If the message is too long, it will only show the most recent ones, and a file will be attached for all the events.
 
 To bind the guild to a VTC, make sure Gecko can see all the invite links, and there's a valid invite link on TruckersMP. Then use `/vtcbind {required: vtcid}` to bind your VTC.
 Gecko also supports sending a message when an event is starting (1 hour before and 5 minutes before), check `/help truckersmp - vtceventping` for more information.""",

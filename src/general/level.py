@@ -452,6 +452,32 @@ async def xprate(ctx, rate: discord.Option(float, "XP rate", required = True)):
     conn.commit()
     await ctx.respond(f"XP rate set to {rate}.")
 
+@bot.slash_command(name="thumbxp", description="Enable / Disable the function to add XP when messages are reacted with thumb-up(s).")
+async def thumbxp(ctx):
+    if ctx.guild is None:
+        await ctx.respond("You can only run this command in guilds!")
+        return
+    
+    if not isStaff(ctx.guild, ctx.author):
+        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+        return
+    
+    await ctx.defer()
+    conn = newconn()
+    cur = conn.cursor()
+    guild = ctx.guild
+    guildid = guild.id
+    cur.execute(f"SELECT * FROM settings WHERE guildid = {guildid} AND skey='thumbxp'")
+    t = cur.fetchall()
+    if len(t) == 0:
+        cur.execute(f"INSERT INTO settings VALUES ({guildid}, 'thumbxp', '1')")
+        conn.commit()
+        await ctx.respond("Thumb-up XP enabled.")
+    else:
+        cur.execute(f"DELETE FROM settings WHERE guildid = {guildid} AND skey='thumbxp'")
+        conn.commit()
+        await ctx.respond("Thumb-up XP disabled.")
+
 @bot.slash_command(name="reset", description="Reset everyone's XP")
 async def reset(ctx):
     if ctx.guild is None:

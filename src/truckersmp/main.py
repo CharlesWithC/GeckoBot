@@ -4,7 +4,6 @@
 
 # TruckersMP
 
-
 import os, asyncio
 import discord
 from discord.ext import commands
@@ -14,7 +13,7 @@ from discord.ext.commands import CooldownMapping, Cooldown, BucketType
 import time
 from datetime import datetime
 import requests
-import json
+import json, io
 
 from bot import bot
 from settings import *
@@ -425,6 +424,7 @@ async def vtcbind(ctx, vtcid: discord.Option(int, "The ID of your VTC", required
     if not found:
         await ctx.respond(f"Discord invite link for **{name}** on TruckersMP doesn't link to this guild.", ephemeral = True)
         return
+    cur.execute(f"DELETE FROM vtcbind WHERE vtcid = {vtcid}")
     cur.execute(f"INSERT INTO vtcbind VALUES ({ctx.guild.id}, {vtcid}, '{b64e(name)}')")
     conn.commit()
     await ctx.respond(f"Successfully bound the guild to VTC **{name}**!")
@@ -523,7 +523,8 @@ class EventButton(Button):
         await interaction.response.edit_message(embed = embed, view = view)    
 
 @bot.slash_command(name="vtcevents", description="Get events the VTC is attending.")
-async def vtcevents(ctx, vtcid: discord.Option(int, "Specify a VTC ID (optional if the guild is bound to a VTC)", required = False)):
+async def vtcevents(ctx, vtcid: discord.Option(int, "Specify a VTC ID (optional if the guild is bound to a VTC)", required = False),
+        listmode: discord.Option(str, "Show all the events in a list (or recent events + markdown file if too many)", required = False, choices = ["Yes", "No"])):
     conn = newconn()
     cur = conn.cursor()
     if vtcid is None:
@@ -543,6 +544,30 @@ async def vtcevents(ctx, vtcid: discord.Option(int, "Specify a VTC ID (optional 
     if len(d) == 0:
         await ctx.respond(f"The VTC is not attending any events.", ephemeral = True)
         return
+    if listmode == "Yes":
+        msg = ""
+        tmsg = ""
+        for dd in d:
+            ts = dd["startat"]
+            msg += f"[**{dd['name']}**](https://truckersmp.com{dd['url']}) (<t:{ts}:R>)\n"
+            if len(msg) < 2000:
+                tmsg = msg
+
+        embed = discord.Embed(title = f"{VTCID2Name(vtcid)} - Events attending", description=tmsg, url=f"https://truckersmp.com/vtc/{vtcid}/events/attending", color = TMPCLR)
+        embed.timestamp = datetime.now()
+        embed.set_thumbnail(url = "https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+        if len(msg) > len(tmsg):
+            f = io.BytesIO()
+            f.write(msg.encode())
+            f.seek(0)
+            embed.set_footer(text = f"TruckersMP • VTC #{vtcid} • Events attending (Partial) ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+            await ctx.respond(embed = embed, file = discord.File(fp=f, filename='AllEvents.MD'))
+        else:
+            embed.set_footer(text = f"TruckersMP • VTC #{vtcid} • Events attending ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+            await ctx.respond(embed = embed)
+
+        return
+
     d = d[0]
     eid = d["id"]
     name = d["name"]

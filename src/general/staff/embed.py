@@ -134,6 +134,9 @@ class ManageEmbed(commands.Cog):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
 
+        conn = newconn()
+        cur = conn.cursor()
+
         cur.execute(f"SELECT COUNT(*) FROM embed WHERE guildid = {guildid}")
         c = cur.fetchall()
         if len(c) > 0:
@@ -143,10 +146,10 @@ class ManageEmbed(commands.Cog):
                 await ctx.respond("Max embeds: 100.\n\nIf you are looking for more embeds, contact Gecko Moderator in support server", ephemeral = True)
                 return
             elif cnt >= 30 and premium == 1:
-                await ctx.respond("Premium Tier 1: 30 embeds.\nPremium Tier 2: 100 embeds.\n\nCheck out more by using `/premium`", ephemeral = True)
+                await ctx.respond("Premium Tier 1: 30 embeds.\nPremium Tier 2: 100 embeds.\n\nFind out more by using `/premium`", ephemeral = True)
                 return
             elif cnt >= 10 and premium == 0:
-                await ctx.respond("Free guilds: 10 embeds.\nPremium Tier 1: 30 embeds.\nPremium Tier 2: 100 embeds.\n\nCheck out more by using `/premium`", ephemeral = True)
+                await ctx.respond("Free guilds: 10 embeds.\nPremium Tier 1: 30 embeds.\nPremium Tier 2: 100 embeds.\n\nFind out more by using `/premium`", ephemeral = True)
                 return
         
         if color is None:

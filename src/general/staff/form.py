@@ -204,10 +204,10 @@ class ManageForm(commands.Cog):
                 await ctx.respond("Max forms: 50.\n\nIf you are looking for more forms, contact Gecko Moderator in support server", ephemeral = True)
                 return
             elif cnt >= 30 and premium == 1:
-                await ctx.respond("Premium Tier 1: 30 forms.\nPremium Tier 2: 50 forms.\n\nCheck out more by using `/premium`", ephemeral = True)
+                await ctx.respond("Premium Tier 1: 30 forms.\nPremium Tier 2: 50 forms.\n\nFind out more by using `/premium`", ephemeral = True)
                 return
             elif cnt >= 5 and premium == 0:
-                await ctx.respond("Free guilds: 5 forms.\nPremium Tier 1: 30 forms.\nPremium Tier 2: 50 forms.\n\nCheck out more by using `/premium`", ephemeral = True)
+                await ctx.respond("Free guilds: 5 forms.\nPremium Tier 1: 30 forms.\nPremium Tier 2: 50 forms.\n\nFind out more by using `/premium`", ephemeral = True)
                 return
 
         ot = 0

@@ -1,5 +1,14 @@
 # Gecko Bot Update History
 
+## Update 2022.04.19
+
+**Version v1.18e**  
+1.Added list-mode for VTC Events  
+2.Added `/thumbsxp`  
+3.Added button roles  
+4.Added auto follow channel **Gecko UPD** for `/setchannel`  
+5.Bug fixes  
+
 ## Update 2022.04.16  
 
 **Version v1.18d**  

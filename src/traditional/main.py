@@ -104,7 +104,7 @@ async def stats(ctx):
     cur.execute(f"SELECT COUNT(*) FROM embed")
     embedcnt = cur.fetchone()[0]
     
-    embed = discord.Embed(title="Gecko Stats", description="Shard refers to slash command bot.", color=GECKOCLR)
+    embed = discord.Embed(title="Gecko Stats", description="Shard refers to prefix command bot.", color=GECKOCLR)
     embed.set_thumbnail(url=BOT_ICON)
     embed.add_field(name="Servers", value=f"```{total_servers}```")
     embed.add_field(name="Users", value=f"```{total_users}```")
@@ -114,7 +114,7 @@ async def stats(ctx):
     embed.add_field(name="Forms", value=f"```{formcnt}```")
     embed.add_field(name="Embeds", value=f"```{embedcnt}```")
     
-    embed.add_field(name="Shard", value=f"```{len(bot.shards)}```")
+    embed.add_field(name="Shard", value=f"```{len(tbot.shards)}```")
     embed.add_field(name="Ping", value=f"```{int(ping*1000)}ms```")
 
     embed.set_footer(text="Gecko", icon_url=BOT_ICON)
@@ -135,18 +135,44 @@ async def SetChannel(ctx, category: str, channel: str):
     conn = newconn()
     cur = conn.cursor()
 
-    if not category in ["form", "four", "finance", "music", "level", "error", "log", "deleted"]:
+    if not category in ["form", "four", "finance", "music", "level", "GeckoUPD", "error", "botlog", "eventlog"]:
         await ctx.send(f"{category} is not a valid category.")
         return
 
     if category in ["four", "finance", "music", "level"] and channel == "all":
         channel = 0
     else:
+        if category == "GeckoUPD":
+            try:
+                if not channel.startswith("<#") or not channel.endswith(">"):
+                    await ctx.send(f"{channel} is not a valid channel.")
+                    return
+                channel = int(channel[2:-1])
+                channel = bot.get_channel(channel)
+                if channel is None:
+                    await ctx.send(f"Channel does not exist.")
+                    return
+                destination = bot.get_channel(ANNOUNCEMENT_CHANNEL[1])
+                if destination is None:
+                    await ctx.send(f"Channel to follow (Gecko Update Channel) does not exist, this should be fixed very soon.\nYou could join [**Gecko Community**]({SUPPORT}) and let us know.")
+                    return
+                await destination.follow(destination = channel)
+            except:
+                import traceback
+                traceback.print_exc()
+                await ctx.send(f"Something wrong happened.")
+                return
+            await ctx.send(f"<#{channel.id}> is now following **Gecko Update Channel**\nTo unfollow, please go to **Server Settings** - **Integrations**")
+            return
+
         if not channel.startswith("<#") or not channel.endswith(">"):
             await ctx.send(f"{channel} is not a valid channel.")
             return
         channel = int(channel[2:-1])
-    
+        chn = bot.get_channel(channel)
+        if chn is None:
+            await ctx.send(f"{channel} is not a valid channel.")
+            return
     cur.execute(f"SELECT * FROM channelbind WHERE guildid = {guild.id} AND category = '{category}'")
     t = cur.fetchall()
     if len(t) == 0:
@@ -158,7 +184,7 @@ async def SetChannel(ctx, category: str, channel: str):
         await ctx.send(f"<#{channel}> has been configured as {category} channel.\nMake sure I always have access to it.\nUnless you want to stop dealing with those messages, then delete the channel.")
     else:
         await ctx.send(f"Members can use {category} commands in any channels.")
-
+            
 # non-interaction purge message
 @tbot.command(name="purge", description="Staff - Purge messages.")
 async def Purge(ctx, count: int):
@@ -177,7 +203,7 @@ async def Purge(ctx, count: int):
     try:
         await ctx.channel.purge(limit = count + 1)
     except:
-        await ctx.respond("I don't have permission to delete messages.", ephemeral = True)
+        await ctx.send("I don't have permission to delete messages.")
 
 @tbot.command(name="ping", description="Get the bot's ping to discord API.")
 async def tping(ctx):
