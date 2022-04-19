@@ -2,6 +2,9 @@
 
 ## Update 2022.04.19
 
+**Version v1.18e2**  
+Fixed some minor bugs
+
 **Version v1.18e**  
 1.Added list-mode for VTC Events  
 2.Added `/thumbsxp`  

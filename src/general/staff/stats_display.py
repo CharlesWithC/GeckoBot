@@ -567,7 +567,8 @@ async def StatsDisplayUpdate():
             
             except Exception as e:
                 try:
-                    await log("ERROR",f"Server Stats update error: {str(e)}")
+                    await log("ERROR",f"[Guild {guildid}] Server Stats update error: {str(e)}")
+                    ss_get_channel_fail.append((guildid, 0))
                 except:
                     pass
 

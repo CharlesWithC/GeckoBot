@@ -137,6 +137,8 @@ class ManageEmbed(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
 
+        guildid = ctx.guild.id
+
         cur.execute(f"SELECT COUNT(*) FROM embed WHERE guildid = {guildid}")
         c = cur.fetchall()
         if len(c) > 0:

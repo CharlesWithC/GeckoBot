@@ -382,7 +382,7 @@ async def ReactionRoleUpdate():
                     
         except Exception as e:
             try:
-                await log("ERROR", f"Reaction role error {str(e)}")
+                await log("ERROR", f"[Guild {guildid}] Reaction role error {str(e)}")
             except:
                 pass
 

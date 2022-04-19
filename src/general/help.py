@@ -683,6 +683,8 @@ Usage: `/vtcbind {required: vtcid} {optional: unbind}`""",
 Send a (custom) message before 1 hour and 5 minutes an event is starting.
 The custom message is optional, and it can contain mentions to ping members.
 
+**NOTE** The event might not be notified if it's added within 3 hours starting.
+
 Usage: `/vtceventping {required: channel} {optional: msg} {optional: disable}`"""
     },
 

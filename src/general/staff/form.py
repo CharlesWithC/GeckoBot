@@ -195,6 +195,10 @@ class ManageForm(commands.Cog):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
 
+        conn = newconn()
+        cur = conn.cursor()
+        guildid = ctx.guild.id
+
         cur.execute(f"SELECT COUNT(*) FROM form WHERE guildid = {guildid}")
         c = cur.fetchall()
         if len(c) > 0:

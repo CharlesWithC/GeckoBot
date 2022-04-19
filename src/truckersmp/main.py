@@ -549,7 +549,7 @@ async def vtcevents(ctx, vtcid: discord.Option(int, "Specify a VTC ID (optional 
         tmsg = ""
         for dd in d:
             ts = dd["startat"]
-            msg += f"[**{dd['name']}**](https://truckersmp.com{dd['url']}) (<t:{ts}:R>)\n"
+            msg += f"[{dd['name']}](https://truckersmp.com{dd['url']}) (<t:{ts}:R>)\n"
             if len(msg) < 2000:
                 tmsg = msg
 
@@ -694,7 +694,7 @@ async def EventPing():
                     continue
                 msg = b64d(tt[3])
                 d = GetEvents(vtcid)
-                if d is None:
+                if d is None or len(d) == 0:
                     continue
                 d = d[0]
                 eid = d["id"]
