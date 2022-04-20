@@ -197,6 +197,7 @@ def SearchVoice(inp):
     return ret
     
 from libretranslatepy import LibreTranslateAPI
+from langdetect import detect as ldetect
 
 config_txt = ""
 config_txt = open("./bot.conf","r").read()
@@ -205,11 +206,20 @@ lt = LibreTranslateAPI(config["libretranslate"]["host"])
 lt.api_key = config["libretranslate"]["key"]
 langs = lt.languages()
 name2code = {}
+allcode = []
 for lang in langs:
     name2code[lang["name"] + f" ({lang['code']})"] = lang["code"]
+    allcode.append(lang["code"])
 
 def DetectLang(text):
-    fromlang = lt.detect(text)[0]["language"]
+    t = lt.detect(text)[0]
+    if t["confidence"] == 0.0: # libretranslate failed
+        fromlang = ldetect(text)
+        if fromlang in allcode:
+            return fromlang
+        else:
+            return "en"
+    fromlang = t["language"]
     return fromlang
 
 def Translate(text, tolang = "en", fromlang = None):
@@ -219,7 +229,11 @@ def Translate(text, tolang = "en", fromlang = None):
         return (f"*I think this is already in the target language.*\n{text}", fromlang, tolang)
     if fromlang == "en" or tolang == "en":
         totext = lt.translate(text, fromlang, tolang)
+        if totext.lower() == text.lower():
+            return None
         return (totext, fromlang, tolang)
     entext = lt.translate(text, fromlang, "en")
     totext = lt.translate(entext, "en", tolang)
+    if totext.lower() == text.lower():
+        return None
     return (totext, fromlang, tolang)

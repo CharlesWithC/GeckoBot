@@ -583,6 +583,9 @@ async def on_message(message):
     if user.id == BOTID or message.guild is None:
         return
 
+    if message.content.lower().startswith("g?") or message.content.lower().startswith("g!"):
+        return
+
     premium = GetPremium(message.guild)
     if premium > 0 and message.content != None:
         cur.execute(f"SELECT fromlang, tolang FROM translate WHERE guildid = {guildid} AND channelid = {message.channel.id}")
@@ -608,15 +611,16 @@ async def on_message(message):
             dtc = DetectLang(message.content)
             if (fromlang == "*" or dtc in fromlang.split(",")) and dtc != tolang:
                 res = Translate(message.content, tolang, fromlang = dtc)
-                embed = discord.Embed(description = res[0], color = GECKOCLR)
-                avatar = None
-                if message.author.avatar != None and message.author.avatar.url != None:
-                    avatar = message.author.avatar.url
-                embed.timestamp = datetime.now()
-                embed.set_author(name = f"{message.author.name}#{message.author.discriminator}", icon_url = avatar)
-                embed.set_footer(text = f"{res[1]} -> {res[2]} • {TRANSLATE} ", icon_url = GECKOICON)
-                
-                await message.reply(embed = embed, mention_author = False)
+                if res != None:
+                    embed = discord.Embed(description = res[0], color = GECKOCLR)
+                    avatar = None
+                    if message.author.avatar != None and message.author.avatar.url != None:
+                        avatar = message.author.avatar.url
+                    embed.timestamp = datetime.now()
+                    embed.set_author(name = f"{message.author.name}#{message.author.discriminator}", icon_url = avatar)
+                    embed.set_footer(text = f"{res[1]} -> {res[2]} • {TRANSLATE} ", icon_url = GECKOICON)
+                    
+                    await message.reply(embed = embed, mention_author = False)
                 
     updlvl = 0
 

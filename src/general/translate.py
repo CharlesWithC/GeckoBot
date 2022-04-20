@@ -35,6 +35,8 @@ async def translate(ctx, text: discord.Option(str, "Text to translate"),
     tolang = process.extract(tolang.lower(), name2code.keys(), limit = 1, score_cutoff = 80)[0][0]
 
     res = Translate(text, name2code[tolang])
+    if res is None:
+        res = (text, tolang, tolang)
     embed = discord.Embed(description = res[0], color = GECKOCLR)
     avatar = None
     if ctx.author.avatar != None and ctx.author.avatar.url != None:
@@ -65,6 +67,8 @@ async def ttranslate(ctx):
     text = message.content
     
     res = Translate(text, name2code[tolang])
+    if res is None:
+        res = (text, tolang, tolang)
     embed = discord.Embed(description = res[0], color = GECKOCLR)
     avatar = None
     if message.author.avatar != None and message.author.avatar.url != None:

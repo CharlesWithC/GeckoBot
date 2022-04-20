@@ -2,6 +2,9 @@
 
 ## Update 2022.04.20
 
+**Version v1.19.1**  
+Minor improvements on translation function  
+
 **Version v1.19**  
 1.Added (auto) translate function  
 2.Replaced `fuzzywuzzy` with `rapidfuzz` and applied `score_cutoff`  
