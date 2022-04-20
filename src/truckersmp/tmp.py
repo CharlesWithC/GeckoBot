@@ -5,7 +5,7 @@
 # Retrieve player map data each 10 seconds.
 
 import requests, json
-from fuzzywuzzy import process
+from rapidfuzz import process, fuzz
 from db import newconn
 from functions import *
 import time
@@ -63,7 +63,7 @@ def VTCID2Name(vtcid):
         return name
 
 def SearchName(name):
-    res = process.extract(name, nameid.keys(), limit = 5)
+    res = process.extract(name, nameid.keys(), limit = 5, score_cutoff = 80)
     ret = []
     for t in res:
         ret.append(t[0])
@@ -257,7 +257,7 @@ def UpdateTMPMap():
         time.sleep(30)
 
 def SearchServer(server):
-    res = process.extract(server, traffic.keys(), limit = 10)
+    res = process.extract(server, traffic.keys(), limit = 10, score_cutoff = 80)
     ret = []
     for t in res:
         if t[0] == "allplayer":
@@ -266,15 +266,14 @@ def SearchServer(server):
     return ret
 
 def SearchLocation(server, loc):
-    res = process.extract(loc, location[server], limit = 10)
+    res = process.extract(loc, location[server], limit = 10, score_cutoff = 80)
     ret = []
     for t in res:
         ret.append(t[0])
     return ret
 
 def SearchCountry(server, loc):
-    print(country[server])
-    res = process.extract(loc, country[server], limit = 10)
+    res = process.extract(loc, country[server], limit = 10, score_cutoff = 80)
     ret = []
     for t in res:
         ret.append(t[0])

@@ -17,44 +17,37 @@ from bot import bot
 from settings import *
 from functions import *
 from db import newconn
-from fuzzywuzzy import process
+from rapidfuzz import process
 
-ABOUT = """Gecko is a **general purpose bot** which can help you moderate community and create fun.  
+ABOUT = """Gecko is a **multi-purpose moderation bot**.
+Games, Music and a lot of staff functions are supported.  
+`/(auto)translate` can make your community international.  
+Use `/help` in bot for detailed help.
+
+**NOTE** Gecko supports prefix commands for very few commands, as listed in `/help`.  
 
 <:truckersmp:964343306626662430> **TruckersMP**
-
-Various **TruckersMP** functions are supported for VTCs!
-Find out more using `/help truckersmp`
+Various **TruckersMP** functions are supported for VTCs!  
+Including **traffic / player lookup**, **HR mode** and **VTC events**  
+Find out more by `/help truckersmp`
 
 **Gecko Ranking**
-
-*Rankcard supports any background image from the web! For free!*
-*Also support level role*
+*Rankcard supports any background image from the web! For free!*  
+*Also support level role*  
 
 **Gecko Games**
-
-- **Finance**
-- **Connect Four**
+**Finance** - earn coins by checking in daily and working  
+**Connect Four** - chess game where two players battle  
+**Message Encrypt & Decrypt** *I consider this a game* - Send a encrypted message and only he / she can decrypt.  
 
 **Gecko Music**
-
 *Not only music, but also radio!*  
+274 radio stations are supported, and you can request your desired station to be added.  
 
 **Staff Functions**
+Button, embed, form, chat action, voice channel recorder, reaction role, server stats, staff management, event logging and more.
 
-Includes: button, embed, form, chat action, reaction role, staff management, server stats and voice channel recorder.  
-**Button** - Create buttons of any kind, the layout and interaction are fully customizable! The interaction could be linked to simple text messages, embed messages or forms.  
-**Embed** - Create and post embeds, the URL, thumbnails, images, footers etc are all customizable. Embeds are stored in the database and can be recovered at any time in case they are deleted accidentally.  
-**Form** - Create forms with at most five input fields, which can be either a multi-line text box or a single-line input. Submissions will be updated in a staff channel and you can download all entries with one command.  
-**Chat Action** - Multiple actions when a keyword is detected, emoji reactions always add fun, delete / kick / ban can be considered auto mod and help keep your community safe (it can also remove invite links, jusy set keyword to `discord.gg`).  
-**Voice Channel Recorder** - Record all the speakers separately, to save a meeting or an interview.  
-**Reaction Role** - Assign members a role when they react an emoji.  
-**Server Stats** - Based on variables, fully customizable!  
-**Staff Management** - Administrative and non-administrative staff, and a staff list for users to know the real staff.  
-
-Join [Gecko Community](https://discord.gg/wNTaaBZ5qd) for help / discussion.
-
-Use `/help` for detailed help."""
+Join [Gecko Community](https://discord.gg/wNTaaBZ5qd) to discuss, get help and have a look at the plans."""
 
 HELP = {
     "about": ABOUT,
@@ -631,10 +624,29 @@ Message authors will be given XP if it's reacted with thumb-up by other members.
 Usage: `/thumbup`"""
     },
 
+    "translate": {
+        "description": """Translate message to make your server international!
+Manual & Auto translation are both supported.
+
+For manual translation, use `/translate` or reply to a message with `g?tr` or `g?translate` to translate it.
+For auto translation, find out more with `/help autotranslate`""",
+
+        "autotranslate": """Auto translate message in any channel.
+
+`{channel}` is where Gecko will be translating message, if not specified, Gecko will translate message from all channels.
+`{fromlang}` is what languages to translate, if not specified, Gecko will translate message of all languages.
+`{tolang}` is what the message will be translated to, default is English (en).
+If `{disable}` is set to `Yes`, auto translation will be turned off.
+
+**NOTE** `{fromlang}` and `{tolang}` should be the full name (e.g. Spanish).
+*This function is premium-only*
+
+Usage: `/autotranslate {optional: channel} {optional: fromlang} {optional: tolang} {optional: disable}`"""
+    },
+
     "truckersmp": {
         "description": """<:truckersmp:964343306626662430> **TruckersMP**
 Gecko supports various **TruckersMP** functions, including **traffic / player lookup**, **HR mode** and **VTC events**.
-**Note** There's a cooldown as noted in the command description, if Gecko doesn't repond, it's probably because you are being cooled down.
 
 **Traffic lookup** 
 `/truckersmp` - General server information.
@@ -664,8 +676,6 @@ Make sure you have bound it on TruckersMP first, and made it public visible, or 
 
 To unbind, set {unbind} to "Yes".
 
-**Note** This command has a cooldown of 3 attempts / 10 minutes, if exceeded, you will be cooled down and Gecko will not respond.
-
 Usage: `/tmpbind {required: mpid} {optional: unbind}`""",
 
         "vtcbind": """<:truckersmp:964343306626662430> **TruckersMP**
@@ -674,8 +684,6 @@ Bind a VTC with the guild.
 Make sure you Gecko can see all invite links the guild has, and there's a valid invite link on TruckersMP page!
 
 To unbind, set {unbind} to "Yes".
-
-**Note** This command has a cooldown of 3 attempts / 60 minutes, if exceeded, you will be cooled down and Gecko will not respond.
 
 Usage: `/vtcbind {required: vtcid} {optional: unbind}`""",
 
@@ -730,8 +738,8 @@ Usage: `/tts {required: text} {optional: gender, default male} {optional: speed,
 }
 
 cmdlist = discord.Embed(title = "All commands", description = "Use `/help {category} - {command}` to check detailed help, you can use the autocomplete results.", color = GECKOCLR)
-cmdlist.set_thumbnail(url=BOT_ICON)
-cmdlist.set_footer(text="Gecko", icon_url=BOT_ICON)
+cmdlist.set_thumbnail(url=GECKOICON)
+cmdlist.set_footer(text="Gecko", icon_url=GECKOICON)
 
 commands = {}
 a = ""
@@ -769,7 +777,7 @@ for cmd in ckey:
 async def HelpAutocomplete(ctx: discord.AutocompleteContext):
     if ctx.value.replace(" ","") == "":
         return list(commands.keys())[:10]
-    d = process.extract(ctx.value.lower(), commands.keys(), limit = 10)
+    d = process.extract(ctx.value.lower(), commands.keys(), limit = 10, score_cutoff = 80)
     ret = []
     for dd in d:
         ret.append(dd[0])
@@ -782,7 +790,7 @@ async def about(ctx):
 @bot.slash_command(name="help", description="Get help.")
 async def help(ctx, cmd: discord.Option(str, "Type category or command to get detailed help.", required = False, autocomplete = HelpAutocomplete)):
     if cmd != None:
-        d = process.extract(cmd, commands.keys(), limit = 1)
+        d = process.extract(cmd, commands.keys(), limit = 1, score_cutoff = 80)
         await ctx.respond(embed = discord.Embed(title = d[0][0], description=commands[d[0][0]], color = GECKOCLR))
     else:
         await ctx.respond(embed = cmdlist)

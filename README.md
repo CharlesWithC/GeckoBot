@@ -1,18 +1,18 @@
 # Gecko
 
-Gecko is a **general purpose bot** which can help you moderate community and create fun.  
+Gecko is a **multi-purpose moderation bot**.
 
 Games, Music and a lot of staff functions are supported.  
-More functions are planned and being added.  
+`/(auto)translate` can make your community international.  
 Use `/help` in bot for detailed help.
 
-**NOTE** Gecko supports non-slash commands for non-staff commands only, such as games and music. Staff commands usually contain a lot of arguments and it will be very hard to use non-slash commands.
+**NOTE** Gecko supports prefix commands for very few commands, as listed in `/help`.  
 
 ## TruckersMP
 
 Various **TruckersMP** functions are supported for VTCs!  
 Including **traffic / player lookup**, **HR mode** and **VTC events**  
-Find out more using `/help truckersmp`
+Find out more by `/help truckersmp`
 
 ## Gecko Ranking  
 
@@ -31,8 +31,7 @@ Find out more using `/help truckersmp`
 274 radio stations are supported, and you can request your desired station to be added.  
 
 ## Staff Functions
-
-Includes: button, embed, form, chat action, reaction role, staff management, server stats and voice channel recorder.  
+  
 **Button** - Create buttons of any kind, the layout and interaction are fully customizable! The interaction could be linked to simple text messages, embed messages or forms.  
 **Embed** - Create and post embeds, the URL, thumbnails, images, footers etc are all customizable. Embeds are stored in the database and can be recovered at any time in case they are deleted accidentally.  
 **Form** - Create forms with at most five input fields, which can be either a multi-line text box or a single-line input. Submissions will be updated in a staff channel and you can download all entries with one command.  
@@ -41,8 +40,7 @@ Includes: button, embed, form, chat action, reaction role, staff management, ser
 **Reaction Role** - Assign members a role when they react an emoji.  
 **Server Stats** - Based on variables, fully customizable!  
 **Staff Management** - Administrative and non-administrative staff, and a staff list for users to know the real staff.  
-**Message recovery** - Not only text messages, but also images, and all attachments!  
-**Logging** - Log all kinds of events happening in your server.  
+**Event Logging** - Log all kinds of events happening in your server.  
 
 ---
 
@@ -54,5 +52,5 @@ All Gecko functions are free at the moment, some functions will become premium-o
 
 ## Some screenshot
 
-![Rank card](https://cdn.discordapp.com/attachments/961135600830926878/962361230935330866/unknown.png)
-![Connect Four](https://cdn.discordapp.com/attachments/961135600830926878/961136034597445682/unknown.png)  
+![Rank card](https://cdn.discordapp.com/attachments/961135600830926878/966256329540923462/unknown.png)
+![TruckersMP](https://cdn.discordapp.com/attachments/961135600830926878/966254610891280384/unknown.png)  

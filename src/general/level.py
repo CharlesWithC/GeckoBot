@@ -478,7 +478,7 @@ async def thumbxp(ctx):
         conn.commit()
         await ctx.respond("Thumb-up XP disabled.")
 
-@bot.slash_command(name="reset", description="Reset everyone's XP")
+@bot.slash_command(name="resetxp", description="Reset everyone's XP")
 async def reset(ctx):
     if ctx.guild is None:
         await ctx.respond("You can only run this command in guilds!")

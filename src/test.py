@@ -30,8 +30,8 @@ async def on_ready():
 config_txt = open("./test.conf","r").read()
 config = json.loads(config_txt)
 
-threading.Thread(target=UpdateTMPMap).start()
-threading.Thread(target=UpdateTMPTraffic).start()
+# threading.Thread(target=UpdateTMPMap).start()
+# threading.Thread(target=UpdateTMPTraffic).start()
 loop = asyncio.get_event_loop()
 loop.create_task(bot.start(config["token"]))
 loop.create_task(tbot.start(config["token"]))

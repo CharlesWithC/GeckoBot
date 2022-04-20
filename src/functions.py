@@ -17,7 +17,7 @@ import ssl
 import discord
 import requests
 import json
-from fuzzywuzzy import process
+from rapidfuzz import process
 
 def TimeDelta(timestamp): # returns human-readable delta
     delta = abs(time() - timestamp)
@@ -190,8 +190,36 @@ def CheckPremium(guild, tier):
     return False
 
 def SearchVoice(inp):
-    res = process.extract(inp, VOICES, limit = 10)
+    res = process.extract(inp, VOICES, limit = 10, score_cutoff = 80)
     ret = []
     for t in res:
         ret.append(t[0])
     return ret
+    
+from libretranslatepy import LibreTranslateAPI
+
+config_txt = ""
+config_txt = open("./bot.conf","r").read()
+config = json.loads(config_txt)
+lt = LibreTranslateAPI(config["libretranslate"]["host"])
+lt.api_key = config["libretranslate"]["key"]
+langs = lt.languages()
+name2code = {}
+for lang in langs:
+    name2code[lang["name"] + f" ({lang['code']})"] = lang["code"]
+
+def DetectLang(text):
+    fromlang = lt.detect(text)[0]["language"]
+    return fromlang
+
+def Translate(text, tolang = "en", fromlang = None):
+    if fromlang == None:
+        fromlang = DetectLang(text)
+    if fromlang == tolang:
+        return (f"*I think this is already in the target language.*\n{text}", fromlang, tolang)
+    if fromlang == "en" or tolang == "en":
+        totext = lt.translate(text, fromlang, tolang)
+        return (totext, fromlang, tolang)
+    entext = lt.translate(text, fromlang, "en")
+    totext = lt.translate(entext, "en", tolang)
+    return (totext, fromlang, tolang)

@@ -17,7 +17,7 @@ from bot import tbot
 from settings import *
 from functions import *
 from db import newconn
-from fuzzywuzzy import process
+from rapidfuzz import process
 
 from general.help import commands, cmdlist
 
@@ -30,7 +30,7 @@ tbot.remove_command('help')
 async def thelp(ctx):
     if len(ctx.message.content.split(" ")) > 1:
         cmd = " ".join(ctx.message.content.split(" ")[1:])
-        d = process.extract(cmd, commands.keys(), limit = 1)
+        d = process.extract(cmd, commands.keys(), limit = 1, score_cutoff = 80)
         await ctx.send(embed = discord.Embed(title = d[0][0], description=commands[d[0][0]], color = GECKOCLR))
     else:
         await ctx.send(embed = cmdlist)

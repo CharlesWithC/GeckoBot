@@ -106,14 +106,10 @@ class FormModal(Modal):
         self.formid = formid
         for field in fields:
             if field.startswith("[Short]"):
-                field = field[7:]
-                while field.startswith(" "):
-                    field = field[1:]
+                field = field[7:].strip()
                 self.add_item(InputText(label=field, required = True))
             elif field.startswith("[Long]"):
-                field = field[6:]
-                while field.startswith(" "):
-                    field = field[1:]
+                field = field[6:].strip()
                 self.add_item(InputText(label=field, required = True, style=discord.InputTextStyle.long))
 
     async def callback(self, interaction: discord.Interaction):
@@ -146,11 +142,9 @@ class FormModal(Modal):
         for pp in p:
             field = b64d(pp)
             if field.startswith("[Short]"):
-                field = field[7:]
+                field = field[7:].strip()
             elif field.startswith("[Long]"):
-                field = field[6:]
-            while field.startswith(" "):
-                field = field[1:]
+                field = field[6:].strip()
             data += f"**{field}**  \n{self.children[i].value}  \n\n"
             i += 1
         

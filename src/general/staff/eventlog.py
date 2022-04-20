@@ -58,7 +58,7 @@ async def on_message_delete(message):
                 if not message.author.avatar is None:
                     icon_url = message.author.avatar.url
                 embed.set_author(name=f"{message.author} ({message.author.id})", icon_url=icon_url)
-                embed.set_footer(text=f"Event: message_delete", icon_url = BOT_ICON)
+                embed.set_footer(text=f"Event: message_delete", icon_url = GECKOICON)
                 embeds.append(embed)
 
                 tot = len(message.attachments)
@@ -71,7 +71,7 @@ async def on_message_delete(message):
                             icon_url = message.author.avatar.url
                         embed.set_author(name=f"{message.author} ({message.author.id})", icon_url=icon_url)
                         embed.set_image(url=message.attachments[i].url)
-                        embed.set_footer(text=f"Event: message_delete", icon_url = BOT_ICON)
+                        embed.set_footer(text=f"Event: message_delete", icon_url = GECKOICON)
                         embeds.append(embed)
                     else:
                         response = requests.get(message.attachments[i].url)
@@ -123,7 +123,7 @@ async def on_bulk_message_delete(messages):
 
                     if len(msg + f"**{message.author}** (`{message.author.id}`): {message.content}\n\n") > 2000:
                         embed = discord.Embed(title=f"#{message.channel}", description=msg, color = GECKOCLR)
-                        embed.set_footer(text=f"Event: bulk_message_delete", icon_url = BOT_ICON)
+                        embed.set_footer(text=f"Event: bulk_message_delete", icon_url = GECKOICON)
                         embeds.append(embed)
                         msg = ""
                     
@@ -144,7 +144,7 @@ async def on_bulk_message_delete(messages):
                                 icon_url = message.author.avatar.url
                             embed.set_author(name=f"{message.author} ({message.author.id})", icon_url=icon_url)
                             embed.set_image(url=message.attachments[i].url)
-                            embed.set_footer(text=f"Event: bulk_message_delete", icon_url = BOT_ICON)
+                            embed.set_footer(text=f"Event: bulk_message_delete", icon_url = GECKOICON)
                             embeds.append(embed)
                         else:
                             response = requests.get(message.attachments[i].url)
@@ -157,7 +157,7 @@ async def on_bulk_message_delete(messages):
 
             if msg != "":
                 embed = discord.Embed(title=f"#{message.channel}", description=msg, color = GECKOCLR)
-                embed.set_footer(text=f"Event: bulk_message_delete", icon_url = BOT_ICON)
+                embed.set_footer(text=f"Event: bulk_message_delete", icon_url = GECKOICON)
                 embeds.append(embed)
 
             if len(embeds) + len(files) > 0:
@@ -198,7 +198,7 @@ async def on_message_edit(before, after):
                 if not before.author.avatar is None:
                     icon_url = before.author.avatar.url
                 embed.set_author(name=f"{before.author} ({before.author.id})", icon_url=icon_url)
-                embed.set_footer(text=f"Event: message_edit", icon_url = BOT_ICON)
+                embed.set_footer(text=f"Event: message_edit", icon_url = GECKOICON)
                 await channel.send(embed = embed)
             except:
                 pass
@@ -231,7 +231,7 @@ async def on_guild_channel_create(channel):
             try:
                 url = f"https://discord.com/channels/{guildid}/{channel.id}"
                 embed = discord.Embed(title=f"#{channel}", url=url, description=f"Position: {channel.position}\nUnder **{channel.category}**", color = GECKOCLR)
-                embed.set_footer(text=f"Event: guild_channel_create", icon_url = BOT_ICON)
+                embed.set_footer(text=f"Event: guild_channel_create", icon_url = GECKOICON)
                 await chn.send(embed = embed)
             except:
                 pass
@@ -263,7 +263,7 @@ async def on_guild_channel_delete(channel):
         if chn != None:
             try:
                 embed = discord.Embed(title=f"#{channel}", color = GECKOCLR)
-                embed.set_footer(text=f"Event: guild_channel_delete", icon_url = BOT_ICON)
+                embed.set_footer(text=f"Event: guild_channel_delete", icon_url = GECKOICON)
                 await chn.send(embed = embed)
             except:
                 pass
@@ -305,7 +305,7 @@ async def on_member_update(before, after):
                     embed.add_field(name="Discriminator", value=f"{before.discriminator} -> {after.discriminator}", inline=True)
                 if before.display_name != after.display_name:
                     embed.add_field(name="Display Name", value=f"{before.display_name} -> {after.display_name}", inline=True)
-                embed.set_footer(text=f"Event: member_update", icon_url = BOT_ICON)
+                embed.set_footer(text=f"Event: member_update", icon_url = GECKOICON)
                 await chn.send(embed = embed)
             except:
                 import traceback
@@ -340,7 +340,7 @@ async def on_member_ban(guild, user):
         if chn != None:
             try:
                 embed = discord.Embed(title=f"{user}", description=f"{user.id}", color = GECKOCLR)
-                embed.set_footer(text=f"Event: member_ban", icon_url = BOT_ICON)
+                embed.set_footer(text=f"Event: member_ban", icon_url = GECKOICON)
                 await chn.send(embed = embed)
             except:
                 pass
@@ -373,7 +373,7 @@ async def on_member_unban(guild, user):
         if chn != None:
             try:
                 embed = discord.Embed(title=f"{user}", description=f"{user.id}", color = GECKOCLR)
-                embed.set_footer(text=f"Event: member_unban", icon_url = BOT_ICON)
+                embed.set_footer(text=f"Event: member_unban", icon_url = GECKOICON)
                 await chn.send(embed = embed)
             except:
                 pass
@@ -408,7 +408,7 @@ async def on_invite_create(invite):
                 if invite.max_age != 0:
                     expire = f"<t:{int(time()+invite.max_age)}:R>"
                 embed = discord.Embed(title=f"{invite.id}", url=invite.url, description=f"URL: {invite.url}\nChannel: [#{invite.channel}]({channelurl})\nExpire: {expire}", color = GECKOCLR)
-                embed.set_footer(text=f"Event: invite_create", icon_url = BOT_ICON)
+                embed.set_footer(text=f"Event: invite_create", icon_url = GECKOICON)
                 await chn.send(embed = embed)
             except:
                 pass
@@ -474,5 +474,5 @@ async def logging(ctx):
         if not event in events:
             msg += f":x: {event}\n"
     embed = discord.Embed(title=f"Events", description=msg, color = GECKOCLR)
-    embed.set_footer(text=f"Gecko Event Log", icon_url = BOT_ICON)
+    embed.set_footer(text=f"Gecko Event Log", icon_url = GECKOICON)
     await ctx.respond(embed = embed)

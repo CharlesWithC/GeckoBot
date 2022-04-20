@@ -151,18 +151,19 @@ class ManageChat(commands.Cog):
         for d in current:
             if not d in existing:
                 if action == "react":
-                    newone += d.lower() + "|" + emoji + ","
+                    newone += d.lower().strip() + "|" + emoji + ","
                 elif action == "message":
-                    newone += d.lower() + "|" + b64e(content) + ","
+                    newone += d.lower().strip() + "|" + b64e(content) + ","
                 elif action == "embed":
-                    newone += d.lower() + "|" + str(embedid) + ","
+                    newone += d.lower().strip() + "|" + str(embedid) + ","
                 elif action == "role":
-                    newone += d.lower() + "|" + str(role) + ","
+                    newone += d.lower().strip() + "|" + str(role) + ","
                 else:
-                    newone += d + ","
+                    newone += d.strip() + ","
         newone = newone.split(",")
         while newone.count("") > 0:
             newone.remove("")
+        newone = list(dict.fromkeys(newone))
         newone = ",".join(newone)
         
         cur.execute(f"UPDATE chataction SET keywords = '{b64e(newone)}' WHERE guildid = {guildid} AND action = '{action}'")
@@ -204,6 +205,7 @@ class ManageChat(commands.Cog):
             for i in range(len(d)):
                 if d[i].startswith("[join]-"):
                     d[i] = "[join]"
+                d[i] = d[i].strip()
             msg += ", ".join(d)
             msg += f"```Gecko will **{action}** the author."
         elif action == "delete":
@@ -212,13 +214,14 @@ class ManageChat(commands.Cog):
             for i in range(len(d)):
                 if d[i].startswith("[join]-"):
                     d[i] = "[join]"
+                d[i] = d[i].strip()
             msg += ", ".join(d)
             msg += f"```Gecko will **delete** the message."
         elif action == "role":
             d = {}
             t = b64d(t[0][0]).split(",")
             for tt in t:
-                kw = tt.split("|")[0]
+                kw = tt.split("|")[0].strip()
                 if kw.startswith("[join]-"):
                     kw = "[join]"
                 if kw.startswith("[leave]-"):
@@ -238,7 +241,7 @@ class ManageChat(commands.Cog):
             d = {}
             t = b64d(t[0][0]).split(",")
             for tt in t:
-                kw = tt.split("|")[0]
+                kw = tt.split("|")[0].strip()
                 if kw.startswith("[join]-"):
                     kw = "[join]"
                 if kw.startswith("[leave]-"):
@@ -255,7 +258,7 @@ class ManageChat(commands.Cog):
             d = {}
             t = b64d(t[0][0]).split(",")
             for tt in t:
-                kw = tt.split("|")[0]
+                kw = tt.split("|")[0].strip()
                 if kw.startswith("[join]-"):
                     kw = "[join]"
                 if kw.startswith("[leave]-"):
@@ -272,7 +275,7 @@ class ManageChat(commands.Cog):
             d = {}
             t = b64d(t[0][0]).split(",")
             for tt in t:
-                kw = tt.split("|")[0]
+                kw = tt.split("|")[0].strip()
                 if kw.startswith("[join]-"):
                     kw = "[join]"
                 if kw.startswith("[leave]-"):
@@ -319,11 +322,14 @@ class ManageChat(commands.Cog):
         if len(t) > 0:
             existing = b64d(t[0][0]).split(",")
             for i in range(len(existing)):
+                existing[i] = existing[i].strip()
                 if existing[i].startswith("[join]-"):
                     existing[i] = "[join]"
                 elif existing[i].startswith("[leave]-"):
                     existing[i] = "[leave]"
         toremove = keywords.lower().split(",")
+        for i in range(len(toremove)):
+            toremove[i] = toremove[i].strip()
         newone = ""
         for d in existing:
             if not d.split("|")[0] in toremove:
@@ -331,6 +337,7 @@ class ManageChat(commands.Cog):
         newone = newone.split(",")
         while newone.count("") > 0:
             newone.remove("")
+        newone = list(dict.fromkeys(newone))
         newone = ",".join(newone)
 
         cur.execute(f"UPDATE chataction SET keywords = '{b64e(newone)}' WHERE guildid = {guildid} AND action = '{action}'")
@@ -366,7 +373,7 @@ async def on_member_join(member):
             if chn != None:
                 try:
                     embed = discord.Embed(title=f"{member}", description=f"{member.id}", color = GECKOCLR)
-                    embed.set_footer(text=f"Event: member_join", icon_url = BOT_ICON)
+                    embed.set_footer(text=f"Event: member_join", icon_url = GECKOICON)
                     await chn.send(embed = embed)
                 except:
                     pass
@@ -488,7 +495,7 @@ async def on_member_remove(member):
             if chn != None:
                 try:
                     embed = discord.Embed(title=f"{member}", description=f"{member.id}", color = GECKOCLR)
-                    embed.set_footer(text=f"Event: member_remove", icon_url = BOT_ICON)
+                    embed.set_footer(text=f"Event: member_remove", icon_url = GECKOICON)
                     await chn.send(embed = embed)
                 except:
                     pass
@@ -576,6 +583,41 @@ async def on_message(message):
     if user.id == BOTID or message.guild is None:
         return
 
+    premium = GetPremium(message.guild)
+    if premium > 0 and message.content != None:
+        cur.execute(f"SELECT fromlang, tolang FROM translate WHERE guildid = {guildid} AND channelid = {message.channel.id}")
+        t1 = cur.fetchall()
+        cur.execute(f"SELECT fromlang, tolang FROM translate WHERE guildid = {guildid} AND channelid = 0")
+        t2 = cur.fetchall()
+        if len(t1) > 0 or len(t2) > 0:
+            fromlang = "*"
+            if len(t1) > 0 and len(t2) > 0:
+                if t1[0][0] != "*" and t2[0][0] != "*":
+                    fromlang = t1[0][0] + "," + t2[0][0]
+            elif len(t1) > 0:
+                fromlang = t1[0][0]
+            elif len(t2) > 0:
+                fromlang = t2[0][0]
+                
+            tolang = "en"
+            if len(t2) > 0:
+                tolang = t2[0][1]
+            if len(t1) > 0:
+                tolang = t1[0][1] # NOTE: Channel settings overal general settings
+
+            dtc = DetectLang(message.content)
+            if (fromlang == "*" or dtc in fromlang.split(",")) and dtc != tolang:
+                res = Translate(message.content, tolang, fromlang = dtc)
+                embed = discord.Embed(description = res[0], color = GECKOCLR)
+                avatar = None
+                if message.author.avatar != None and message.author.avatar.url != None:
+                    avatar = message.author.avatar.url
+                embed.timestamp = datetime.now()
+                embed.set_author(name = f"{message.author.name}#{message.author.discriminator}", icon_url = avatar)
+                embed.set_footer(text = f"{res[1]} -> {res[2]} • {TRANSLATE} ", icon_url = GECKOICON)
+                
+                await message.reply(embed = embed, mention_author = False)
+                
     updlvl = 0
 
     if not user.bot:

@@ -9,7 +9,6 @@ import discord
 from discord.ext import commands
 from discord.ui import Button, View
 from discord.enums import ButtonStyle
-from discord.ext.commands import CooldownMapping, Cooldown, BucketType
 import time
 from datetime import datetime
 import requests
@@ -53,7 +52,7 @@ async def CountryAutocomplete(ctx: discord.AutocompleteContext):
         return country[server][:10]
     return SearchCountry(server, ctx.value)
 
-@bot.slash_command(name="truckersmp", alias=["tmp"], description="TruckersMP (30 attempt / 10 min)", cooldown = CooldownMapping(Cooldown(30, 600), BucketType.user))
+@bot.slash_command(name="truckersmp", alias=["tmp"], description="TruckersMP")
 async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (cache)", required = False, autocomplete = PlayerAutocomplete),
         mpid: discord.Option(int, "TruckersMP ID", required = False),
         mention: discord.Option(discord.User, "Discord Mention (cache / manual bind)", required = False),
@@ -136,10 +135,15 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (cache)", r
             if discordid != None:
                 user = bot.get_user(int(discordid))
                 if user != None:
-                    if ctx.guild != None and await ctx.guild.fetch_member(user.id) != None:
-                        embed.add_field(name = "Discord", value = f"<@{discordid}> (`{discordid}`)")
-                    else:
+                    try:
+                        if ctx.guild != None and await ctx.guild.fetch_member(user.id) != None:
+                            embed.add_field(name = "Discord", value = f"<@{discordid}> (`{discordid}`)")
+                        else:
+                            embed.add_field(name = "Discord", value = f"{user.name}#{user.discriminator} (`{discordid}`)")
+                    except:
                         embed.add_field(name = "Discord", value = f"{user.name}#{user.discriminator} (`{discordid}`)")
+                else:
+                    embed.add_field(name = "Discord", value = f"`{discordid}`")
 
             if d["vtcid"] != 0:
                 embed.add_field(name = "Virtual Trucking Company", value = vtc, inline = False)
@@ -332,7 +336,7 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (cache)", r
 
         await ctx.respond(embed = embed)
 
-@bot.slash_command(name="tmpbind", description="Bind your TruckersMP profile to your Discord account (3 attempt / 10 min)", cooldown = CooldownMapping(Cooldown(3, 600), BucketType.user))
+@bot.slash_command(name="tmpbind", description="Bind your TruckersMP profile to your Discord account")
 async def tmpbind(ctx, mpid: discord.Option(int, "Your TruckersMP User ID"),
         unbind: discord.Option(str, "Unbind your TruckersMP profile", required = False, choices = ["Yes", "No"])):
     await ctx.defer()
@@ -370,7 +374,7 @@ async def tmpbind(ctx, mpid: discord.Option(int, "Your TruckersMP User ID"),
     else:
         await ctx.respond(f"[{d['name']}](https://truckersmp.com/user/{mpid})'s Discord is not you!")
 
-@bot.slash_command(name="vtcbind", description="Bind your VTC to this guild (3 attempt / 60 min)", cooldown = CooldownMapping(Cooldown(3, 3600), BucketType.guild))
+@bot.slash_command(name="vtcbind", description="Bind your VTC to this guild (3 attempt / 60 min)")
 async def vtcbind(ctx, vtcid: discord.Option(int, "The ID of your VTC", required = True),
         unbind: discord.Option(str, "Unbind VTC from this guild", required = False, choices = ["Yes", "No"])):
     if ctx.guild is None:
@@ -414,7 +418,7 @@ async def vtcbind(ctx, vtcid: discord.Option(int, "The ID of your VTC", required
     try:
         invites = await ctx.guild.invites()
     except:
-        await ctx.respond(f"Failed to get invites for this guild. Please make sure I have permission to do that.", ephemeral = True)
+        await ctx.respond(f"Failed to get invites for this guild. `Manage Server` permission is required to do this.\nYou could grant Gecko a temporary `Manage Server` permission.", ephemeral = True)
         return
     found = False
     for invite in invites:

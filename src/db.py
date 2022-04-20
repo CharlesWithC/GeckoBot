@@ -38,6 +38,7 @@ cur.execute(f"CREATE TABLE IF NOT EXISTS statsconfig (guildid BIGINT, categoryid
 cur.execute(f"CREATE TABLE IF NOT EXISTS channelbind (guildid BIGINT, category VARCHAR(32), channelid BIGINT)")
 cur.execute(f"CREATE TABLE IF NOT EXISTS eventlog (guildid BIGINT, events TEXT)")
 cur.execute(f"CREATE TABLE IF NOT EXISTS vcrecord (guildid BIGINT, minutes BIGINT, laststart BIGINT)") # clear each month
+cur.execute(f"CREATE TABLE IF NOT EXISTS translate (guildid BIGINT, channelid BIGINT, fromlang TEXT, tolang TEXT)")
 
 # USER MANAGEMENT
 cur.execute(f"CREATE TABLE IF NOT EXISTS level (guildid BIGINT, userid BIGINT, level BIGINT, xp BIGINT, lastmsg BIGINT)")

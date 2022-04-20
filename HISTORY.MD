@@ -1,5 +1,12 @@
 # Gecko Bot Update History
 
+## Update 2022.04.20
+
+**Version v1.19**  
+1.Added (auto) translate function  
+2.Replaced `fuzzywuzzy` with `rapidfuzz` and applied `score_cutoff`  
+3.Minor bug fixes  
+
 ## Update 2022.04.19
 
 **Version v1.18e2**  

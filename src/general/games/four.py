@@ -254,7 +254,7 @@ class ConnectFour(commands.Cog):
                 result += f"{RANK_EMOJI[i+1]} **{bot.get_user(t[i][0]).name}**\n:x: {t[i][1]}\n"
             
         embed = discord.Embed(title = "Connect Four - Leaderboard", description=result, color = GECKOCLR)
-        embed.set_footer(text = "The leaderboard includes all players, throughout all guilds.", icon_url = BOT_ICON)
+        embed.set_footer(text = "The leaderboard includes all players, throughout all guilds.", icon_url = GECKOICON)
         await ctx.respond(embed = embed)
     
     @four.command(name="statistics", description="Connect Four - Get your statistics.")
@@ -281,7 +281,7 @@ class ConnectFour(commands.Cog):
         embed.add_field(name = "Draws", value = f"```{t[0][2]}```", inline = True)
         embed.add_field(name = "Losses", value = f"```{t[0][1]}```", inline = True)
 
-        embed.set_footer(text = "The statistics include all games played, throughout all guilds.", icon_url = BOT_ICON)
+        embed.set_footer(text = "The statistics include all games played, throughout all guilds.", icon_url = GECKOICON)
         await ctx.respond(embed = embed)
 
 async def ClearExpiredGame():

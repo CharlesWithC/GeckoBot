@@ -16,6 +16,7 @@ import general.dev
 import general.help
 import general.level
 import general.music
+import general.translate
 import general.vc
 import general.games.finance
 import general.games.four
@@ -199,7 +200,7 @@ async def stats(ctx):
     embedcnt = cur.fetchone()[0]
     
     embed = discord.Embed(title="Gecko Stats", description="Shard refers to slash command bot.", color=GECKOCLR)
-    embed.set_thumbnail(url=BOT_ICON)
+    embed.set_thumbnail(url=GECKOICON)
     embed.add_field(name="Servers", value=f"```{total_servers}```")
     embed.add_field(name="Users", value=f"```{total_users}```")
     embed.add_field(name="Channels", value=f"```{total_channels}```")
@@ -211,7 +212,7 @@ async def stats(ctx):
     embed.add_field(name="Shard", value=f"```{len(bot.shards)}```")
     embed.add_field(name="Ping", value=f"```{int(ping*1000)}ms```")
 
-    embed.set_footer(text="Gecko", icon_url=BOT_ICON)
+    embed.set_footer(text="Gecko", icon_url=GECKOICON)
     await ctx.respond(embed=embed)
 
 async def UpdateBotStatus():
@@ -295,8 +296,8 @@ async def Premium(ctx):
     embed.add_field(name = "Note", value = f"Gecko is giving away **Free Premium** to the first 100 guilds!\nIf your guild isn't given premium ,join [support server]({SUPPORT}) and ask for it!", inline = False)
 
     embed.timestamp = datetime.now()
-    embed.set_thumbnail(url = BOT_ICON)
-    embed.set_footer(text = f"Gecko Premium ", icon_url = BOT_ICON)
+    embed.set_thumbnail(url = GECKOICON)
+    embed.set_footer(text = f"Gecko Premium ", icon_url = GECKOICON)
 
     await ctx.respond(embed = embed)
 

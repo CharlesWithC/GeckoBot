@@ -10,7 +10,7 @@ from discord.commands import CommandPermission, SlashCommandGroup
 from discord.ext import commands
 from time import time
 import requests
-from fuzzywuzzy import process
+from rapidfuzz import process
 
 from general.radiolist import radiolist, radioname, radiolink, SearchRadio, SearchRadioMul
 
@@ -267,7 +267,7 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords for searching, if n
 
     embed = discord.Embed(title=f"Now playing", description=title, color = GECKOCLR)
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-    embed.set_thumbnail(url=BOT_ICON)
+    embed.set_thumbnail(url=GECKOICON)
     icon_url = None
     if not ctx.author.avatar is None:
         icon_url = ctx.author.avatar.url
@@ -363,7 +363,7 @@ async def NextSong(ctx):
 
     embed = discord.Embed(title=f"Now playing", description=b64d(title), color = GECKOCLR)
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-    embed.set_thumbnail(url=BOT_ICON)
+    embed.set_thumbnail(url=GECKOICON)
     embed.set_footer(text=f"Requested by {username}", icon_url = avatar)
     await ctx.respond(embed = embed)
 
@@ -412,7 +412,7 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords for searching", req
 
     embed = discord.Embed(title=f"Added to queue", description=title, color = GECKOCLR)
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-    embed.set_thumbnail(url=BOT_ICON)
+    embed.set_thumbnail(url=GECKOICON)
     icon_url = None
     if not ctx.author.avatar is None:
         icon_url = ctx.author.avatar.url
@@ -431,7 +431,7 @@ async def GetQueueList(ctx: discord.AutocompleteContext):
         d.append(b64d(tt[0]))
     if ctx.value.replace(" ","") == "":
         return d[:10]
-    d = process.extract(ctx.value.lower(), d, limit = 10)
+    d = process.extract(ctx.value.lower(), d, limit = 10, score_cutoff = 80)
     ret = []
     for dd in d:
         ret.append(dd[0])
@@ -538,7 +538,7 @@ async def GetfavouriteList(ctx: discord.AutocompleteContext):
         d.append(b64d(dd))
     if ctx.value.replace(" ","") == "":
         return d[:10]
-    d = process.extract(ctx.value.lower(), d, limit = 10)
+    d = process.extract(ctx.value.lower(), d, limit = 10, score_cutoff = 80)
     ret = []
     for dd in d:
         ret.append(dd[0])
@@ -585,7 +585,7 @@ async def FavouriteList(ctx):
     if len(msg) < 2000:
         embed = discord.Embed(title=f"{ctx.author.name}'s favourite list", description='\n'.join(d), color = GECKOCLR)
         embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-        embed.set_thumbnail(url=BOT_ICON)
+        embed.set_thumbnail(url=GECKOICON)
         icon_url = None
         if not ctx.author.avatar is None:
             icon_url = ctx.author.avatar.url
@@ -649,7 +649,7 @@ async def Queuefavourite(ctx, song: discord.Option(str, "Song, must be one from 
 
     embed = discord.Embed(title=f"Added to queue", description=title, color = GECKOCLR)
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-    embed.set_thumbnail(url=BOT_ICON)
+    embed.set_thumbnail(url=GECKOICON)
     icon_url = None
     if not ctx.author.avatar is None:
         icon_url = ctx.author.avatar.url
@@ -719,7 +719,7 @@ async def PlayList(ctx):
     
     embed = discord.Embed(title=f"Playlist", description=msg, color = GECKOCLR)
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-    embed.set_thumbnail(url=BOT_ICON)
+    embed.set_thumbnail(url=GECKOICON)
     if onloop(guildid):
         embed.set_footer(text=f"Loop playback enbled.")
     await ctx.respond(embed = embed)
@@ -777,20 +777,20 @@ async def CurrentSong(ctx):
         if radiosong != -1:
             embed = discord.Embed(title=f"Now playing", description=radiosong, color = GECKOCLR)
             embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-            embed.set_thumbnail(url=BOT_ICON)
+            embed.set_thumbnail(url=GECKOICON)
             embed.set_footer(text="Radio: "+title.split("-")[1])
             await ctx.respond(embed = embed)
         
         else:
             embed = discord.Embed(title=f"Now playing", description=title.split("-")[1], color = GECKOCLR)
             embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-            embed.set_thumbnail(url=BOT_ICON)
+            embed.set_thumbnail(url=GECKOICON)
             embed.set_footer(text=f"Radio: "+title.split("-")[1], icon_url = avatar)
             await ctx.respond(embed = embed)
     else:
         embed = discord.Embed(title=f"Now playing", description=title, color = GECKOCLR)
         embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-        embed.set_thumbnail(url=BOT_ICON)
+        embed.set_thumbnail(url=GECKOICON)
         embed.set_footer(text=f"Requested by {username}", icon_url = avatar)
         await ctx.respond(embed = embed)
 
@@ -864,12 +864,12 @@ async def RadioList(ctx):
         if len(msg) > 2000:
             embed = discord.Embed(title=f"Radio station list", description=msg, color = GECKOCLR)
             embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-            embed.set_thumbnail(url=BOT_ICON)
+            embed.set_thumbnail(url=GECKOICON)
             await ctx.respond(embed = embed, ephemeral = True)
             msg = ""
     embed = discord.Embed(title=f"Radio station list", description=msg, color = GECKOCLR)
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-    embed.set_thumbnail(url=BOT_ICON)
+    embed.set_thumbnail(url=GECKOICON)
     await ctx.respond(embed = embed, ephemeral = True)
 
 def postupdate(guildid):
@@ -991,7 +991,7 @@ async def MusicLoop():
                         if postupdate(guildid):
                             embed = discord.Embed(title=f"Now playing", description=radiosong, color = GECKOCLR)
                             embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-                            embed.set_thumbnail(url=BOT_ICON)
+                            embed.set_thumbnail(url=GECKOICON)
                             embed.set_footer(text="Radio: "+title.split("-")[1])
                             if not textchn is None:
                                 await textchn.send(embed=embed)
@@ -1059,7 +1059,7 @@ async def MusicLoop():
                             emptynotice.append(guildid)
                             embed = discord.Embed(title=f"Playlist is empty", description="Use /queue to fill it!", color = GECKOCLR)
                             embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-                            embed.set_thumbnail(url=BOT_ICON)
+                            embed.set_thumbnail(url=GECKOICON)
                             if textchn != None:
                                 await textchn.send(embed = embed)
                         continue
@@ -1114,7 +1114,7 @@ async def MusicLoop():
                     if textchn != None and postupdate(guildid):
                         embed = discord.Embed(title=f"Now playing", description=title, color = GECKOCLR)
                         embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
-                        embed.set_thumbnail(url=BOT_ICON)
+                        embed.set_thumbnail(url=GECKOICON)
                         embed.set_footer(text=f"Requested by {username}", icon_url = avatar)
                         await textchn.send(embed=embed)
                 
