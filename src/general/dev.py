@@ -181,18 +181,18 @@ async def GiveAllPremium(ctx, days: Option(int, "Days of premium", required = Tr
         await ctx.respond(msgs1)
     else:
         f = io.BytesIO()
-        f.write(msg.encode())
+        f.write(msg1.encode())
         f.seek(0)
-        await ctx.respond(file=discord.File(fp=msg1, filename='PremiumUpdate.MD'))
+        await ctx.respond(file=discord.File(fp=f, filename='PremiumUpdate.MD'))
     try:
         channel = bot.get_channel(GUILDUPD[1])
         if len(msgs2) <= 2000:
             await channel.send(msgs2)
         else:
             f = io.BytesIO()
-            f.write(msg.encode())
+            f.write(msg2.encode())
             f.seek(0)
-            await channel.send(file=discord.File(fp=msgs2, filename='PremiumUpdate.MD'))
+            await channel.send(file=discord.File(fp=f, filename='PremiumUpdate.MD'))
     except:
         pass
 

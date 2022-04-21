@@ -206,9 +206,11 @@ lt = LibreTranslateAPI(config["libretranslate"]["host"])
 lt.api_key = config["libretranslate"]["key"]
 langs = lt.languages()
 name2code = {}
+code2name = {}
 allcode = []
 for lang in langs:
     name2code[lang["name"] + f" ({lang['code']})"] = lang["code"]
+    code2name[lang["code"]] = lang["name"] + f" ({lang['code']})"
     allcode.append(lang["code"])
 
 def DetectLang(text):

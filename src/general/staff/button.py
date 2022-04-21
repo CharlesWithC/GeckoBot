@@ -114,13 +114,13 @@ class GeckoButton(Button):
                             d = []
                             for pp in p:
                                 d.append(b64d(pp))
-                            response.append({"modal": FormModal(formid, d, "Submit Form"), "ephemeral": ephemeral})
+                            response.append({"modal": FormModal(formid, d, None, "Submit Form"), "ephemeral": ephemeral})
                     else:
                         p = data.split("|")[:-1]
                         d = []
                         for pp in p:
                             d.append(b64d(pp))
-                        response.append({"modal": FormModal(formid, d, "Submit Form"), "ephemeral": ephemeral})
+                        response.append({"modal": FormModal(formid, d, None, "Submit Form"), "ephemeral": ephemeral})
         
         if roles != None:
             ret = ""
@@ -304,7 +304,7 @@ class ManageButton(commands.Cog):
         if roles != None:
             r = roles.replace(" ","").replace("-","").split(",")
             for rr in r:
-                if not rr.startswith("<@") or not rr.endswith(">"):
+                if not rr.startswith("<@&") or not rr.endswith(">"):
                     await ctx.respond(f"Invalid role {rr}!", ephemeral = True)
                     return
 
@@ -457,7 +457,7 @@ class ManageButton(commands.Cog):
         elif roles != None:
             r = roles.replace(" ","").replace("-","").split(",")
             for rr in r:
-                if not rr.startswith("<@") or not rr.endswith(">"):
+                if not rr.startswith("<@&") or not rr.endswith(">"):
                     await ctx.respond(f"Invalid role {rr}!", ephemeral = True)
                     return
             data["roles"] = roles

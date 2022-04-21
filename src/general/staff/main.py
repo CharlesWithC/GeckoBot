@@ -15,28 +15,33 @@ from db import newconn
 from settings import *
 from functions import *
 
-SETUP_MSG = """Gecko is a developing bot that can help you make your community better.
-I'm ready to use slash commands and you type / to see a list of my commands.
+SETUP_MSG = """Gecko is a multi-purpose moderation bot that can help you make your community better.
 Use /about for basic information about Gecko and /help for help.
 
 You should set up dedicated channels for specific functions, tell me by using `/setchannel`.
-Form     - Where notifications will be sent when a user submit an entry.
-Four     - Where players will play connect four games.
-Finance  - Where players will play finance games.
-Music    - Where players will request for songs. If you don't set this up, only staff will be allowed to play music.
-           If you want the bot to stick to a radio station and not being interrupted, then do not set it.
-           *A bot can only be in one voice channel at the same time*
-Level    - Where level updates will be posted.
-GeckoUPD - The channel to follow #gecko-upd from **Gecko Community** where updates / maintenance schedules are published.
-Eventlog - Where server events (messages / members etc) will be logged.
-Botlog   - Where bot audit log will be sent.
-Error    - Where important error notifications will be sent. (This should be rare)
+**NOTE** If you don't set up those channels, relevant functions might not work.
+**Necessary**
+GeckoUPD   - The channel to follow #gecko-upd from **Gecko Community** where updates / maintenance schedules are published.
+Error      - Where important error notifications will be sent. (This should be rare)
+**Optional**
+Four       - Where players will play connect four games.
+Finance    - Where players will play finance games.
+Music      - Where players will request for songs. If you don't set this up, only staff will be allowed to play music.
+             If you want the bot to stick to a radio station and not being interrupted, then you don't need to set it.
+             *A bot can only be in one voice channel at the same time*
+Level      - Where level updates will be posted. 
+             If not set, levels will still be counted but updates will not be posted.
+Suggestion - Where suggestions will be posted and voted.
+**Optional (for staff)**
+Form       - Where notifications will be sent when a user submit an entry. 
+             If not set, forms will still be accepted but updates will not be posted.
+             You can retrieve en entry with `/form entry`.
+EventLog   - Where server events (messages / members etc) will be logged.
+BotLog     - Where bot audit log will be sent.
 **NOTE** 
-1.For four, finance and music, you can set channel to "all" so that player can use related commands in any channels.
+1.For four, finance and music, you can set channel to "all" so that player can use relevant commands in any channels.
 2.For level, if you set channel to "all", the level update will be posted at the channel where the user sent the last message before upgrading.
-3.If the channel got deleted, it will be considered as that the channel hasn't been set up. And users cannot use related commands.
-
-Have a nice day!"""
+3.If the channel got deleted, it will be considered as that the channel hasn't been set up. And users cannot use relevant commands."""
 
 @bot.slash_command(name="setup", description="Hint to setup Gecko in the guild.")
 async def BotSetup(ctx):
@@ -53,7 +58,7 @@ async def BotSetup(ctx):
         await ctx.respond(f"Hi, {ctx.author.name}\n" + SETUP_MSG)
 
 @bot.slash_command(name="setchannel", description="Staff - Set default channels where specific messages will be dealt with.")
-async def SetChannel(ctx, category: discord.Option(str, "The category of message.", required = True, choices = ["form", "four", "finance", "music", "level", "GeckoUPD", "eventlog", "botlog", "error"]),
+async def SetChannel(ctx, category: discord.Option(str, "The category of message.", required = True, choices = ["GeckoUPD", "Error", "Four", "Finance", "Music", "Level", "Suggestion", "Form", "EventLog", "BotLog"]),
     channel: discord.Option(str, "Channel for messages, type 'all' for four / finance / music to allow all channels", required = True),
     remove: discord.Option(str, "Whether to unbind the category and the channel", required = False, choices = ["Yes", "No"])):
     
@@ -70,12 +75,14 @@ async def SetChannel(ctx, category: discord.Option(str, "The category of message
     conn = newconn()
     cur = conn.cursor()
 
-    if not category in ["form", "four", "finance", "music", "level", "GeckoUPD", "error", "botlog", "eventlog"]:
+    category = category.lower()
+
+    if not category in ["geckoupd", "error", "four", "finance", "music", "level", "suggestion", "form", "eventlog", "botlog"]:
         await ctx.respond(f"{category} is not a valid category.", ephemeral = True)
         return
 
     if remove == "Yes":
-        if category == "GeckoUPD":
+        if category == "geckoupd":
             await ctx.respond(f"Gecko does not support unfollowing channel, please go to **Server Settings** - **Integrations**")
             return
 
@@ -86,7 +93,7 @@ async def SetChannel(ctx, category: discord.Option(str, "The category of message
         if category in ["four", "finance", "music", "level"] and channel == "all":
             channel = 0
         else:
-            if category == "GeckoUPD":
+            if category == "geckoupd":
                 try:
                     if not channel.startswith("<#") or not channel.endswith(">"):
                         await ctx.respond(f"{channel} is not a valid channel.", ephemeral = True)
@@ -149,3 +156,47 @@ async def Purge(ctx, count: discord.Option(int, "Number of messages to delete.",
         await ctx.channel.purge(limit = count + 1)
     except:
         await ctx.respond("I don't have permission to delete messages.", ephemeral = True)
+
+@bot.slash_command(name="dm", description="DM a member through Gecko. Your message will be forwarded in embed.")
+async def dm(ctx, user: discord.Option(discord.User, "Member to DM, must be in this guild", required = True),
+        msg: discord.Option(str, "Message to be sent to the member", required = True),
+        showauthor: discord.Option(str, "Show your name on the message, default Yes", required = False, choices = ["Yes", "No"])):
+    
+    await ctx.defer()
+    if ctx.guild is None:
+        await ctx.respond("You can only run this command in guilds!")
+        return
+    
+    if not isStaff(ctx.guild, ctx.author):
+        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+        return
+    
+    if user.bot:
+        await ctx.respond("You can't DM bots.", ephemeral = True)
+        return
+    
+    if user.id == bot.user.id:
+        await ctx.respond("You can't DM me.", ephemeral = True)
+        return
+    
+    if ctx.guild.get_member(user.id) is None:
+        await ctx.respond(f"{user} is not in this guild.", ephemeral = True)
+        return
+    
+    try:
+        channel = await user.create_dm()
+        if channel is None:
+            await ctx.respond(f"I cannot DM the member", ephemeral = True)
+            return
+        embed=discord.Embed(title=f"Message from staff of {ctx.guild.name}", description=msg, color=GECKOCLR)
+        if showauthor == "Yes":
+            avatar = ""
+            if ctx.author.avatar != None:
+                avatar = ctx.author.avatar.url
+            embed.set_author(name=ctx.author.name, icon_url=avatar)
+        await channel.send(embed = embed)
+        await ctx.respond(f"DM sent", ephemeral = True)
+    except:
+        import traceback
+        traceback.print_exc()
+        await ctx.respond(f"I cannot DM the member", ephemeral = True)

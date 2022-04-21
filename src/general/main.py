@@ -16,6 +16,7 @@ import general.dev
 import general.help
 import general.level
 import general.music
+import general.suggestion
 import general.translate
 import general.vc
 import general.games.finance
@@ -168,11 +169,12 @@ async def getserver(ctx):
     embed.add_field(name = "Categories", value = f"```{len(ctx.guild.categories)}```", inline = True)
     embed.add_field(name = "Text Channels", value = f"```{len(ctx.guild.text_channels)}```", inline = True)
     embed.add_field(name = "Voice Channels", value = f"```{len(ctx.guild.voice_channels)}```", inline = True)
-    icon_url = None
     if not ctx.guild.icon is None:
         icon_url = ctx.guild.icon.url
-    embed.set_thumbnail(url = icon_url)
-    embed.set_author(name = f"{ctx.guild.name}", icon_url = icon_url)
+        embed.set_thumbnail(url = icon_url)
+        embed.set_author(name = f"{ctx.guild.name}", icon_url = icon_url)
+    else:
+        embed.set_author(name = f"{ctx.guild.name}")
     embed.set_footer(text = f"ID: {ctx.guild.id} | Server Creation: {ctx.guild.created_at.strftime('%m/%d/%Y')}")
     await ctx.respond(embed = embed)
 
@@ -292,7 +294,7 @@ async def Premium(ctx):
     embed.add_field(name = "Forms", value = "Free: **5**\nTier 1: **30**\nTier 2: **50**", inline = True)
     embed.add_field(name = "Reaction Role (Messages)", value = "Free: **10**\nTier 1: **30**\nTier 2: **50**", inline = True)
     embed.add_field(name = "Voice Channel Recorder", value = "Free: **10 hours / month**\nTier 1: **30 hours / month**\nTier 2: **100 hours / month**", inline = True)
-    embed.add_field(name = "Other", value = "Any Permium Tier: **Radio**, **Rank Card with image background**", inline = False)
+    embed.add_field(name = "Other", value = "Any Premium Tier: **Radio**, **Rank Card with image background**", inline = False)
     embed.add_field(name = "Note", value = f"Gecko is giving away **Free Premium** to the first 100 guilds!\nIf your guild isn't given premium ,join [support server]({SUPPORT}) and ask for it!", inline = False)
 
     embed.timestamp = datetime.now()

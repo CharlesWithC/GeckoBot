@@ -268,7 +268,7 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords for searching, if n
     embed = discord.Embed(title=f"Now playing", description=title, color = GECKOCLR)
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
     embed.set_thumbnail(url=GECKOICON)
-    icon_url = None
+    icon_url = discord.Embed.Empty
     if not ctx.author.avatar is None:
         icon_url = ctx.author.avatar.url
     embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = icon_url)
@@ -339,7 +339,7 @@ async def NextSong(ctx):
         return
 
     username = "Unknown user"
-    avatar = None
+    avatar = discord.Embed.Empty
     try:
         user = guild.get_member(userid)
         username = user.name
@@ -413,7 +413,7 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords for searching", req
     embed = discord.Embed(title=f"Added to queue", description=title, color = GECKOCLR)
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
     embed.set_thumbnail(url=GECKOICON)
-    icon_url = None
+    icon_url = discord.Embed.Empty
     if not ctx.author.avatar is None:
         icon_url = ctx.author.avatar.url
     embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = icon_url)
@@ -586,7 +586,7 @@ async def FavouriteList(ctx):
         embed = discord.Embed(title=f"{ctx.author.name}'s favourite list", description='\n'.join(d), color = GECKOCLR)
         embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
         embed.set_thumbnail(url=GECKOICON)
-        icon_url = None
+        icon_url = discord.Embed.Empty
         if not ctx.author.avatar is None:
             icon_url = ctx.author.avatar.url
         embed.set_footer(text=f"{ctx.author.name}", icon_url = icon_url)
@@ -650,7 +650,7 @@ async def Queuefavourite(ctx, song: discord.Option(str, "Song, must be one from 
     embed = discord.Embed(title=f"Added to queue", description=title, color = GECKOCLR)
     embed.set_author(name="Gecko Music", icon_url=MUSIC_ICON)
     embed.set_thumbnail(url=GECKOICON)
-    icon_url = None
+    icon_url = discord.Embed.Empty
     if not ctx.author.avatar is None:
         icon_url = ctx.author.avatar.url
     embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = icon_url)
@@ -760,7 +760,7 @@ async def CurrentSong(ctx):
     title = b64d(t[0][1])
 
     username = "Unknown user"
-    avatar = None
+    avatar = discord.Embed.Empty
 
     try:
         user = ctx.guild.get_member(userid)
@@ -1087,7 +1087,7 @@ async def MusicLoop():
 
                     # get music requester
                     username = "Unknown user"
-                    avatar = None
+                    avatar = discord.Embed.Empty
                     try:
                         user = guild.get_member(userid)
                         username = user.name

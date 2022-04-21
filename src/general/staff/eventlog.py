@@ -54,7 +54,7 @@ async def on_message_delete(message):
                 embeds = []
                 files = []
                 embed = discord.Embed(title=f"#{message.channel}", description=message.content, color = GECKOCLR)
-                icon_url = None
+                icon_url = discord.Embed.Empty
                 if not message.author.avatar is None:
                     icon_url = message.author.avatar.url
                 embed.set_author(name=f"{message.author} ({message.author.id})", icon_url=icon_url)
@@ -66,7 +66,7 @@ async def on_message_delete(message):
                     isimage = message.attachments[i].content_type.startswith("image")
                     if isimage:
                         embed = discord.Embed(title=f"#{message.channel}", description=f"*Message {message.id} Attachment*", color = GECKOCLR)
-                        icon_url = None
+                        icon_url = discord.Embed.Empty
                         if not message.author.avatar is None:
                             icon_url = message.author.avatar.url
                         embed.set_author(name=f"{message.author} ({message.author.id})", icon_url=icon_url)
@@ -139,7 +139,7 @@ async def on_bulk_message_delete(messages):
                         isimage = message.attachments[i].content_type.startswith("image")
                         if isimage:
                             embed = discord.Embed(title=f"#{message.channel}", description=f"*Message {message.id} Attachment*", color = GECKOCLR)
-                            icon_url = None
+                            icon_url = discord.Embed.Empty
                             if not message.author.avatar is None:
                                 icon_url = message.author.avatar.url
                             embed.set_author(name=f"{message.author} ({message.author.id})", icon_url=icon_url)
@@ -194,7 +194,7 @@ async def on_message_edit(before, after):
             try:
                 url = f"https://discord.com/channels/{guildid}/{before.channel.id}/{before.id}"
                 embed = discord.Embed(title=f"#{before.channel}", url=url, description=f"{before.content}", color = GECKOCLR)
-                icon_url = None
+                icon_url = discord.Embed.Empty
                 if not before.author.avatar is None:
                     icon_url = before.author.avatar.url
                 embed.set_author(name=f"{before.author} ({before.author.id})", icon_url=icon_url)

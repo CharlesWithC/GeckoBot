@@ -382,7 +382,10 @@ async def ReactionRoleUpdate():
                     
         except Exception as e:
             try:
+                import traceback
+                traceback.print_exc()
                 await log("ERROR", f"[Guild {guildid}] Reaction role error {str(e)}")
+                reactionrole_fail.append((channelid, msgid))
             except:
                 pass
 

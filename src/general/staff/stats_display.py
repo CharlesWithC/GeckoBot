@@ -567,6 +567,8 @@ async def StatsDisplayUpdate():
             
             except Exception as e:
                 try:
+                    import traceback
+                    traceback.print_exc()
                     await log("ERROR",f"[Guild {guildid}] Server Stats update error: {str(e)}")
                     ss_get_channel_fail.append((guildid, 0))
                 except:

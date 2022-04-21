@@ -12,6 +12,7 @@ from discord.ext import commands
 import base64
 from time import time
 from datetime import datetime
+import re
 
 from bot import bot, tbot
 from settings import *
@@ -22,23 +23,53 @@ from rapidfuzz import process
 async def LangAutocomplete(ctx: discord.AutocompleteContext):
     if ctx.value.replace(" ","") == "":
         return list(name2code.keys())[:25]
-    d = process.extract(ctx.value.lower(), name2code.keys(), limit = 25, score_cutoff = 80)
     ret = []
+    if len(ctx.value) == 2 and ctx.value.lower() in code2name.keys():
+        ret.append(code2name[ctx.value.lower()])
+    d = process.extract(ctx.value.lower(), name2code.keys(), limit = 25 - len(ret))
     for dd in d:
         ret.append(dd[0])
-    return ret[:25]
+    return ret
 
 @bot.slash_command(name="translate", description="Translate text")
 async def translate(ctx, text: discord.Option(str, "Text to translate"), 
         tolang: discord.Option(str, "Translate into what language, default English", default="English", required = False, autocomplete = LangAutocomplete)):
     await ctx.defer()
-    tolang = process.extract(tolang.lower(), name2code.keys(), limit = 1, score_cutoff = 80)[0][0]
+    tolang = tolang.lower()
+    if len(tolang) == 2 and tolang in code2name.keys():
+        tolang = code2name[tolang]
+    tolang = process.extract(tolang, name2code.keys(), limit = 1)[0][0]
+
+    text = text.replace("@!","@")
+    channels = re.findall(r"<#(\d+)>", text)
+    for channel in channels:
+        try:
+            channel = bot.get_channel(int(channel))
+            text = text.replace(f"<#{channel.id}>", f"#{channel.name}")
+        except:
+            import traceback
+            traceback.print_exc()
+            pass
+    mentions = re.findall(r"<@(\d+)>", text)
+    for mention in mentions:
+        try:
+            mention = bot.get_user(int(mention))
+            text = text.replace(mention.mention, f"@{mention.name}")
+        except:
+            pass
+    roles = re.findall(r"<@&(\d+)>", text)
+    for role in roles:
+        try:
+            role = ctx.guild.get_role(int(role))
+            text = text.replace(f"<@&{role.id}>", f"@{role.name}")
+        except:
+            pass
 
     res = Translate(text, name2code[tolang])
     if res is None:
         res = (text, tolang, tolang)
     embed = discord.Embed(description = res[0], color = GECKOCLR)
-    avatar = None
+    avatar = discord.Embed.Empty
     if ctx.author.avatar != None and ctx.author.avatar.url != None:
         avatar = ctx.author.avatar.url
     embed.timestamp = datetime.now()
@@ -56,8 +87,10 @@ async def ttranslate(ctx):
     t = ctx.message.content.split(" ")
     tolang = "English (en)"
     if len(t) > 1:
-        tolang = t[1]
-        tolang = process.extract(tolang.lower(), name2code.keys(), limit = 1, score_cutoff = 80)[0][0]
+        tolang = t[1].lower()
+        if len(tolang) == 2 and tolang in code2name.keys():
+            tolang = code2name[tolang]
+        tolang = process.extract(tolang, name2code.keys(), limit = 1)[0][0]
         
     message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
     if message is None:
@@ -65,12 +98,36 @@ async def ttranslate(ctx):
         return
     
     text = message.content
+    text = text.replace("@!","@")
+    channels = re.findall(r"<#(\d+)>", text)
+    for channel in channels:
+        try:
+            channel = bot.get_channel(int(channel))
+            text = text.replace(f"<#{channel.id}>", f"#{channel.name}")
+        except:
+            import traceback
+            traceback.print_exc()
+            pass
+    mentions = re.findall(r"<@(\d+)>", text)
+    for mention in mentions:
+        try:
+            mention = bot.get_user(int(mention))
+            text = text.replace(mention.mention, f"@{mention.name}")
+        except:
+            pass
+    roles = re.findall(r"<@&(\d+)>", text)
+    for role in roles:
+        try:
+            role = ctx.guild.get_role(int(role))
+            text = text.replace(f"<@&{role.id}>", f"@{role.name}")
+        except:
+            pass
     
     res = Translate(text, name2code[tolang])
     if res is None:
         res = (text, tolang, tolang)
     embed = discord.Embed(description = res[0], color = GECKOCLR)
-    avatar = None
+    avatar = discord.Embed.Empty
     if message.author.avatar != None and message.author.avatar.url != None:
         avatar = message.author.avatar.url
     embed.timestamp = datetime.now()
@@ -121,13 +178,13 @@ async def autotranslate(ctx, channel: discord.Option(discord.TextChannel, "Chann
     else:
         fromlang = fromlang.split(",")
         for i in range(len(fromlang)):
-            fromlang[i] = name2code[process.extract(fromlang[i].lower(), name2code.keys(), limit = 1, score_cutoff = 80)[0][0]]
+            fromlang[i] = name2code[process.extract(fromlang[i].lower(), name2code.keys(), limit = 1)[0][0]]
         fromlang = ",".join(fromlang)
 
     if tolang is None:
         tolang = "en"
     else:
-        tolang = name2code[process.extract(tolang.lower(), name2code.keys(), limit = 1, score_cutoff = 80)[0][0]]
+        tolang = name2code[process.extract(tolang.lower(), name2code.keys(), limit = 1)[0][0]]
 
     if fromlang == tolang:
         await ctx.respond("You can't translate into the same language", ephemeral = True)

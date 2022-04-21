@@ -607,13 +607,36 @@ async def on_message(message):
                 tolang = t2[0][1]
             if len(t1) > 0:
                 tolang = t1[0][1] # NOTE: Channel settings overal general settings
+            
+            text = message.content
+            channels = re.findall(r"<#(\d+)>", text)
+            for channel in channels:
+                try:
+                    channel = await ctx.bot.fetch_channel(int(channel))
+                    text = text.replace("<#"+channel.id+">", channel.name)
+                except:
+                    pass
+            mentions = re.findall(r"<@(\d+)>", text)
+            for mention in mentions:
+                try:
+                    mention = await ctx.bot.fetch_user(int(mention))
+                    text = text.replace("<@"+mention.id+">", mention.name)
+                except:
+                    pass
+            roles = re.findall(r"<@&(\d+)>", text)
+            for role in roles:
+                try:
+                    role = await ctx.bot.fetch_role(int(role))
+                    text = text.replace("<@&"+role.id+">", role.name)
+                except:
+                    pass
 
-            dtc = DetectLang(message.content)
+            dtc = DetectLang(text)
             if (fromlang == "*" or dtc in fromlang.split(",")) and dtc != tolang:
-                res = Translate(message.content, tolang, fromlang = dtc)
+                res = Translate(text, tolang, fromlang = dtc)
                 if res != None:
                     embed = discord.Embed(description = res[0], color = GECKOCLR)
-                    avatar = None
+                    avatar = discord.Embed.Empty
                     if message.author.avatar != None and message.author.avatar.url != None:
                         avatar = message.author.avatar.url
                     embed.timestamp = datetime.now()
@@ -752,6 +775,8 @@ async def on_message(message):
                         haveresp = True
 
                 except Exception as e:
+                    import traceback
+                    traceback.print_exc()
                     await log("ChatAction", f"[Guild {message.guild} ({message.guild.id})] Unknown error occurred on {action} {user}: {str(e)}", message.guild.id)
 
     if updlvl > 0:
@@ -773,8 +798,49 @@ async def on_message(message):
                         pass
 
 @bot.event
+async def on_reaction_remove(reaction, user):
+    message = reaction.message
+    UPVOTE = '✅'
+    DOWNVOTE = '❌'
+    if not user.bot and user.id != BOTID and reaction.emoji in [UPVOTE, DOWNVOTE]:
+        conn = newconn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT * FROM suggestion WHERE messageid = {message.id}")
+        t = cur.fetchall()
+        if len(t) > 0:
+            if reaction.emoji == UPVOTE:
+                cur.execute(f"UPDATE suggestion SET upvote = upvote - 1 WHERE messageid = {message.id}")
+                conn.commit()
+            elif reaction.emoji == DOWNVOTE:
+                cur.execute(f"UPDATE suggestion SET downvote = downvote - 1 WHERE messageid = {message.id}")
+                conn.commit()
+
+@bot.event
 async def on_reaction_add(reaction, user):
     message = reaction.message
+    conn = newconn()
+    cur = conn.cursor()
+    UPVOTE = '✅'
+    DOWNVOTE = '❌'
+    if not user.bot and user.id != BOTID and reaction.emoji in [UPVOTE, DOWNVOTE]:
+        cur.execute(f"SELECT * FROM suggestion WHERE messageid = {message.id}")
+        t = cur.fetchall()
+        if len(t) > 0:
+            if reaction.emoji == UPVOTE:
+                try:
+                    await message.remove_reaction(DOWNVOTE, user)
+                except:
+                    pass
+                cur.execute(f"UPDATE suggestion SET upvote = upvote + 1 WHERE messageid = {message.id}")
+                conn.commit()
+            elif reaction.emoji == DOWNVOTE:
+                try:
+                    await message.remove_reaction(UPVOTE, user)
+                except:
+                    pass
+                cur.execute(f"UPDATE suggestion SET downvote = downvote + 1 WHERE messageid = {message.id}")
+                conn.commit()
+            
     if message.guild is None or message.author.id == user.id \
         or message.author.bot or user.bot or message.author.id == BOTID: # no DM / no self-thumb / no bot
         return
@@ -783,8 +849,6 @@ async def on_reaction_add(reaction, user):
     emoji = reaction.emoji
     THUMBSUP = '👍'
     if emoji == THUMBSUP:
-        conn = newconn()
-        cur = conn.cursor()
         # check if thumbsxp enabled
         cur.execute(f"SELECT * FROM settings WHERE guildid = {guildid} AND skey='thumbxp'")
         t = cur.fetchall()

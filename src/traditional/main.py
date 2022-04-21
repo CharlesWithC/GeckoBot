@@ -73,11 +73,12 @@ async def getserver(ctx):
     embed.add_field(name = "Categories", value = f"```{len(ctx.guild.categories)}```", inline = True)
     embed.add_field(name = "Text Channels", value = f"```{len(ctx.guild.text_channels)}```", inline = True)
     embed.add_field(name = "Voice Channels", value = f"```{len(ctx.guild.voice_channels)}```", inline = True)
-    icon_url = None
     if not ctx.guild.icon is None:
         icon_url = ctx.guild.icon.url
-    embed.set_thumbnail(url = icon_url)
-    embed.set_author(name = f"{ctx.guild.name}", icon_url = icon_url)
+        embed.set_thumbnail(url = icon_url)
+        embed.set_author(name = f"{ctx.guild.name}", icon_url = icon_url)
+    else:
+        embed.set_author(name = f"{ctx.guild.name}")
     embed.set_footer(text = f"ID: {ctx.guild.id} | Server Creation: {ctx.guild.created_at.strftime('%m/%d/%Y')}")
     await ctx.send(embed = embed)
 
@@ -135,14 +136,16 @@ async def SetChannel(ctx, category: str, channel: str):
     conn = newconn()
     cur = conn.cursor()
 
-    if not category in ["form", "four", "finance", "music", "level", "GeckoUPD", "error", "botlog", "eventlog"]:
+    category = category.lower()
+
+    if not category in ["geckoupd", "error", "four", "finance", "music", "level", "suggestion", "form", "eventlog", "botlog"]:
         await ctx.send(f"{category} is not a valid category.")
         return
 
     if category in ["four", "finance", "music", "level"] and channel == "all":
         channel = 0
     else:
-        if category == "GeckoUPD":
+        if category == "geckoupd":
             try:
                 if not channel.startswith("<#") or not channel.endswith(">"):
                     await ctx.send(f"{channel} is not a valid channel.")
@@ -210,8 +213,8 @@ async def tping(ctx):
     await ctx.send(f"Pong! {int(tbot.latency * 1000)}ms.")
 
 @tbot.command(name="parse", description="Get original text message", guild_ids = [DEVGUILD])
-async def ParseMsg(ctx, msg: str):
-    await ctx.send(f"```{msg}```")
+async def ParseMsg(ctx):
+    await ctx.send(f"```{' '.join(ctx.message.content.split(' ')[1:])}```")
 
 @tbot.command(name="premium", description="Get Gecko Premium subscription status, and information about premium.")
 async def Premium(ctx):
@@ -237,7 +240,7 @@ async def Premium(ctx):
     embed.add_field(name = "Forms", value = "Free: **5**\nTier 1: **30**\nTier 2: **50**", inline = True)
     embed.add_field(name = "Reaction Role (Messages)", value = "Free: **10**\nTier 1: **30**\nTier 2: **50**", inline = True)
     embed.add_field(name = "Voice Channel Recorder", value = "Free: **10 hours / month**\nTier 1: **30 hours / month**\nTier 2: **100 hours / month**", inline = True)
-    embed.add_field(name = "Other", value = "Any Permium Tier: **Radio**, **Rank Card with image background**", inline = False)
+    embed.add_field(name = "Other", value = "Any Premium Tier: **Radio**, **Rank Card with image background**", inline = False)
     embed.add_field(name = "Note", value = f"Gecko is giving away **Free Premium** to the first 100 guilds!\nIf your guild isn't given premium ,join [support server]({SUPPORT}) and ask for it!", inline = False)
 
     embed.timestamp = datetime.now()

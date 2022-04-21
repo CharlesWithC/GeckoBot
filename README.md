@@ -30,6 +30,11 @@ Find out more by `/help truckersmp`
 *Not only music, but also radio!*  
 274 radio stations are supported, and you can request your desired station to be added.  
 
+## Suggestion  
+
+Accept suggestions and improve the server!  
+Receive upvotes and downvotes, export all suggestions with one command!
+
 ## Staff Functions
   
 **Button** - Create buttons of any kind, the layout and interaction are fully customizable! The interaction could be linked to simple text messages, embed messages or forms.  
@@ -44,7 +49,7 @@ Find out more by `/help truckersmp`
 
 ---
 
-Gecko is developing fast, you are welcomed to join [Gecko Community](https://discord.gg/wNTaaBZ5qd) to discuss, submit feedbacks and share your ideas.  
+[Gecko Community](https://discord.gg/wNTaaBZ5qd): discuss, submit feedbacks and share your ideas.  
 
 ## One more thing
 

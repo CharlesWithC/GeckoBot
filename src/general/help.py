@@ -44,6 +44,10 @@ Find out more by `/help truckersmp`
 *Not only music, but also radio!*  
 274 radio stations are supported, and you can request your desired station to be added.  
 
+**Suggestion**
+Accept suggestions and improve the server!  
+Receive upvotes and downvotes, export all suggestions with one command!
+
 **Staff Functions**
 Button, embed, form, chat action, voice channel recorder, reaction role, server stats, staff management, event logging and more.
 
@@ -642,6 +646,25 @@ If `{disable}` is set to `Yes`, auto translation will be turned off.
 *This function is premium-only*
 
 Usage: `/autotranslate {optional: channel} {optional: fromlang} {optional: tolang} {optional: disable}`"""
+    },
+
+    "suggestion": {
+        "description": """**Suggestion**
+Accept suggestions and improve the server!
+Receive upvotes and downvotes, export all suggestions with one command!
+Edit your suggestion message at any time in case you made a mistake.
+
+**NOTE** To enable suggestion function, use `/setchannel` to specify a channel where suggestions will be posted.
+
+Usage: `/suggestion {optional: editlink}`
+
+To download all suggestions, use `/dlsuggestion`""",
+
+        "dlsuggestion": """**Suggestion**
+Download all suggestions made in the server, even if their original messages are deleted.
+You will receive a Markdown file and you are recommended to view it using a Markdown reader.
+
+Usage: `/dlsuggestion`"""
     },
 
     "truckersmp": {

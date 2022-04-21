@@ -10,6 +10,7 @@ from discord.commands import CommandPermission, SlashCommandGroup
 from discord.ext import commands
 from discord.ui import Modal, InputText
 from time import time
+from datetime import datetime
 from random import randint
 import io
 
@@ -101,27 +102,85 @@ class FormEditModal(Modal):
             await log(f"Form", f"[Guild {interaction.guild} {guildid}] {interaction.user} ({interaction.user.id}) created form #{formid}", guildid)
 
 class FormModal(Modal):
-    def __init__(self, formid, fields, *args, **kwargs) -> None:
+    def __init__(self, formid, fields, vals, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.formid = formid
+        i = 0
         for field in fields:
             if field.startswith("[Short]"):
                 field = field[7:].strip()
-                self.add_item(InputText(label=field, required = True))
+                if vals != None:
+                    self.add_item(InputText(label=field, required = True, value = vals[i]))
+                else:
+                    self.add_item(InputText(label=field, required = True))
             elif field.startswith("[Long]"):
                 field = field[6:].strip()
-                self.add_item(InputText(label=field, required = True, style=discord.InputTextStyle.long))
+                if vals != None:
+                    self.add_item(InputText(label=field, required = True, style=discord.InputTextStyle.long, value = vals[i]))
+                else:
+                    self.add_item(InputText(label=field, required = True, style=discord.InputTextStyle.long))
+            i += 1
 
     async def callback(self, interaction: discord.Interaction):
         user = interaction.user
         userid = user.id
-        guildid = interaction.guild_id
+        guild = interaction.guild
+        guildid = guild.id
         formid = self.formid
-
-        data = f"Entry of **{user.name}** (`{user.id}`)  \n"
 
         conn = newconn()
         cur = conn.cursor()
+        if formid < 0: # suggestion
+            UPVOTE = '✅'
+            DOWNVOTE = '❌'
+            cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'suggestion'")
+            t = cur.fetchall()
+            if len(t) == 0:
+                await interaction.response.send_message(f"Suggestion function is not enabled in this guild.", ephemeral = True)
+                return
+            channelid = t[0][0]
+            channel = bot.get_channel(channelid)
+            if channel == None:
+                await interaction.response.send_message(f"Suggestion channel not found.", ephemeral = True)
+                return
+            embed = discord.Embed(title = self.children[0].value, description = self.children[1].value, color = GECKOCLR)
+            avatar = discord.Embed.Empty
+            if user.avatar != None and user.avatar.url != None:
+                avatar = user.avatar.url
+            embed.timestamp = datetime.now()
+            embed.set_author(name = f"{user.name}#{user.discriminator}", icon_url = avatar)
+            guild_icon = discord.Embed.Empty
+            if guild.icon != None and guild.icon.url != None:
+                guild_icon = guild.icon.url
+            embed.set_footer(text = f"Gecko Suggestion • {guild.name} ", icon_url = guild_icon)
+            if formid != -1:
+                try:
+                    message = await channel.fetch_message(-formid)
+                    if message != None:
+                        await message.edit(embed = embed)   
+                        cur.execute(f"UPDATE suggestion SET subject = '{b64e(self.children[0].value)}', content = '{b64e(self.children[1].value)}' WHERE messageid = {-formid}")
+                        conn.commit()    
+                        await interaction.response.send_message(f"Suggestion [message]({message.jump_url}) edited.", ephemeral = True)         
+                        return
+                except:
+                    message = await channel.send(embed = embed)
+                    cur.execute(f"INSERT INTO suggestion VALUES ({guild.id}, {user.id}, {message.id}, '{b64e(self.children[0].value)}', '{b64e(self.children[1].value)}', 0, 0)")
+                    conn.commit()
+                    await message.add_reaction(UPVOTE)
+                    await message.add_reaction(DOWNVOTE)
+                    await interaction.response.send_message(f"Original suggestion message not found. A new [message]({message.jump_url}) has been posted at <#{channelid}>", ephemeral = True)         
+                    return
+            else:
+                message = await channel.send(embed = embed)
+                cur.execute(f"INSERT INTO suggestion VALUES ({guild.id}, {user.id}, {message.id}, '{b64e(self.children[0].value)}', '{b64e(self.children[1].value)}', 0, 0)")
+                conn.commit()
+                await message.add_reaction(UPVOTE)
+                await message.add_reaction(DOWNVOTE)
+                await interaction.response.send_message(f"You [suggestion]({message.jump_url}) has been logged and posted at <#{channelid}>.", ephemeral = True)
+                return
+
+        data = f"Entry of **{user.name}** (`{user.id}`)  \n"
+
         cur.execute(f"SELECT data, callback FROM form WHERE formid = {formid} AND guildid = {guildid}")
         t = cur.fetchall()
         if len(t) == 0:
@@ -500,49 +559,5 @@ class ManageForm(commands.Cog):
             import traceback
             traceback.print_exc()
             await ctx.respond(f"For security reasons, Gecko has to send you the data in DM. Please allow Gecko to send you DMs.", ephemeral = True)
-
-@bot.slash_command(name="dm", description="DM a member through Gecko. Your message will be forwarded in embed.")
-async def dm(ctx, user: discord.Option(discord.User, "Member to DM, must be in this guild", required = True),
-        msg: discord.Option(str, "Message to be sent to the member", required = True),
-        showauthor: discord.Option(str, "Show your name on the message, default Yes", required = False, choices = ["Yes", "No"])):
-    
-    await ctx.defer()
-    if ctx.guild is None:
-        await ctx.respond("You can only run this command in guilds!")
-        return
-    
-    if not isStaff(ctx.guild, ctx.author):
-        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
-        return
-    
-    if user.bot:
-        await ctx.respond("You can't DM bots.", ephemeral = True)
-        return
-    
-    if user.id == bot.user.id:
-        await ctx.respond("You can't DM me.", ephemeral = True)
-        return
-    
-    if ctx.guild.get_member(user.id) is None:
-        await ctx.respond(f"{user} is not in this guild.", ephemeral = True)
-        return
-    
-    try:
-        channel = await user.create_dm()
-        if channel is None:
-            await ctx.respond(f"I cannot DM the member", ephemeral = True)
-            return
-        embed=discord.Embed(title=f"Message from staff of {ctx.guild.name}", description=msg, color=GECKOCLR)
-        if showauthor == "Yes":
-            avatar = ""
-            if ctx.author.avatar != None:
-                avatar = ctx.author.avatar.url
-            embed.set_author(name=ctx.author.name, icon_url=avatar)
-        await channel.send(embed = embed)
-        await ctx.respond(f"DM sent", ephemeral = True)
-    except:
-        import traceback
-        traceback.print_exc()
-        await ctx.respond(f"I cannot DM the member", ephemeral = True)
 
 bot.add_cog(ManageForm(bot))

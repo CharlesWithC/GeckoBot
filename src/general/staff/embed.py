@@ -296,7 +296,7 @@ class ManageEmbed(commands.Cog):
         
         embed=discord.Embed(title=title, url=url, description=description, color=discord.Colour.from_rgb(int(clr[0]), int(clr[1]), int(clr[2])))
         if showauthor == "Yes":
-            icon_url = None
+            icon_url = discord.Embed.Empty
             if not ctx.author.avatar is None:
                 icon_url = ctx.author.avatar.url
             embed.set_author(name=ctx.author.name, icon_url=icon_url)
@@ -385,7 +385,7 @@ class ManageEmbed(commands.Cog):
         
         embed=discord.Embed(title=title, url=url, description=description, color=discord.Colour.from_rgb(int(clr[0]), int(clr[1]), int(clr[2])))
         if showauthor == "Yes":
-            icon_url = None
+            icon_url = discord.Embed.Empty
             if not ctx.author.avatar is None:
                 icon_url = ctx.author.avatar.url
             embed.set_author(name=ctx.author.name, icon_url=icon_url)
@@ -450,7 +450,7 @@ class ManageEmbed(commands.Cog):
         
         embed=discord.Embed(title=title, url=url, description=description, color=discord.Colour.from_rgb(int(clr[0]), int(clr[1]), int(clr[2])))
         if showauthor == "Yes":
-            icon_url = None
+            icon_url = discord.Embed.Empty
             if not ctx.author.avatar is None:
                 icon_url = ctx.author.avatar.url
             embed.set_author(name=ctx.author.name, icon_url=icon_url)
