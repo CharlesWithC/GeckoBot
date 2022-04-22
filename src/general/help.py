@@ -51,7 +51,8 @@ Receive upvotes and downvotes, export all suggestions with one command!
 **Staff Functions**
 Button, embed, form, chat action, voice channel recorder, reaction role, server stats, staff management, event logging and more.
 
-Join [Gecko Community](https://discord.gg/wNTaaBZ5qd) to discuss, get help and have a look at the plans."""
+Join [Gecko Community](https://discord.gg/wNTaaBZ5qd) to discuss, get help and have a look at the plans.
+Gecko is created and maintained by [CharlesWithC](https://charlws.com)"""
 
 HELP = {
     "about": ABOUT,

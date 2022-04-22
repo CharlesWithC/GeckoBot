@@ -11,7 +11,7 @@ GECKOEMOJI = "<:gecko:960189082007371806>"
 STATUS = {"online": ":green_circle: Online", "offline": ":black_circle: Offline", "idle": ":yellow_circle: Idle", "dnd": ":red_circle: Do Not Disturb"}
 
 SUPPORT = "https://discord.gg/wNTaaBZ5qd"
-TRANSLATE = "translate.charles14.xyz"
+TRANSLATE = "translate.charlws.com"
 
 ETS2ID = 227300
 ATSID = 270880
