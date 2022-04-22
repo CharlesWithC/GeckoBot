@@ -64,6 +64,8 @@ async def translate(ctx, text: discord.Option(str, "Text to translate"),
             text = text.replace(f"<@&{role.id}>", f"@{role.name}")
         except:
             pass
+    text = re.sub("<:(\w+):(\d+)>","\\1",text) # emoji fix
+    text = re.sub("<:(\w+):>","\\1",text)
 
     res = Translate(text, name2code[tolang])
     if res is None:
@@ -122,6 +124,8 @@ async def ttranslate(ctx):
             text = text.replace(f"<@&{role.id}>", f"@{role.name}")
         except:
             pass
+    text = re.sub("<:(\w+):(\d+)>","\\1",text) # emoji fix
+    text = re.sub("<:(\w+):>","\\1",text)
     
     res = Translate(text, name2code[tolang])
     if res is None:

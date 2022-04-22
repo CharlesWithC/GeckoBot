@@ -48,6 +48,9 @@ class ManageChat(commands.Cog):
 
         keywords=keywords.replace("|","")
 
+        if content != None:
+            content = content.replace("\\n","\n")
+
         if action == "delete":
             if not botuser.guild_permissions.manage_messages:
                 await ctx.respond("I don't have permission to delete messages.", ephemeral = True)

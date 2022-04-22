@@ -221,6 +221,9 @@ class ManageButton(commands.Cog):
             elif cnt >= 10 and premium == 0:
                 await ctx.respond("Free guilds: 10 buttons.\nPremium Tier 1: 30 buttons.\nPremium Tier 2: 100 buttons.\n\nFind out more by using `/premium`", ephemeral = True)
                 return
+        
+        if content != None:
+            content = content.replace("\\n", "\n")
             
         data = {}
 
@@ -346,6 +349,9 @@ class ManageButton(commands.Cog):
 
         conn = newconn()
         cur = conn.cursor()
+        
+        if content != None:
+            content = content.replace("\\n", "\n")
 
         try:
             buttonid = int(buttonid)

@@ -182,6 +182,9 @@ async def dm(ctx, user: discord.Option(discord.User, "Member to DM, must be in t
     if ctx.guild.get_member(user.id) is None:
         await ctx.respond(f"{user} is not in this guild.", ephemeral = True)
         return
+
+    if msg != None:
+        msg = msg.replace("\\n","\n")
     
     try:
         channel = await user.create_dm()
