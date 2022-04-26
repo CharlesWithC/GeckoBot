@@ -12,9 +12,12 @@ import time
 from settings import *
 from datetime import datetime
 
+ponline = {}
 nameid = {}
+vtcnameid = {}
 playerid = {}
 serverid = {}
+idserver = {}
 traffic = {}
 location = {}
 country = {}
@@ -62,6 +65,13 @@ def VTCID2Name(vtcid):
         conn.commit()
         return name
 
+def SearchVTCName(name):
+    res = process.extract(name, vtcnameid.keys(), limit = 5, score_cutoff = 80)
+    ret = []
+    for t in res:
+        ret.append(t[0])
+    return ret
+
 def SearchName(name):
     res = process.extract(name, nameid.keys(), limit = 5, score_cutoff = 80)
     ret = []
@@ -72,6 +82,16 @@ def SearchName(name):
 def Name2ID(name):
     if name in nameid.keys():
         return nameid[name]
+    return None
+
+def VTCName2ID(name):
+    if name in vtcnameid.keys():
+        return vtcnameid[name]
+    return None
+
+def ID2Player(mpid):
+    if mpid in ponline.keys():
+        return ponline[mpid]
     return None
 
 def Discord2Mp(discordid):
@@ -169,6 +189,110 @@ def GetHRData(mpid):
         "banned": banned, "bannedUntil": bannedUntil, "bansCount": bansCount, \
         "displayBans": displayBans, "bans": bans, "ets2hour": ets2hour, "atshour": atshour}
 
+def GetVTCData(vtcid, clearcache = False):
+    conn = newconn()
+    cur = conn.cursor()
+    if not clearcache:
+        cur.execute(f"SELECT tmpdata FROM vtc WHERE vtcid = {vtcid} AND lastupd > {int(time.time()) - 10800}")
+        t = cur.fetchall()
+        if len(t) > 0:
+            return json.loads(b64d(t[0][0])) # cache for three hours
+            
+    r = requests.get(f"https://api.truckersmp.com/v2/vtc/{vtcid}")
+    if r.status_code == 200:
+        d = json.loads(r.text)
+        if not d["error"]:
+            d = d["response"]
+            name = d["name"]
+            slogan = d["slogan"]
+            ownerid = d["owner_id"]
+            ownername = d["owner_username"]
+            logo = d["logo"]
+            games = ""
+            if d["games"]["ats"]:
+                games += "American Truck Simulator, "
+            if d["games"]["ets"]:
+                games += "Euro Truck Simulator, "
+            games = games[:-2]
+            membercnt = d["members_count"]
+            recruitment = d["recruitment"]
+            language = d["language"]
+            verified = d["verified"]
+            created = d["created"]
+
+            res = {"vtcid": vtcid, "name": name, "slogan": slogan, "ownerid": ownerid, "ownername": ownername, \
+                "logo": logo, "games": games, "membercnt": membercnt, "recruitment": recruitment, "language": language, \
+                "verified": verified, "created": created}
+
+            cur.execute(f"SELECT name, tmpdata FROM vtc WHERE vtcid = {vtcid}")
+            t = cur.fetchall()
+            if len(t) == 0:
+                cur.execute(f"INSERT INTO vtc VALUES ({vtcid}, '{b64e(name)}', '{b64e(json.dumps(res))}', '',  {int(time.time())})")
+                conn.commit()
+            else:
+                if t[0][0] != b64e(d['name']):
+                    cur.execute(f"UPDATE vtc SET name = '{b64e(d['name'])}', lastupd = '{int(time.time())}' WHERE vtcid = {vtcid}")
+                if t[0][1] != b64e(json.dumps(res)):
+                    cur.execute(f"UPDATE vtc SET tmpdata = '{b64e(json.dumps(res))}', lastupd = '{int(time.time())}' WHERE vtcid = {vtcid}")
+                conn.commit()
+            
+            return res
+    return None
+
+def GetVTCMembers(vtcid, clearcache = False):
+    conn = newconn()
+    cur = conn.cursor()
+    if not clearcache:
+        cur.execute(f"SELECT members FROM vtc WHERE vtcid = {vtcid} AND lastupd > {int(time.time()) - 10800}")
+        t = cur.fetchall()
+        if len(t) > 0 and t[0][0] != '':
+            tt = t[0][0].split("|")
+            return (json.loads(b64d(tt[0])), json.loads(b64d(tt[1]))) # cache for three hours
+
+    roles = []
+    r = requests.get(f"https://api.truckersmp.com/v2/vtc/{vtcid}/roles")
+    if r.status_code == 200:
+        d = json.loads(r.text)
+        if not d["error"]:
+            d = d["response"]
+            for role in d["roles"]:
+                name = role["name"]
+                roleid = role["id"]
+                order = role["order"]
+                r = {"name": name, "roleid": roleid, "order": order}
+                roles.append(r)            
+
+    r = requests.get(f"https://api.truckersmp.com/v2/vtc/{vtcid}/members")
+    if r.status_code == 200:
+        d = json.loads(r.text)
+        if not d["error"]:
+            d = d["response"]["members"]
+            members = []
+            for dd in d:
+                members.append({"mpid": dd["user_id"], "username": dd["username"], "roleid": dd["role_id"], "joinDate": dd["joinDate"]})
+                cur.execute(f"SELECT name FROM truckersmp WHERE mpid = {dd['user_id']}")
+                p = cur.fetchall()
+                nameid[f"{dd['username']} ({dd['user_id']})"] = dd['user_id']
+                if len(p) == 0:
+                    cur.execute(f"INSERT INTO truckersmp VALUES ({dd['user_id']}, '{b64e(dd['username'])}', '', 0)")
+                else:
+                    if p[0][0] != b64e(dd["username"]):
+                        cur.execute(f"UPDATE truckersmp SET name = '{b64e(dd['username'])}' WHERE mpid = {dd['user_id']}")
+                        del nameid[f"{b64d(p[0][0])} ({dd['user_id']})"]
+
+            cur.execute(f"SELECT members FROM vtc WHERE vtcid = {vtcid}")
+            t = cur.fetchall()
+            if len(t) == 0:
+                cur.execute(f"INSERT INTO vtc VALUES ({vtcid}, '', '', '{b64e(json.dumps(roles)) + '|' + b64e(json.dumps(members))}',  0)")
+                conn.commit()
+            else:
+                if t[0][0] != b64e(json.dumps(members)):
+                    cur.execute(f"UPDATE vtc SET members = '{b64e(json.dumps(roles)) + '|' + b64e(json.dumps(members))}' WHERE vtcid = {vtcid}")
+                conn.commit()
+            
+            return (roles, members)
+    return None
+
 def GetTMPData(mpid, clearcache = False):
     conn = newconn()
     cur = conn.cursor()
@@ -208,6 +332,12 @@ def GetTMPData(mpid, clearcache = False):
             res = {"mpid": mpid, "steamid": steamid, "discordid": discordid, "name":name, "patreon": patreon, "avatar": avatar, "joinDate": joinDate, "group": group, \
                 "vtcid": vtcid, "vtc": vtc, "vtctag": vtctag, "vtcpos": GetVTCPosition(d["vtc"]["id"], d["vtc"]["memberID"]),\
                     "lastupd": lastupd}
+            cur.execute(f"SELECT * FROM vtc WHERE vtcid = {vtcid}")
+            t = cur.fetchall()
+            if len(t) == 0:
+                cur.execute(f"INSERT INTO vtc VALUES ({vtcid}, '{b64e(vtc)}', '', '', 0)")
+                conn.commit()
+                vtcnameid[f"{vtc} ({vtcid})"] = vtcid
             nameid[f'{name} ({mpid})'] = mpid
             cur.execute(f"SELECT name, tmpdata FROM truckersmp WHERE mpid = {mpid}")
             t = cur.fetchall()
@@ -216,6 +346,7 @@ def GetTMPData(mpid, clearcache = False):
                 conn.commit()
             else:
                 if t[0][0] != b64e(d['name']):
+                    del nameid[f'{b64d(t[0][0])} ({mpid})']
                     cur.execute(f"UPDATE truckersmp SET name = '{b64e(d['name'])}', lastupd = '{int(time.time())}' WHERE mpid = {mpid}")
                 if t[0][1] != b64e(json.dumps(res)):
                     cur.execute(f"UPDATE truckersmp SET tmpdata = '{b64e(json.dumps(res))}', lastupd = '{int(time.time())}' WHERE mpid = {mpid}")
@@ -226,7 +357,9 @@ def GetTMPData(mpid, clearcache = False):
 
 def UpdateTMPMap():
     global nameid
-    global playerid
+    global playerid 
+    global ponline
+    global vtcnameid
     while 1:
         conn = newconn()
         cur = conn.cursor()
@@ -236,8 +369,10 @@ def UpdateTMPMap():
             continue
         d = json.loads(r.text)["Data"]
         playerid = {}
+        ponline = {}
         for dd in d:
             playerid[(dd['ServerId'], dd['PlayerId'])] = dd['MpId']
+            ponline[dd['MpId']] = (dd['ServerId'], dd['PlayerId'])
             cur.execute(f"SELECT name FROM truckersmp WHERE mpid = {dd['MpId']}")
             t = cur.fetchall()
             if len(t) == 0:
@@ -253,6 +388,12 @@ def UpdateTMPMap():
         nameid = {}
         for tt in t:
             nameid[f'{b64d(tt[1])} ({tt[0]})'] = tt[0]
+        
+        cur.execute(f"SELECT vtcid, name FROM vtc")
+        t = cur.fetchall()
+        vtcnameid = {}
+        for tt in t:
+            vtcnameid[f'{b64d(tt[1])} ({tt[0]})'] = tt[0]
 
         time.sleep(30)
 
@@ -289,6 +430,8 @@ def UpdateTMPTraffic():
     global traffic
     global location
     global country
+    global serverid
+    global idserver
     while 1:
         r = requests.get("https://traffic.krashnz.com/api/v2/public/servers.json")
         if r.status_code != 200:
@@ -323,6 +466,7 @@ def UpdateTMPTraffic():
             if not name in country.keys():
                 country[name] = []
             serverid[name] = server["id"]
+            idserver[server["id"]] = name
             for place in d["response"]["traffic"]:
                 loc = place["name"] + ", " + place["country"]
                 if not loc in location[name]:

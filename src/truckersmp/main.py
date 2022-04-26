@@ -13,6 +13,7 @@ import time
 from datetime import datetime
 import requests
 import json, io
+import collections
 
 from bot import bot
 from settings import *
@@ -22,7 +23,17 @@ from truckersmp.tmp import *
 
 PNF = """Player not found or not cached.
 Gecko caches all the players it found on the map, and if the player is not cached, it will not show up in the name search.
-Please use TruckersMP ID instead, and bot will cache the player.
+Please use TruckersMP ID instead, and Gecko will cache the player.
+
+If you are already using TruckersMP ID, then the player does not exist.
+
+**NOTE** Player profile & VTC infomration updates each 3 hours, map data is realtime."""
+
+VNF = """VTC not found or not cached.
+Gecko caches all the vtcs that have been queried.
+Please use VTC ID instead, and Gecko will cache the vtc.
+
+If you are already using VTC ID, then the VTC does not exist.
 
 **NOTE** Player profile & VTC infomration updates each 3 hours, map data is realtime."""
 
@@ -30,6 +41,11 @@ async def PlayerAutocomplete(ctx: discord.AutocompleteContext):
     if ctx.value.replace(" ", "") == "":
         return []
     return SearchName(ctx.value)
+
+async def VTCAutocomplete(ctx: discord.AutocompleteContext):
+    if ctx.value.replace(" ", "") == "":
+        return []
+    return SearchVTCName(ctx.value)
 
 async def ServerAutocomplete(ctx: discord.AutocompleteContext):
     return SearchServer(ctx.value)
@@ -53,15 +69,18 @@ async def CountryAutocomplete(ctx: discord.AutocompleteContext):
     return SearchCountry(server, ctx.value)
 
 @bot.slash_command(name="truckersmp", alias=["tmp"], description="TruckersMP")
-async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (cache)", required = False, autocomplete = PlayerAutocomplete),
+async def truckersmp(ctx,
+        sep0: discord.Option(str, "------------------------------------------------------------------------------------------", name = "----------player-----------", required = False),
+        name: discord.Option(str, "TruckersMP Name (cache)", required = False, autocomplete = PlayerAutocomplete),
         mpid: discord.Option(int, "TruckersMP ID", required = False),
         mention: discord.Option(discord.User, "Discord Mention (cache / manual bind)", required = False),
         playerid: discord.Option(int, "Player In-game ID, require server argument, this might only work for ETS2 SIM 1", required = False),
         steamid: discord.Option(str, "Steam ID (cache)", required = False),
+        hrmode: discord.Option(str, "HR Mode, to get play hour and ban history", required = False, choices = ["Yes", "No"]),
+        sep1: discord.Option(str, "------------------------------------------------------------------------------------------", name = "----------traffic----------", required = False),
         server: discord.Option(str, "TruckersMP Server", required = False, autocomplete = ServerAutocomplete),
         location: discord.Option(str, "Get traffic of location, require server argument.", required = False, autocomplete = LocationAutocomplete),
-        country: discord.Option(str, "Get traffic of all locations in the country, require server argument.", required = False, autocomplete = CountryAutocomplete),
-        hrmode: discord.Option(str, "HR Mode, to get play hour and ban history", required = False, choices = ["Yes", "No"])):
+        country: discord.Option(str, "Get traffic of all locations in the country, require server argument.", required = False, autocomplete = CountryAutocomplete)):
     
     await ctx.defer()
     if name != None or mpid != None or mention != None or playerid != None or steamid != None:
@@ -71,7 +90,11 @@ async def truckersmp(ctx, name: discord.Option(str, "TruckersMP Name (cache)", r
             if player == "":
                 await ctx.respond(PNF)
                 return
-            player = SearchName(player)[0]
+            player = SearchName(player)
+            if len(player) == 0:
+                await ctx.respond(PNF)
+                return
+            player = player[0]
             mpid = Name2ID(player)
             if mpid is None:
                 await ctx.respond(PNF)
@@ -374,7 +397,130 @@ async def tmpbind(ctx, mpid: discord.Option(int, "Your TruckersMP User ID"),
     else:
         await ctx.respond(f"[{d['name']}](https://truckersmp.com/user/{mpid})'s Discord is not you!")
 
-@bot.slash_command(name="vtcbind", description="Bind your VTC to this guild (3 attempt / 60 min)")
+@bot.slash_command(name="vtc", description="Get information of the VTC.")
+async def vtc(ctx, vtcname: discord.Option(str, "VTC Name (cache)" , name="name", required = False, autocomplete = VTCAutocomplete),
+        vtcid: discord.Option(int, "VTC ID", name="id", required = False),
+        allmembers: discord.Option(str, "Whether to show all VTC members", required = False, choices = ["Yes", "No"])):
+    await ctx.defer()
+    conn = newconn()
+    cur = conn.cursor()
+    if vtcid is None:
+        if vtcname != None:
+            vtc = vtcname.replace(" ", "")
+            if vtc == "":
+                await ctx.respond(VNF)
+                return
+            vtc = SearchVTCName(vtc)
+            if len(vtc) == 0:
+                await ctx.respond(VNF)
+                return
+            vtc = vtc[0]
+            vtcid = VTCName2ID(vtc)
+            if vtcid is None:
+                await ctx.respond(VNF)
+                return
+        else:
+            cur.execute(f"SELECT vtcid, name FROM vtcbind WHERE guildid = {ctx.guild.id}")
+            t = cur.fetchall()
+            if len(t) == 0:
+                await ctx.respond("This guild is not bound to a VTC!\nUse `/vtcbind` to bind it first.", ephemeral = True)
+                return
+            vtcid = t[0][0]
+            name = b64d(t[0][1])
+
+    vtc = GetVTCData(vtcid)
+    if vtc is None:
+        await ctx.respond(VNF)
+        return
+
+    embed = discord.Embed(title = vtc['name'], description = vtc['slogan'], url = f'https://truckersmp.com/vtc/{vtc["vtcid"]}', color = TMPCLR)
+    if not vtc["verified"]:
+        embed.add_field(name = "VTC ID", value = f'[{vtc["vtcid"]}](https://truckersmp.com/vtc/{vtc["vtcid"]})', inline = True)
+    else:
+        embed.add_field(name = "VTC ID", value = f'[{vtc["vtcid"]}](https://truckersmp.com/vtc/{vtc["vtcid"]}) <:verified:968397158044803112>', inline = True)
+    embed.add_field(name = "Owner", value = f'[{vtc["ownername"]}](https://truckersmp.com/user/{vtc["ownerid"]})', inline = True)
+    embed.add_field(name = "Language", value = vtc["language"], inline = True)
+    embed.add_field(name = "Members", value = vtc["membercnt"], inline = True)
+    embed.add_field(name = "Recruitment", value = vtc["recruitment"], inline = True)
+    embed.add_field(name = "Games", value = vtc["games"], inline = False)
+    embed.add_field(name = "Creation Date", value = vtc["created"], inline = False)
+
+    embed.set_thumbnail(url = vtc["logo"])
+    embed.timestamp = datetime.now()
+    embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+    
+    if allmembers == "Yes":
+        content = ""
+        embeds = []
+        embeds.append(embed)
+
+        d = GetVTCMembers(vtcid)
+        if d is None:
+            content = "Failed to get members"
+        else:
+            roles = d[0]
+            members = d[1]
+            if roles == [] or members == []:
+                content = "Failed to get members"
+            else:           
+                memberbyrole = {}
+                drole = {}
+                for role in roles:
+                    memberbyrole[role["roleid"]] = []
+                    drole[role["roleid"]] = (role["name"], role["order"])
+                for member in members:
+                    mpid = member["mpid"]
+                    username = member["username"]
+                    roleid = member["roleid"]
+                    ol = "- *Offline*"
+                    if ID2Player(mpid) != None:
+                        pol = ID2Player(mpid)
+                        sv = idserver[pol[0]]
+                        pid = pol[1]
+                        ol = f"- {sv} - {pid}"
+                    memberbyrole[roleid].append(f'[{username}](https://truckersmp.com/user/{mpid}) {ol}')
+                rolebyorder = {}
+                for roleid in memberbyrole:
+                    rolebyorder[drole[roleid][1]] = {"name": drole[roleid][0], "members": memberbyrole[roleid]}
+                mbr = collections.OrderedDict(sorted(rolebyorder.items()))
+
+                res = ""
+                rres = ""
+                for role in mbr:
+                    name = mbr[role]["name"]
+                    members = mbr[role]["members"]
+                    if len(members) == 0:
+                        continue
+                    res += f"**{name}**  \n"
+                    for member in members:
+                        res += f"{member}  \n"
+                        if len(res) <= 4000:
+                            rres = res
+                    res += "  \n"
+
+                if res != rres:
+                    rres += "...\n\n*(Full member list in attached file)*"
+                    
+                embed = discord.Embed(title = "Members", description = rres, url = f'https://truckersmp.com/vtc/{vtcid}/members', color = TMPCLR)
+                embed.set_thumbnail(url = vtc["logo"])
+                embed.timestamp = datetime.now()
+                embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+                embeds.append(embed)
+
+                if res == rres:
+                    await ctx.respond(embeds = embeds)
+                else:
+                    f = io.BytesIO()
+                    f.write(res.encode())
+                    f.seek(0)
+                    await ctx.respond(embeds = embeds, file=discord.File(fp=f, filename='AllMembers.MD'))
+                return
+
+        await ctx.respond(content = content, embed = embed)
+    else:
+        await ctx.respond(embed = embed)
+
+@bot.slash_command(name="vtcbind", description="Bind your VTC to this guild")
 async def vtcbind(ctx, vtcid: discord.Option(int, "The ID of your VTC", required = True),
         unbind: discord.Option(str, "Unbind VTC from this guild", required = False, choices = ["Yes", "No"])):
     if ctx.guild is None:
@@ -430,6 +576,7 @@ async def vtcbind(ctx, vtcid: discord.Option(int, "The ID of your VTC", required
         return
     cur.execute(f"DELETE FROM vtcbind WHERE vtcid = {vtcid}")
     cur.execute(f"INSERT INTO vtcbind VALUES ({ctx.guild.id}, {vtcid}, '{b64e(name)}')")
+    cur.execute(f"INSERT INTO vtc VALUES ({vtcid}, '{b64e(name)}', '', '', 0)")
     conn.commit()
     await ctx.respond(f"Successfully bound the guild to VTC **{name}**!")
 
@@ -527,18 +674,34 @@ class EventButton(Button):
         await interaction.response.edit_message(embed = embed, view = view)    
 
 @bot.slash_command(name="vtcevents", description="Get events the VTC is attending.")
-async def vtcevents(ctx, vtcid: discord.Option(int, "Specify a VTC ID (optional if the guild is bound to a VTC)", required = False),
+async def vtcevents(ctx, vtcname: discord.Option(str, "VTC Name (cache)" , required = False, autocomplete = VTCAutocomplete),
+        vtcid: discord.Option(int, "Specify a VTC ID (optional if the guild is bound to a VTC)", required = False),
         listmode: discord.Option(str, "Show all the events in a list (or recent events + markdown file if too many)", required = False, choices = ["Yes", "No"])):
     conn = newconn()
     cur = conn.cursor()
     if vtcid is None:
-        cur.execute(f"SELECT vtcid, name FROM vtcbind WHERE guildid = {ctx.guild.id}")
-        t = cur.fetchall()
-        if len(t) == 0:
-            await ctx.respond("This guild is not bound to a VTC!\nUse `/vtcbind` to bind it first.", ephemeral = True)
-            return
-        vtcid = t[0][0]
-        name = b64d(t[0][1])
+        if vtcname != None:
+            vtc = vtcname.replace(" ", "")
+            if vtc == "":
+                await ctx.respond(VNF)
+                return
+            vtc = SearchVTCName(vtc)
+            if len(vtc) == 0:
+                await ctx.respond(VNF)
+                return
+            vtc = vtc[0]
+            vtcid = VTCName2ID(vtc)
+            if vtcid is None:
+                await ctx.respond(VNF)
+                return
+        else:
+            cur.execute(f"SELECT vtcid, name FROM vtcbind WHERE guildid = {ctx.guild.id}")
+            t = cur.fetchall()
+            if len(t) == 0:
+                await ctx.respond("This guild is not bound to a VTC!\nUse `/vtcbind` to bind it first.", ephemeral = True)
+                return
+            vtcid = t[0][0]
+            name = b64d(t[0][1])
     
     await ctx.defer()
     d = GetEvents(vtcid)

@@ -1,5 +1,10 @@
 # Gecko Bot Update History
 
+## Update 2022.04.26
+
+**Version v1.20.3**  
+1.Added more TruckersMP VTC functions  
+
 ## Update 2022.04.25
 
 **Version v1.20.2**  
@@ -16,7 +21,7 @@ Minor bug fixes
 **Version v1.20**  
 1.Added suggestion function  
 2.Minor improvements on translation function  
-3.Minor bug fixes 
+3.Minor bug fixes  
 
 ## Update 2022.04.20
 
