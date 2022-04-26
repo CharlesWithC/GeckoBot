@@ -10,6 +10,7 @@ from discord.commands import CommandPermission, SlashCommandGroup
 from discord.ext import commands
 from discord.ui import Modal, InputText
 import validators
+from datetime import datetime
 
 from bot import bot
 from settings import *
@@ -60,9 +61,9 @@ class EmbedModal(Modal):
         thumbnail_url = self.children[4].value.replace(" ","")
 
         l = len(title) + len(description)
-        if l > 2000:
-            await interaction.response.send_message(f"The maximum length of title + description is 2000, current {l}", ephemeral = True)
-            return
+        # if l > 2000:
+        #     await interaction.response.send_message(f"The maximum length of title + description is 2000, current {l}", ephemeral = True)
+        #     return
 
         if "|" in thumbnail_url:
             thumbnail_url = thumbnail_url.split("|")
@@ -254,7 +255,8 @@ class ManageEmbed(commands.Cog):
     
     @manage.command(name="preview", description="Staff - Preview an embed privately before posting it in public.")
     async def preview(self, ctx, embedid: discord.Option(int, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
-            showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"])):
+            showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"]),
+            timestamp: discord.Option(str, "Add timestamp?", required = False, choices = ["Yes", "No"])):
         
         await ctx.defer()    
         if ctx.guild is None:
@@ -300,6 +302,8 @@ class ManageEmbed(commands.Cog):
             if not ctx.author.avatar is None:
                 icon_url = ctx.author.avatar.url
             embed.set_author(name=ctx.author.name, icon_url=icon_url)
+        if timestamp == "Yes":
+            embed.timestamp = datetime.now()
         embed.set_footer(text=footer, icon_url=footer_icon_url)
         embed.set_thumbnail(url=thumbnail_url[0])
         embed.set_image(url=thumbnail_url[1])
@@ -341,7 +345,8 @@ class ManageEmbed(commands.Cog):
     @manage.command(name="send", description="Staff - Send an embed in public.")
     async def send(self, ctx, channel: discord.Option(discord.TextChannel, "Channel to post the embed.", required = True),
             embedid: discord.Option(int, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
-            showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"])):
+            showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"]),
+            timestamp: discord.Option(str, "Add timestamp?", required = False, choices = ["Yes", "No"])):
         
         await ctx.defer()    
         if ctx.guild is None:
@@ -389,6 +394,8 @@ class ManageEmbed(commands.Cog):
             if not ctx.author.avatar is None:
                 icon_url = ctx.author.avatar.url
             embed.set_author(name=ctx.author.name, icon_url=icon_url)
+        if timestamp == "Yes":
+            embed.timestamp = datetime.now()
         embed.set_footer(text=footer, icon_url=footer_icon_url)
         embed.set_thumbnail(url=thumbnail_url[0])
         embed.set_image(url=thumbnail_url[1])
@@ -402,7 +409,8 @@ class ManageEmbed(commands.Cog):
     @manage.command(name="update", description="Staff - Update an embed in a message. The message must be sent by Gecko.")
     async def update(self, ctx, msglink: discord.Option(str, "Link to the message to update.", required = True),
             embedid: discord.Option(int, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
-            showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"])):
+            showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"]),
+            timestamp: discord.Option(str, "Add timestamp?", required = False, choices = ["Yes", "No"])):
         
         await ctx.defer()    
         if ctx.guild is None:
@@ -454,6 +462,8 @@ class ManageEmbed(commands.Cog):
             if not ctx.author.avatar is None:
                 icon_url = ctx.author.avatar.url
             embed.set_author(name=ctx.author.name, icon_url=icon_url)
+        if timestamp == "Yes":
+            embed.timestamp = datetime.now()
         embed.set_footer(text=footer, icon_url=footer_icon_url)
         embed.set_thumbnail(url=thumbnail_url[0])
         embed.set_image(url=thumbnail_url[1])

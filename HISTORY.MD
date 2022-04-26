@@ -1,5 +1,11 @@
 # Gecko Bot Update History
 
+## Update 2022.04.25
+
+**Version v1.20.2**  
+1.Added timestamp for embeds  
+2.Other minor updates & bug fixes
+
 ## Update 2022.04.22
 
 **Version v1.20.1**  

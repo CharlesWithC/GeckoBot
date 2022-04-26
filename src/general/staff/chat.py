@@ -590,7 +590,7 @@ async def on_message(message):
         return
 
     premium = GetPremium(message.guild)
-    if premium > 0 and message.content != None:
+    if premium > 0 and message.content != None and len(message.content) >= 10:
         cur.execute(f"SELECT fromlang, tolang FROM translate WHERE guildid = {guildid} AND channelid = {message.channel.id}")
         t1 = cur.fetchall()
         cur.execute(f"SELECT fromlang, tolang FROM translate WHERE guildid = {guildid} AND channelid = 0")

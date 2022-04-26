@@ -165,18 +165,18 @@ class FormModal(Modal):
                 except:
                     message = await channel.send(embed = embed)
                     cur.execute(f"INSERT INTO suggestion VALUES ({guild.id}, {user.id}, {message.id}, '{b64e(self.children[0].value)}', '{b64e(self.children[1].value)}', 0, 0)")
+                    await interaction.response.send_message(f"Original suggestion message not found. A new [message]({message.jump_url}) has been posted at <#{channelid}>", ephemeral = True)
                     conn.commit()
                     await message.add_reaction(UPVOTE)
                     await message.add_reaction(DOWNVOTE)
-                    await interaction.response.send_message(f"Original suggestion message not found. A new [message]({message.jump_url}) has been posted at <#{channelid}>", ephemeral = True)         
                     return
             else:
                 message = await channel.send(embed = embed)
                 cur.execute(f"INSERT INTO suggestion VALUES ({guild.id}, {user.id}, {message.id}, '{b64e(self.children[0].value)}', '{b64e(self.children[1].value)}', 0, 0)")
                 conn.commit()
+                await interaction.response.send_message(f"You [suggestion]({message.jump_url}) has been logged and posted at <#{channelid}>.", ephemeral = True)
                 await message.add_reaction(UPVOTE)
                 await message.add_reaction(DOWNVOTE)
-                await interaction.response.send_message(f"You [suggestion]({message.jump_url}) has been logged and posted at <#{channelid}>.", ephemeral = True)
                 return
 
         data = f"Entry of **{user.name}** (`{user.id}`)  \n"

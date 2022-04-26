@@ -45,6 +45,9 @@ async def suggestion(ctx, editlink: discord.Option(str, "Specify a suggestion me
             return
         subject = b64d(t[0][0])
         content = b64d(t[0][1])
+        if t[0][2] != ctx.author.id:
+            await ctx.respond("You can only edit your own suggestions.", ephemeral = True)
+            return
         modal = FormModal(-int(messageid), ["[Short] Subject", "[Long] Content"], [subject, content], "Edit Suggestion")
         await ctx.send_modal(modal)
         return
