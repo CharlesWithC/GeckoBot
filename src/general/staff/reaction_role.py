@@ -58,6 +58,8 @@ class ReactionRole(commands.Cog):
                 return
         
         rolebindtxt = rolebind.split()
+        while "" in rolebindtxt:
+            rolebindtxt.remove("")
         i = 0
         rolebind = []
         roles = []
@@ -71,11 +73,11 @@ class ReactionRole(commands.Cog):
                     return
                 r = int(data[3:-1])
             else:
-                if roles.count(r) > 0 or emojis.count(e) > 0:
+                e = data.replace(" ", "")
+                if r in roles or e in emojis:
                     await ctx.respond(f"{ctx.author.name}, each role can only be bound to one unique emoji.", ephemeral = True)
                     return
                 roles.append(r)
-                e = data.replace(" ", "")
                 emojis.append(e)
                 rolebind.append((r, e))
                 cur.execute(f"SELECT emoji FROM rolebind WHERE guildid = {guildid} AND role = {r}")
@@ -108,13 +110,19 @@ class ReactionRole(commands.Cog):
         messageid = int(l[-2])
         channelid = int(l[-3])
         
+        cur.execute(f"SELECT * FROM reactionrole WHERE guildid = {guildid} AND msgid = {messageid} AND channelid = {channelid}")
+        t = cur.fetchall()
+        if len(t) != 0:
+            await ctx.respond(f"{ctx.author.name}, reaction role message already bound. Please use `/reaction_role append` to add reactions.", ephemeral = True)
+            return
+        
         message = None
         try:
             channel = bot.get_channel(channelid)
             message = await channel.fetch_message(messageid)
             for data in rolebind:
                 await message.add_reaction(data[1])
-            await ctx.respond(f"{ctx.author.name}, reaction-role message posted at <#{channelid}>!")
+            await ctx.respond(f"{ctx.author.name}, reaction-roles bound to [message]({message.jump_url})!")
 
             msgid = message.id
             cur.execute(f"INSERT INTO reactionrole VALUES ({guildid}, {channelid}, {msgid})")
@@ -122,9 +130,9 @@ class ReactionRole(commands.Cog):
                 cur.execute(f"INSERT INTO rolebind VALUES ({guildid}, {channelid}, {msgid}, {data[0]}, '{b64e(data[1])}')")
             conn.commit()
 
-            await log("Staff", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author} created a reaction-role post at {channel} ({channelid}), with role-binding: {rolebindtxt}", ctx.guild.id)
+            await log("Staff", f"[Guild {ctx.guild} ({ctx.guild.id})] {ctx.author} created reaction-role bound at {channel} ({channelid}), with role-binding: {rolebindtxt}", ctx.guild.id)
         except Exception as e:
-            await ctx.respond(f"{ctx.author.name}, it seems I cannot send message at <#{channelid}>. Make sure the channel exist and I have access to it!", ephemeral = True)
+            await ctx.respond(f"{ctx.author.name}, unknown error occurred. Make sure I have permission to add reaction and the message exists.", ephemeral = True)
 
             await log("Staff", f"[Guild {ctx.guild} ({ctx.guild.id})] '/reaction_role create' command executed by {ctx.author} failed due to {str(e)}", ctx.guild.id)
 
@@ -149,8 +157,6 @@ class ReactionRole(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
         
-        
-
         if msglink.endswith("/"):
             msglink = msglink[:-1]
         msglink = msglink.split("/")
@@ -174,6 +180,8 @@ class ReactionRole(commands.Cog):
             return
 
         rolebindtxt = rolebind.split()
+        while "" in rolebindtxt:
+            rolebindtxt.remove("")
         i = 0
         rolebind = []
         roles = []
@@ -187,11 +195,11 @@ class ReactionRole(commands.Cog):
                     return
                 r = int(data[3:-1])
             else:
-                if roles.count(r) > 0 or emojis.count(e) > 0:
+                e = data.replace(" ", "")
+                if r in roles or e in emojis:
                     await ctx.respond(f"{ctx.author.name}, each role can only be bound to one unique emoji.", ephemeral = True)
                     return
                 roles.append(r)
-                e = data.replace(" ", "")
                 emojis.append(e)
                 rolebind.append((r, e))
             i += 1
@@ -239,7 +247,7 @@ class ReactionRole(commands.Cog):
                 cur.execute(f"INSERT INTO rolebind VALUES ({guildid}, {channelid}, {msgid}, {roleid}, '{emoji}')")
                 conn.commit()
             
-        await ctx.respond(f"{ctx.author.name}, reaction-role post updated!\n{updates}")
+        await ctx.respond(f"{ctx.author.name}, reaction-roles bound to [message]({message.jump_url})!\n{updates}")
         await log("Staff", f"{ctx.author} updated reaction-role post {msglink} rolebind. {updateslog}", ctx.guild.id)
 
     @rr.command(name = "list", description = "Staff - List all reaction role posts in this guild.")

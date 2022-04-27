@@ -2,6 +2,9 @@
 
 ## Update 2022.04.27
 
+**Version v1.20.6**  
+Minor improvements and bug fixes  
+
 **Version v1.20.5**  
 Added TruckersMP realtime online member list / ping.  
 

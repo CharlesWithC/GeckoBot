@@ -1002,18 +1002,17 @@ async def vtconline(ctx, channel: discord.Option(discord.TextChannel, "Channel t
                 res += "  \n"
 
             if exceeded:
-                rres += "...\n\n*(Full member list in attached file)*\n"
+                rres += "...\n\n(Use `/vtc onlinemembers:Yes` to get full list)\n"
 
             embed = discord.Embed(title = vtc['name'], description = f"**Members trucking at the moment:**\n\n{rres}", url = f'https://truckersmp.com/vtc/{vtc["vtcid"]}', color = TMPCLR)
             embed.set_thumbnail(url = vtc["logo"])
             embed.timestamp = datetime.now()
             embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
-            embeds.append(embed)
-
+            
             f = io.BytesIO()
             f.write(res.encode())
             f.seek(0)
-            embed.set_thumbnail(url = vtc["logo"], file=discord.File(fp=f, filename="OnlineMembers.MD"))
+            embed.set_thumbnail(url = vtc["logo"])
             embed.timestamp = datetime.now()
             embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
             msg = await channel.send(embed = embed)
@@ -1240,7 +1239,7 @@ async def OnlinePing():
                         player = GetMapLoc(mpid)
                         embed.add_field(name = "Name", value = f"[{olmembers[mpid][0]}](https://truckersmp.com/user/{mpid})", inline = True)
                         embed.add_field(name = "TruckersMP ID", value = f"[{mpid}](https://truckersmp.com/user/{mpid})", inline = True)
-                        embed.add_field(name = "Role", value = f"[{olmembers[mpid][2]}](https://truckersmp.com/vtc/{vtcid}/members)", inline = True)
+                        embed.add_field(name = "Role", value = f"[{drole[olmembers[mpid][2]]}](https://truckersmp.com/vtc/{vtcid}/members)", inline = True)
                         server = ID2Server(olmembers[mpid][2])
                         if server is None:
                             server = "Unknown"
@@ -1264,12 +1263,12 @@ async def OnlinePing():
                     ss = ""
                     if len(newof) > 1:
                         ss = "s"
-                    embed = discord.Embed(title = f"{len(olmembers.keys())} member{ss} went offline!", description = b64d(msg[1]), color = TMPCLR)
-                    for mpid in olmembers.keys():
+                    embed = discord.Embed(title = f"{len(newof)} member{ss} went offline!", description = b64d(msg[1]), color = TMPCLR)
+                    for mpid in newof:
                         player = GetMapLoc(mpid)
                         embed.add_field(name = "Name", value = f"[{olmembers[mpid][0]}](https://truckersmp.com/user/{mpid})", inline = True)
                         embed.add_field(name = "TruckersMP ID", value = f"[{mpid}](https://truckersmp.com/user/{mpid})", inline = True)
-                        embed.add_field(name = "Role", value = f"[{olmembers[mpid][2]}](https://truckersmp.com/vtc/{vtcid}/members)", inline = True)
+                        embed.add_field(name = "Role", value = f"[{drole[olmembers[mpid][2]]}](https://truckersmp.com/vtc/{vtcid}/members)", inline = True)
                         
                     embed.timestamp = datetime.now()
                     embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
@@ -1392,18 +1391,17 @@ async def OnlineUpd():
                             res += "  \n"
 
                         if exceeded:
-                            rres += "...\n\n*(Full member list in attached file)*\n"
+                            rres += "...\n\n(Use `/vtc onlinemembers:Yes` to get full list)\n"
 
                         embed = discord.Embed(title = vtc['name'], description = f"**Members trucking at the moment:**\n\n{rres}", url = f'https://truckersmp.com/vtc/{vtc["vtcid"]}', color = TMPCLR)
                         embed.set_thumbnail(url = vtc["logo"])
                         embed.timestamp = datetime.now()
                         embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
-                        embeds.append(embed)
 
                         f = io.BytesIO()
                         f.write(res.encode())
                         f.seek(0)
-                        embed.set_thumbnail(url = vtc["logo"], file=discord.File(fp=f, filename="OnlineMembers.MD"))
+                        embed.set_thumbnail(url = vtc["logo"])
                         embed.timestamp = datetime.now()
                         embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
                         await message.edit(embed = embed)
