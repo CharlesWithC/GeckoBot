@@ -825,7 +825,7 @@ for cmd in ckey:
 async def HelpAutocomplete(ctx: discord.AutocompleteContext):
     if ctx.value.replace(" ","") == "":
         return list(commands.keys())[:10]
-    d = process.extract(ctx.value.lower(), commands.keys(), limit = 10, score_cutoff = 80)
+    d = process.extract(ctx.value.lower(), commands.keys(), limit = 10, score_cutoff = 40)
     ret = []
     for dd in d:
         ret.append(dd[0])
@@ -838,7 +838,7 @@ async def about(ctx):
 @bot.slash_command(name="help", description="Get help.")
 async def help(ctx, cmd: discord.Option(str, "Type category or command to get detailed help.", required = False, autocomplete = HelpAutocomplete)):
     if cmd != None:
-        d = process.extract(cmd, commands.keys(), limit = 1, score_cutoff = 80)
+        d = process.extract(cmd, commands.keys(), limit = 1, score_cutoff = 40)
         await ctx.respond(embed = discord.Embed(title = d[0][0], description=commands[d[0][0]], color = GECKOCLR))
     else:
         await ctx.respond(embed = cmdlist)

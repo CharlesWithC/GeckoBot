@@ -190,7 +190,7 @@ def CheckPremium(guild, tier):
     return False
 
 def SearchVoice(inp):
-    res = process.extract(inp, VOICES, limit = 10, score_cutoff = 80)
+    res = process.extract(inp, VOICES, limit = 10, score_cutoff = 60)
     ret = []
     for t in res:
         ret.append(t[0])

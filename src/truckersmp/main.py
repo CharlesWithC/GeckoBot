@@ -48,6 +48,8 @@ async def VTCAutocomplete(ctx: discord.AutocompleteContext):
     return SearchVTCName(ctx.value)
 
 async def ServerAutocomplete(ctx: discord.AutocompleteContext):
+    if ctx.value.replace(" ", "") == "":
+        return serverid.keys()
     return SearchServer(ctx.value)
 
 async def LocationAutocomplete(ctx: discord.AutocompleteContext):
@@ -1197,6 +1199,7 @@ async def OnlinePing():
 
                 reconn = []
                 olmembers = {}
+                ofmembers = {}
                 for member in members:
                     mpid = member["mpid"]
                     username = member["username"]
@@ -1205,6 +1208,8 @@ async def OnlinePing():
                     if ID2Player(mpid) != None:
                         pol = ID2Player(mpid)
                         olmembers[mpid] = (username, drole[roleid], pol[0], pol[1])
+                    else:
+                        ofmembers[mpid] = (username, drole[roleid])
                 
                 oldol = []
                 newof = []
@@ -1234,17 +1239,34 @@ async def OnlinePing():
                     ss = ""
                     if len(olmembers.keys()) > 1:
                         ss = "s"
-                    embed = discord.Embed(title = f"{len(olmembers.keys())} member{ss} came online!", description = b64d(msg[0]), color = TMPCLR)
+                    mmm = f"{len(olmembers.keys())} member{ss} came online!"
+                    if len(reconn) > 0:
+                        if len(olmembers.keys()) == len(reconn):
+                            mmm = f"{len(olmembers.keys())} member{ss} reconnected!"
+                        else:
+                            ss1 = ""
+                            if len(olmembers.keys()) - len(reconn) > 1:
+                                ss1 = "s"
+                            ss2 = ""
+                            if len(reconn) > 1:
+                                ss2 = "s"
+                            mmm = f"{len(olmembers.keys() - len(reconn))} member{ss1} came online, {len(reconn)} member{ss2} reconnected!"
+                    
+                    embed = discord.Embed(title = mmm, description = b64d(msg[0]), color = TMPCLR)
                     for mpid in olmembers.keys():
                         player = GetMapLoc(mpid)
                         embed.add_field(name = "Name", value = f"[{olmembers[mpid][0]}](https://truckersmp.com/user/{mpid})", inline = True)
                         embed.add_field(name = "TruckersMP ID", value = f"[{mpid}](https://truckersmp.com/user/{mpid})", inline = True)
-                        embed.add_field(name = "Role", value = f"[{drole[olmembers[mpid][2]]}](https://truckersmp.com/vtc/{vtcid}/members)", inline = True)
+                        embed.add_field(name = "Role", value = f"[{olmembers[mpid][1]}](https://truckersmp.com/vtc/{vtcid}/members)", inline = True)
                         server = ID2Server(olmembers[mpid][2])
                         if server is None:
                             server = "Unknown"
                         embed.add_field(name = "Server", value = server, inline = True)
-                        embed.add_field(name = "Player ID", value = olmembers[mpid][3], inline = True)
+                        pid = olmembers[mpid][3]
+                        if mpid in reconn:
+                            pid = pid + " (Reconnected)"
+                        embed.add_field(name = "Player ID", value = pid, inline = True)
+                        player = GetMapLoc(mpid)
                         if player != None:
                             location = player["city"] + ", " + player["country"]
                             if player["distance"] != 0:
@@ -1255,7 +1277,7 @@ async def OnlinePing():
                             embed.add_field(name = "Location", value = location, inline = False)
 
                     embed.timestamp = datetime.now()
-                    embed.set_footer(text = f"TruckersMP • TruckyApp ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+                    embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
                     
                     await channel.send(embed = embed)
                 
@@ -1265,10 +1287,9 @@ async def OnlinePing():
                         ss = "s"
                     embed = discord.Embed(title = f"{len(newof)} member{ss} went offline!", description = b64d(msg[1]), color = TMPCLR)
                     for mpid in newof:
-                        player = GetMapLoc(mpid)
-                        embed.add_field(name = "Name", value = f"[{olmembers[mpid][0]}](https://truckersmp.com/user/{mpid})", inline = True)
+                        embed.add_field(name = "Name", value = f"[{ofmembers[mpid][0]}](https://truckersmp.com/user/{mpid})", inline = True)
                         embed.add_field(name = "TruckersMP ID", value = f"[{mpid}](https://truckersmp.com/user/{mpid})", inline = True)
-                        embed.add_field(name = "Role", value = f"[{drole[olmembers[mpid][2]]}](https://truckersmp.com/vtc/{vtcid}/members)", inline = True)
+                        embed.add_field(name = "Role", value = f"[{ofmembers[mpid][1]}](https://truckersmp.com/vtc/{vtcid}/members)", inline = True)
                         
                     embed.timestamp = datetime.now()
                     embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
@@ -1336,6 +1357,8 @@ async def OnlineUpd():
                         errs.append((vtcid, channelid, messageid))
                         continue
                     else: 
+                        while (vtcid, channelid, messageid) in errs:
+                            errs.remove((vtcid, channelid, messageid))
                         cnt = 0
                         memberbyrole = {}
                         drole = {}

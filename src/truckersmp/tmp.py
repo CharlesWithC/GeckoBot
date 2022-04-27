@@ -67,7 +67,7 @@ def VTCID2Name(vtcid):
         return name
 
 def SearchVTCName(name):
-    res = process.extract(name, vtcnameid.keys(), limit = 5, score_cutoff = 80)
+    res = process.extract(name, vtcnameid.keys(), limit = 5, score_cutoff = 60)
     ret = []
     for t in res:
         ret.append(t[0])
@@ -402,7 +402,7 @@ def UpdateTMPMap():
         time.sleep(30)
 
 def SearchServer(server):
-    res = process.extract(server, traffic.keys(), limit = 10, score_cutoff = 80)
+    res = process.extract(server, traffic.keys(), limit = 10, score_cutoff = 40)
     ret = []
     for t in res:
         if t[0] == "allplayer":
@@ -416,14 +416,14 @@ def ID2Server(sid):
     return None
 
 def SearchLocation(server, loc):
-    res = process.extract(loc, location[server], limit = 10, score_cutoff = 80)
+    res = process.extract(loc, location[server], limit = 10, score_cutoff = 40)
     ret = []
     for t in res:
         ret.append(t[0])
     return ret
 
 def SearchCountry(server, loc):
-    res = process.extract(loc, country[server], limit = 10, score_cutoff = 80)
+    res = process.extract(loc, country[server], limit = 10, score_cutoff = 40)
     ret = []
     for t in res:
         ret.append(t[0])
@@ -442,6 +442,13 @@ def UpdateTMPTraffic():
     global serverid
     global idserver
     while 1:
+        r = requests.get("https://api.truckersmp.com/v2/servers")
+        if r.status_code == 200:
+            d = json.loads(r.text)["response"]
+            for dd in d:
+                serverid[dd["game"] + " " + dd["name"]] = dd["mapid"]
+                idserver[dd["mapid"]] = dd["game"] + " " + dd["name"]
+                
         r = requests.get("https://traffic.krashnz.com/api/v2/public/servers.json")
         if r.status_code != 200:
             time.sleep(10)
@@ -474,8 +481,6 @@ def UpdateTMPTraffic():
                 location[name] = []
             if not name in country.keys():
                 country[name] = []
-            serverid[name] = server["id"]
-            idserver[server["id"]] = name
             for place in d["response"]["traffic"]:
                 loc = place["name"] + ", " + place["country"]
                 if not loc in location[name]:
@@ -500,6 +505,7 @@ def UpdateTMPTraffic():
             
             traffic[name] = {"players": totplayer, "traffic": straffic, "ctraffic": ctraffic, "top": stop, "lastupd": int(time.time())}
         traffic["allplayer"] = allplayer
+
         time.sleep(180)
 
 def GetEvents(vtcid):

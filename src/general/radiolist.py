@@ -284,11 +284,11 @@ for t in radiolist:
     radiolink.append(t.split("|")[0])
 
 def SearchRadio(station):
-    station = process.extract(station, radioname, score_cutoff = 80)[0]
+    station = process.extract(station, radioname, score_cutoff = 60)[0]
     return station[0]
 
 def SearchRadioMul(station, limit = 10):
-    station = process.extract(station, radioname, limit = limit, score_cutoff = 80)[:limit]
+    station = process.extract(station, radioname, limit = limit, score_cutoff = 60)[:limit]
     ret = []
     for t in station:
         ret.append(t[0])

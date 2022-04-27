@@ -2,6 +2,12 @@
 
 ## Update 2022.04.27
 
+**Version v1.20.8**  
+Lowered score_cutoff for more autocomplete results  
+
+**Version v1.20.7**  
+Bug fixes on TruckersMP functions  
+
 **Version v1.20.6**  
 Minor improvements and bug fixes  
 
