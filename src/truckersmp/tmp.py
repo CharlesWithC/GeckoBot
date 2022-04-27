@@ -21,6 +21,7 @@ idserver = {}
 traffic = {}
 location = {}
 country = {}
+idname = {}
 
 config_txt = ""
 if sys.argv[0].endswith("main.py"):
@@ -270,15 +271,16 @@ def GetVTCMembers(vtcid, clearcache = False):
             members = []
             for dd in d:
                 members.append({"mpid": dd["user_id"], "username": dd["username"], "roleid": dd["role_id"], "joinDate": dd["joinDate"]})
-                cur.execute(f"SELECT name FROM truckersmp WHERE mpid = {dd['user_id']}")
-                p = cur.fetchall()
-                nameid[f"{dd['username']} ({dd['user_id']})"] = dd['user_id']
-                if len(p) == 0:
-                    cur.execute(f"INSERT INTO truckersmp VALUES ({dd['user_id']}, '{b64e(dd['username'])}', '', 0)")
-                else:
-                    if p[0][0] != b64e(dd["username"]):
-                        cur.execute(f"UPDATE truckersmp SET name = '{b64e(dd['username'])}' WHERE mpid = {dd['user_id']}")
-                        del nameid[f"{b64d(p[0][0])} ({dd['user_id']})"]
+                if dd['user_id'] in idname.keys() and idname[dd['user_id']] != b64e(dd['username']):
+                    cur.execute(f"SELECT name FROM truckersmp WHERE mpid = {dd['user_id']}")
+                    p = cur.fetchall()
+                    nameid[f"{dd['username']} ({dd['user_id']})"] = dd['user_id']
+                    if len(p) == 0:
+                        cur.execute(f"INSERT INTO truckersmp VALUES ({dd['user_id']}, '{b64e(dd['username'])}', '', 0)")
+                    else:
+                        if p[0][0] != b64e(dd["username"]):
+                            cur.execute(f"UPDATE truckersmp SET name = '{b64e(dd['username'])}' WHERE mpid = {dd['user_id']}")
+                            del nameid[f"{b64d(p[0][0])} ({dd['user_id']})"]
 
             cur.execute(f"SELECT members FROM vtc WHERE vtcid = {vtcid}")
             t = cur.fetchall()
@@ -357,6 +359,7 @@ def GetTMPData(mpid, clearcache = False):
 
 def UpdateTMPMap():
     global nameid
+    global idname
     global playerid 
     global ponline
     global vtcnameid
@@ -388,6 +391,7 @@ def UpdateTMPMap():
         nameid = {}
         for tt in t:
             nameid[f'{b64d(tt[1])} ({tt[0]})'] = tt[0]
+            idname[tt[0]] = tt[1]
         
         cur.execute(f"SELECT vtcid, name FROM vtc")
         t = cur.fetchall()
@@ -405,6 +409,11 @@ def SearchServer(server):
             continue
         ret.append(t[0])
     return ret
+
+def ID2Server(sid):
+    if sid in idserver.keys():
+        return idserver[sid]
+    return None
 
 def SearchLocation(server, loc):
     res = process.extract(loc, location[server], limit = 10, score_cutoff = 80)

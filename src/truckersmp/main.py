@@ -70,14 +70,12 @@ async def CountryAutocomplete(ctx: discord.AutocompleteContext):
 
 @bot.slash_command(name="truckersmp", alias=["tmp"], description="TruckersMP")
 async def truckersmp(ctx,
-        sep0: discord.Option(str, "------------------------------------------------------------------------------------------", name = "----------player-----------", required = False),
         name: discord.Option(str, "TruckersMP Name (cache)", required = False, autocomplete = PlayerAutocomplete),
         mpid: discord.Option(int, "TruckersMP ID", required = False),
         mention: discord.Option(discord.User, "Discord Mention (cache / manual bind)", required = False),
         playerid: discord.Option(int, "Player In-game ID, require server argument, this might only work for ETS2 SIM 1", required = False),
         steamid: discord.Option(str, "Steam ID (cache)", required = False),
         hrmode: discord.Option(str, "HR Mode, to get play hour and ban history", required = False, choices = ["Yes", "No"]),
-        sep1: discord.Option(str, "------------------------------------------------------------------------------------------", name = "----------traffic----------", required = False),
         server: discord.Option(str, "TruckersMP Server", required = False, autocomplete = ServerAutocomplete),
         location: discord.Option(str, "Get traffic of location, require server argument.", required = False, autocomplete = LocationAutocomplete),
         country: discord.Option(str, "Get traffic of all locations in the country, require server argument.", required = False, autocomplete = CountryAutocomplete)):
@@ -400,7 +398,8 @@ async def tmpbind(ctx, mpid: discord.Option(int, "Your TruckersMP User ID"),
 @bot.slash_command(name="vtc", description="Get information of the VTC.")
 async def vtc(ctx, vtcname: discord.Option(str, "VTC Name (cache)" , name="name", required = False, autocomplete = VTCAutocomplete),
         vtcid: discord.Option(int, "VTC ID", name="id", required = False),
-        allmembers: discord.Option(str, "Whether to show all VTC members", required = False, choices = ["Yes", "No"])):
+        allmembers: discord.Option(str, "Whether to show all members", required = False, choices = ["Yes", "No"]),
+        onlinemembers: discord.Option(str, "Whether to show online members only (this overrides 'allmembers')", required = False, choices = ["Yes", "No"])):
     await ctx.defer()
     conn = newconn()
     cur = conn.cursor()
@@ -428,9 +427,14 @@ async def vtc(ctx, vtcname: discord.Option(str, "VTC Name (cache)" , name="name"
             vtcid = t[0][0]
             name = b64d(t[0][1])
 
+    embed = discord.Embed(title = "Working...", description = "<a:loading:968445867105320980> Please allow up to 5 minutes.", color = TMPCLR)
+    embed.timestamp = datetime.now()
+    embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+    message = await ctx.respond(embed = embed)
+
     vtc = GetVTCData(vtcid)
     if vtc is None:
-        await ctx.respond(VNF)
+        await message.edit(VNF, embed = discord.Embed.Empty)
         return
 
     embed = discord.Embed(title = vtc['name'], description = vtc['slogan'], url = f'https://truckersmp.com/vtc/{vtc["vtcid"]}', color = TMPCLR)
@@ -449,20 +453,28 @@ async def vtc(ctx, vtcname: discord.Option(str, "VTC Name (cache)" , name="name"
     embed.timestamp = datetime.now()
     embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
     
-    if allmembers == "Yes":
-        content = ""
+    if allmembers == "Yes" or onlinemembers == "Yes":
         embeds = []
         embeds.append(embed)
 
         d = GetVTCMembers(vtcid)
         if d is None:
-            content = "Failed to get members"
+            embed = discord.Embed(title = "Members", description = "**Failed to get members**", url = f'https://truckersmp.com/vtc/{vtcid}/members', color = TMPCLR)
+            embed.set_thumbnail(url = vtc["logo"])
+            embed.timestamp = datetime.now()
+            embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+            embeds.append(embed)
         else:
             roles = d[0]
             members = d[1]
             if roles == [] or members == []:
-                content = "Failed to get members"
-            else:           
+                embed = discord.Embed(title = "Members", description = "**Failed to get members**", url = f'https://truckersmp.com/vtc/{vtcid}/members', color = TMPCLR)
+                embed.set_thumbnail(url = vtc["logo"])
+                embed.timestamp = datetime.now()
+                embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+                embeds.append(embed)
+            else: 
+                cnt = 0
                 memberbyrole = {}
                 drole = {}
                 for role in roles:
@@ -475,10 +487,23 @@ async def vtc(ctx, vtcname: discord.Option(str, "VTC Name (cache)" , name="name"
                     ol = "- *Offline*"
                     if ID2Player(mpid) != None:
                         pol = ID2Player(mpid)
-                        sv = idserver[pol[0]]
+                        sv = ID2Server(pol[0])
+                        if sv is None:
+                            sv = "Unknown Server"
                         pid = pol[1]
                         ol = f"- {sv} - {pid}"
+                    if ol == "- *Offline*" and onlinemembers == "Yes":
+                        continue
+                    cnt += 1
                     memberbyrole[roleid].append(f'[{username}](https://truckersmp.com/user/{mpid}) {ol}')
+                if cnt == 0:
+                    embed = discord.Embed(title = "Members", description = "**No online members**", url = f'https://truckersmp.com/vtc/{vtcid}/members', color = TMPCLR)
+                    embed.set_thumbnail(url = vtc["logo"])
+                    embed.timestamp = datetime.now()
+                    embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+                    embeds.append(embed)
+                    await message.edit(embeds = embeds)
+                    return
                 rolebyorder = {}
                 for roleid in memberbyrole:
                     rolebyorder[drole[roleid][1]] = {"name": drole[roleid][0], "members": memberbyrole[roleid]}
@@ -486,6 +511,7 @@ async def vtc(ctx, vtcname: discord.Option(str, "VTC Name (cache)" , name="name"
 
                 res = ""
                 rres = ""
+                exceeded = False
                 for role in mbr:
                     name = mbr[role]["name"]
                     members = mbr[role]["members"]
@@ -494,12 +520,17 @@ async def vtc(ctx, vtcname: discord.Option(str, "VTC Name (cache)" , name="name"
                     res += f"**{name}**  \n"
                     for member in members:
                         res += f"{member}  \n"
-                        if len(res) <= 4000:
+                        if len(res) <= 3500:
                             rres = res
+                        else:
+                            exceeded = True
                     res += "  \n"
 
-                if res != rres:
-                    rres += "...\n\n*(Full member list in attached file)*"
+                if exceeded:
+                    rres += "...\n\n*(Full member list in attached file)*\n"
+
+                res += "\nMember list is cached for **3 hours** and new members might not show up. The online status of members already cached is updated realtime."
+                rres += "\nMember list is cached for **3 hours** and new members might not show up. The online status of members already cached is updated realtime."
                     
                 embed = discord.Embed(title = "Members", description = rres, url = f'https://truckersmp.com/vtc/{vtcid}/members', color = TMPCLR)
                 embed.set_thumbnail(url = vtc["logo"])
@@ -507,18 +538,18 @@ async def vtc(ctx, vtcname: discord.Option(str, "VTC Name (cache)" , name="name"
                 embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
                 embeds.append(embed)
 
-                if res == rres:
-                    await ctx.respond(embeds = embeds)
-                else:
-                    f = io.BytesIO()
-                    f.write(res.encode())
-                    f.seek(0)
-                    await ctx.respond(embeds = embeds, file=discord.File(fp=f, filename='AllMembers.MD'))
+                f = io.BytesIO()
+                f.write(res.encode())
+                f.seek(0)
+                fn = "AllMembers.MD"
+                if onlinemembers == "Yes":
+                    fn = "OnlineMembers.MD"
+                await message.edit(embeds = embeds, file=discord.File(fp=f, filename=fn))
                 return
 
-        await ctx.respond(content = content, embed = embed)
+        await message.edit(embeds = embeds)
     else:
-        await ctx.respond(embed = embed)
+        await message.edit(embed = embed)
 
 @bot.slash_command(name="vtcbind", description="Bind your VTC to this guild")
 async def vtcbind(ctx, vtcid: discord.Option(int, "The ID of your VTC", required = True),
@@ -674,11 +705,12 @@ class EventButton(Button):
         await interaction.response.edit_message(embed = embed, view = view)    
 
 @bot.slash_command(name="vtcevents", description="Get events the VTC is attending.")
-async def vtcevents(ctx, vtcname: discord.Option(str, "VTC Name (cache)" , required = False, autocomplete = VTCAutocomplete),
-        vtcid: discord.Option(int, "Specify a VTC ID (optional if the guild is bound to a VTC)", required = False),
+async def vtcevents(ctx, vtcname: discord.Option(str, "VTC Name (cache)" , name="name", required = False, autocomplete = VTCAutocomplete),
+        vtcid: discord.Option(int, "Specify a VTC ID (optional if the guild is bound to a VTC)", name="id", required = False),
         listmode: discord.Option(str, "Show all the events in a list (or recent events + markdown file if too many)", required = False, choices = ["Yes", "No"])):
     conn = newconn()
     cur = conn.cursor()
+    await ctx.defer()
     if vtcid is None:
         if vtcname != None:
             vtc = vtcname.replace(" ", "")
@@ -702,14 +734,13 @@ async def vtcevents(ctx, vtcname: discord.Option(str, "VTC Name (cache)" , requi
                 return
             vtcid = t[0][0]
             name = b64d(t[0][1])
-    
-    await ctx.defer()
+
     d = GetEvents(vtcid)
     if d is None:
-        await ctx.respond(f"TruckersMP API request failed, or there's no events the VTC is attending.", ephemeral = True)
+        await ctx.respond(f"TruckersMP API request failed, or there's no events the VTC is attending.", embed = discord.Embed.Empty)
         return
     if len(d) == 0:
-        await ctx.respond(f"The VTC is not attending any events.", ephemeral = True)
+        await ctx.respond(f"The VTC is not attending any events.", embed = discord.Embed.Empty)
         return
     if listmode == "Yes":
         msg = ""

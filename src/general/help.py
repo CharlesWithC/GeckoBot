@@ -686,8 +686,10 @@ If you want to look up a player using `{steamid}`, a normal lookup is needed to 
 **HR mode**
 `/truckersmp {optional: name} {optional: mpid} {optional: playerid, require server} {optional: steamid} {required: hrmode = Yes}` - In addition to all the basic player information, get their steam play hour of ETS2 and ATS, as well as their TruckersMP ban count and history.
 
-**VTC Events**
-`/vtcevents {optional: vtcid} {optional: listmode}` - Get the events a VTC is attending, if `{vtcid}` is not specified, get the events of the VTC the guild is bound to.
+**VTC**
+`/vtc {optional: name} {optional: id} {optional: allmembers} {optional: onlinemembers}` - Get information of a VTC, and include all members or all online members.
+**NOTE** VTC Members are cached for 3 hours and new members might not show up. Online status is updated realtime for cached members.
+`/vtcevents {optional: name} {optional: id} {optional: listmode}` - Get the events a VTC is attending, if `{vtcid}` is not specified, get the events of the VTC the guild is bound to.
 If {listmode} is set to yes, all the events the VTC is attending will be displayed in a list. If the message is too long, it will only show the most recent ones, and a file will be attached for all the events.
 
 To bind the guild to a VTC, make sure Gecko can see all the invite links, and there's a valid invite link on TruckersMP. Then use `/vtcbind {required: vtcid}` to bind your VTC.
@@ -701,6 +703,14 @@ Make sure you have bound it on TruckersMP first, and made it public visible, or 
 To unbind, set {unbind} to "Yes".
 
 Usage: `/tmpbind {required: mpid} {optional: unbind}`""",
+
+        "vtc": """<:truckersmp:964343306626662430> **TruckersMP**
+Get information of a VTC, and include all members or all online members.
+
+**NOTE** VTC Members are cached for 3 hours and new members might not show up. Online status is updated realtime for cached members.
+For large VTCs with a lot of members, member query might be slow for first time query.
+
+Usage: `/vtc {optional: name} {optional: id} {optional: allmembers} {optional: onlinemembers}`""",
 
         "vtcbind": """<:truckersmp:964343306626662430> **TruckersMP**
 Bind a VTC with the guild.

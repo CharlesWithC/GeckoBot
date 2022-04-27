@@ -33,8 +33,14 @@ async def LangAutocomplete(ctx: discord.AutocompleteContext):
 
 @bot.slash_command(name="translate", description="Translate text")
 async def translate(ctx, text: discord.Option(str, "Text to translate"), 
-        tolang: discord.Option(str, "Translate into what language, default English", default="English", required = False, autocomplete = LangAutocomplete)):
-    await ctx.defer()
+        tolang: discord.Option(str, "Translate into what language, default English", default="English", required = False, autocomplete = LangAutocomplete),
+        ephemeral: discord.Option(str, "Whether to make the result visible only to you", required = False, choices = ["Yes", "No"])):
+    if ephemeral == "Yes":
+        ephemeral = True
+    else:
+        ephemeral = False
+    if not ephemeral:
+        await ctx.defer()
     tolang = tolang.lower()
     if len(tolang) == 2 and tolang in code2name.keys():
         tolang = code2name[tolang]
@@ -78,7 +84,7 @@ async def translate(ctx, text: discord.Option(str, "Text to translate"),
     embed.set_author(name = f"{ctx.author.name}#{ctx.author.discriminator}", icon_url = avatar)
     embed.set_footer(text = f"{res[1]} -> {res[2]} • {TRANSLATE} ", icon_url = GECKOICON)
 
-    await ctx.respond(embed = embed)
+    await ctx.respond(embed = embed, ephemeral = ephemeral)
 
 @tbot.command(aliases=['translate', 'tr'], description="Reply to a text to translate it, default to English")
 async def ttranslate(ctx):

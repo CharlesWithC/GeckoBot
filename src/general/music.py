@@ -23,7 +23,7 @@ def search(arg):
         try:
             get(arg) 
         except:
-            video = ydl.extract_info(f"ytsearch:{arg}", download=False)['entries'][0]
+            video = ydl.extract_info(f"ytsearch1:{arg}", download=False)['entries'][0]
         else:
             video = ydl.extract_info(arg, download=False)
     return video
