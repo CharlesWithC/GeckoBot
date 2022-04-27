@@ -690,6 +690,8 @@ class ManageButton(commands.Cog):
                 style = BTNSTYLE[color]
                 uniq = f"{randint(1,100000)}{int(time()*100000)}"
                 custom_id = "GeckoButton-"+str(btnid)+"-"+uniq
+                if url != None:
+                    custom_id = None
                 button = GeckoButton(label, url, style, data["disabled"], custom_id)
                 view.add_item(button)
                 cur.execute(f"INSERT INTO buttonview VALUES ({btnid}, '{custom_id}')")
@@ -769,11 +771,15 @@ class ManageButton(commands.Cog):
                 style = BTNSTYLE[color]
                 uniq = f"{randint(1,100000)}{int(time()*100000)}"
                 custom_id = "GeckoButton-"+str(btnid)+"-"+uniq
+                if url != None:
+                    custom_id = None
                 button = GeckoButton(label, url, style, data["disabled"], custom_id)
                 view.add_item(button)
                 cur.execute(f"INSERT INTO buttonview VALUES ({btnid}, '{custom_id}')")
                 conn.commit()
             except:
+                import traceback
+                traceback.print_exc()
                 await ctx.respond(f"Button ID {buttonid[i]} is invalid.", ephemeral = True)
                 return
 
@@ -843,6 +849,8 @@ class ManageButton(commands.Cog):
             style = BTNSTYLE[color]
             uniq = f"{randint(1,100000)}{int(time()*100000)}"
             custom_id = "GeckoButton-"+str(btnid)+"-"+uniq
+            if url != None:
+                custom_id = None
             button = GeckoButton(label, url, style, data["disabled"], custom_id)
             newview.add_item(button)
             cur.execute(f"DELETE FROM buttonview WHERE buttonid = {btnid} AND customid = '{child.custom_id}'")

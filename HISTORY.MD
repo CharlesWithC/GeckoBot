@@ -2,6 +2,9 @@
 
 ## Update 2022.04.27
 
+**Version v1.20.9**  
+Bug fix on URL Buttons  
+
 **Version v1.20.8**  
 Lowered score_cutoff for more autocomplete results  
 
