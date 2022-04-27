@@ -132,7 +132,7 @@ async def SetChannel(ctx, category: discord.Option(str, "The category of message
             cur.execute(f"UPDATE channelbind SET channelid = {channel} WHERE guildid = {guild.id} AND category = '{category}'")
         conn.commit()
         if channel != 0:
-            await ctx.respond(f"<#{channel}> has been configured as {category} channel.\nMake sure I always have access to it.\nUnless you want to stop dealing with those messages, then delete the channel.")
+            await ctx.respond(f"<#{channel}> has been configured as {category} channel.")
         else:
             await ctx.respond(f"Members can use {category} commands in any channels.")
             

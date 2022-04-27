@@ -184,7 +184,7 @@ async def SetChannel(ctx, category: str, channel: str):
         cur.execute(f"UPDATE channelbind SET channelid = {channel} WHERE guildid = {guild.id} AND category = '{category}'")
     conn.commit()
     if channel != 0:
-        await ctx.send(f"<#{channel}> has been configured as {category} channel.\nMake sure I always have access to it.\nUnless you want to stop dealing with those messages, then delete the channel.")
+        await ctx.send(f"<#{channel}> has been configured as {category} channel.")
     else:
         await ctx.send(f"Members can use {category} commands in any channels.")
             

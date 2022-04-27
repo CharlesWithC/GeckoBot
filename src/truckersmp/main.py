@@ -823,9 +823,212 @@ async def vtcevents(ctx, vtcname: discord.Option(str, "VTC Name (cache)" , name=
 
     await ctx.respond(embed = embed, view = view)
 
+@bot.slash_command(name="vtcping", description="Send a message when a member come online.")
+async def vtconlineping(ctx, channel: discord.Option(discord.TextChannel, "Channel to send the message", required = True),
+        olmsg: discord.Option(str, "Message to add in the embed when members come online", required = False),
+        ofmsg: discord.Option(str, "Message to add in the embed when members go offline", required = False),
+        disable: discord.Option(bool, "Disable the ping", required = False)):
+    
+    premium = GetPremium(ctx.guild)
+    if premium == 0:
+        await ctx.respond(f"Member online ping is premium only.", ephemeral = True)
+        return
+
+    if ctx.guild is None:
+        await ctx.respond("You can only run this command in guilds!")
+        return
+    guildid = ctx.guild.id
+    if not isStaff(ctx.guild, ctx.author):
+        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+        return
+    
+    await ctx.defer()
+
+    conn = newconn()
+    cur = conn.cursor()
+
+    channelid = channel.id
+    msg = "|"
+    if olmsg != None:
+        msg = b64e(olmsg) + "|"
+    if ofmsg != None:
+        msg = msg + b64e(ofmsg)
+    
+    if disable == "Yes":
+        cur.execute(f"SELECT * FROM onlineping WHERE guildid = {ctx.guild.id}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond("Member online pings not enabled!")
+            return
+        cur.execute(f"DELETE FROM onlineping WHERE guildid = {ctx.guild.id}")
+        conn.commit()
+
+        await ctx.respond("Member online pings disabled!")
+    else:
+        cur.execute(f"SELECT vtcid FROM vtcbind WHERE guildid = {ctx.guild.id}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond("This guild is not bound to a VTC!\nUse `/vtcbind` to bind it first.", ephemeral = True)
+            return
+        vtcid = t[0][0]
+
+        cur.execute(f"SELECT * FROM onlineping WHERE guildid = {ctx.guild.id}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            cur.execute(f"INSERT INTO onlineping VALUES ({ctx.guild.id}, {vtcid}, {channelid}, '{b64e(msg)}')")
+        else:
+            cur.execute(f"UPDATE onlineping SET vtcid = {vtcid}, channelid = {channelid}, msg = '{msg}' WHERE guildid = {ctx.guild.id}")
+        conn.commit()
+        
+        await ctx.respond("Member online pings enabled!")
+
+@bot.slash_command(name="vtconline", description="Post an embed containing members online and keep it updated. | Delete message to disabled.")
+async def vtconline(ctx, channel: discord.Option(discord.TextChannel, "Channel to post the embed", required = True)):
+    premium = GetPremium(ctx.guild)
+    if premium == 0:
+        await ctx.respond(f"Member online ping is premium only.", ephemeral = True)
+        return
+
+    await ctx.defer()
+
+    if ctx.guild is None:
+        await ctx.respond("You can only run this command in guilds!")
+        return
+    guildid = ctx.guild.id
+    if not isStaff(ctx.guild, ctx.author):
+        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+        return
+
+    conn = newconn()
+    cur = conn.cursor()
+
+    cur.execute(f"SELECT vtcid, name FROM vtcbind WHERE guildid = {ctx.guild.id}")
+    t = cur.fetchall()
+    if len(t) == 0:
+        await ctx.respond("This guild is not bound to a VTC!\nUse `/vtcbind` to bind it first.", ephemeral = True)
+        return
+    vtcid = t[0][0]
+    name = b64d(t[0][1])
+
+    embed = discord.Embed(title = "Working...", description = "<a:loading:968445867105320980> Please allow up to 5 minutes.", color = TMPCLR)
+    embed.timestamp = datetime.now()
+    embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+    message = await ctx.respond(embed = embed)
+
+    vtc = GetVTCData(vtcid)
+    if vtc is None:
+        await message.edit(VNF, embed = discord.Embed.Empty)
+        return
+
+    d = GetVTCMembers(vtcid)
+    if d is None:
+        embed = discord.Embed(title = "Failed", description = "I cannot get members. Make sure it's public visible and try again later.", url = f'https://truckersmp.com/vtc/{vtcid}/members', color = TMPCLR)
+        embed.set_thumbnail(url = vtc["logo"])
+        embed.timestamp = datetime.now()
+        embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+        await message.edit(embed = embed)
+        return
+    else:
+        roles = d[0]
+        members = d[1]
+        if roles == [] or members == []:
+            embed = discord.Embed(title = "Failed", description = "I cannot get members. Make sure it's public visible and try again later.", url = f'https://truckersmp.com/vtc/{vtcid}/members', color = TMPCLR)
+            embed.set_thumbnail(url = vtc["logo"])
+            embed.timestamp = datetime.now()
+            embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+            await message.edit(embed = embed)
+            return
+        else: 
+            cnt = 0
+            memberbyrole = {}
+            drole = {}
+            for role in roles:
+                memberbyrole[role["roleid"]] = []
+                drole[role["roleid"]] = (role["name"], role["order"])
+            for member in members:
+                mpid = member["mpid"]
+                username = member["username"]
+                roleid = member["roleid"]
+                ol = "- *Offline*"
+                if ID2Player(mpid) != None:
+                    pol = ID2Player(mpid)
+                    sv = ID2Server(pol[0])
+                    if sv is None:
+                        sv = "Unknown Server"
+                    pid = pol[1]
+                    ol = f"- {sv} - {pid}"
+                if ol == "- *Offline*":
+                    continue
+                cnt += 1
+                memberbyrole[roleid].append(f'[{username}](https://truckersmp.com/user/{mpid}) {ol}')
+            if cnt == 0:
+                embed = discord.Embed(title = vtc['name'], description = "**Members trucking at the moment:**\n\n*No member is online.*", url = f'https://truckersmp.com/vtc/{vtc["vtcid"]}', color = TMPCLR)
+                
+                embed.set_thumbnail(url = vtc["logo"])
+                embed.timestamp = datetime.now()
+                embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+                msg = await channel.send(embed = embed)
+
+                cur.execute(f"INSERT INTO onlineupd VALUES ({vtcid}, {channel.id}, {msg.id})")
+                conn.commit()
+                
+                embed = discord.Embed(title = "Done", description = f"Online member list will be updated at <#{channel.id}>", color = TMPCLR)
+                embed.timestamp = datetime.now()
+                embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+                await message.edit(embed = embed)
+
+                return
+
+            rolebyorder = {}
+            for roleid in memberbyrole:
+                rolebyorder[drole[roleid][1]] = {"name": drole[roleid][0], "members": memberbyrole[roleid]}
+            mbr = collections.OrderedDict(sorted(rolebyorder.items()))
+
+            res = ""
+            rres = ""
+            exceeded = False
+            for role in mbr:
+                name = mbr[role]["name"]
+                members = mbr[role]["members"]
+                if len(members) == 0:
+                    continue
+                res += f"**{name}**  \n"
+                for member in members:
+                    res += f"{member}  \n"
+                    if len(res) <= 3500:
+                        rres = res
+                    else:
+                        exceeded = True
+                res += "  \n"
+
+            if exceeded:
+                rres += "...\n\n*(Full member list in attached file)*\n"
+
+            embed = discord.Embed(title = vtc['name'], description = f"**Members trucking at the moment:**\n\n{rres}", url = f'https://truckersmp.com/vtc/{vtc["vtcid"]}', color = TMPCLR)
+            embed.set_thumbnail(url = vtc["logo"])
+            embed.timestamp = datetime.now()
+            embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+            embeds.append(embed)
+
+            f = io.BytesIO()
+            f.write(res.encode())
+            f.seek(0)
+            embed.set_thumbnail(url = vtc["logo"], file=discord.File(fp=f, filename="OnlineMembers.MD"))
+            embed.timestamp = datetime.now()
+            embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+            msg = await channel.send(embed = embed)
+            cur.execute(f"INSERT INTO onlineupd VALUES ({vtcid}, {channel.id}, {msg.id})")
+            conn.commit()
+            
+            embed = discord.Embed(title = "Done", description = f"Online member list will be updated at <#{channel.id}>", color = TMPCLR)
+            embed.timestamp = datetime.now()
+            embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+            await message.edit(embed = embed)
+            return
+
 @bot.slash_command(name="vtceventping", description="Send a message one hour before and the time an event starts.")
 async def vtceventping(ctx, channel: discord.Option(discord.TextChannel, "Channel to send the message", required = True),
-        msg: discord.Option(str, "Message to send, can contain @role pings", required = False),
+        msg: discord.Option(str, "Message to send, you can add @role to ping members", required = False),
         disable: discord.Option(str, "Disable event ping", required = False, choices = ["Yes", "No"])):
 
     if ctx.guild is None:
@@ -967,4 +1170,251 @@ async def EventPing():
 
         await asyncio.sleep(30)
 
+async def OnlinePing():
+    await bot.wait_until_ready()
+    await asyncio.sleep(5)
+    
+    while not bot.is_closed():
+        conn = newconn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT guildid, vtcid, channelid, msg FROM onlineping")
+        t = cur.fetchall()
+        for tt in t:
+            try:
+                guildid = tt[0]
+                vtcid = tt[1]
+                channelid = tt[2]
+                channel = bot.get_channel(channelid)
+                if channel is None:
+                    continue
+                msg = tt[3].split("|")
+                
+                d = GetVTCMembers(vtcid)
+                roles = d[0]
+                members = d[1]
+                drole = {}
+                for role in roles:
+                    drole[role["roleid"]] = role["name"]
+
+                reconn = []
+                olmembers = {}
+                for member in members:
+                    mpid = member["mpid"]
+                    username = member["username"]
+                    roleid = member["roleid"]
+                    ol = "- *Offline*"
+                    if ID2Player(mpid) != None:
+                        pol = ID2Player(mpid)
+                        olmembers[mpid] = (username, drole[roleid], pol[0], pol[1])
+                
+                oldol = []
+                newof = []
+                cur.execute(f"SELECT mpid, serverid, playerid FROM onlinepinged WHERE vtcid = {vtcid}")
+                p = cur.fetchall()
+                for pp in p:
+                    mpid = pp[0]
+                    oldol.append(mpid)
+                    serverid = pp[1]
+                    playerid = pp[2]
+                    if mpid in olmembers.keys():
+                        if olmembers[mpid][2] == serverid and olmembers[mpid][3] == playerid:
+                            del olmembers[mpid] # already pinged
+                        else:
+                            reconn.append(mpid)
+                            cur.execute(f"UPDATE onlinepinged SET serverid = {olmembers[mpid][2]}, playerid = {olmembers[mpid][3]} WHERE vtcid = {vtcid} AND mpid = {mpid}")
+                            # update member serverid & playerid
+                    else: # member went offline
+                        cur.execute(f"DELETE FROM onlinepinged WHERE vtcid = {vtcid} AND mpid = {mpid}")
+                        newof.append(mpid)
+                for mpid in olmembers.keys():
+                    if not mpid in oldol: # member went online
+                        cur.execute(f"INSERT INTO onlinepinged VALUES ({vtcid}, {mpid}, {olmembers[mpid][2]}, {olmembers[mpid][3]})")
+                conn.commit()
+
+                if len(olmembers.keys()) > 0:
+                    ss = ""
+                    if len(olmembers.keys()) > 1:
+                        ss = "s"
+                    embed = discord.Embed(title = f"{len(olmembers.keys())} member{ss} came online!", description = b64d(msg[0]), color = TMPCLR)
+                    for mpid in olmembers.keys():
+                        player = GetMapLoc(mpid)
+                        embed.add_field(name = "Name", value = f"[{olmembers[mpid][0]}](https://truckersmp.com/user/{mpid})", inline = True)
+                        embed.add_field(name = "TruckersMP ID", value = f"[{mpid}](https://truckersmp.com/user/{mpid})", inline = True)
+                        embed.add_field(name = "Role", value = f"[{olmembers[mpid][2]}](https://truckersmp.com/vtc/{vtcid}/members)", inline = True)
+                        server = ID2Server(olmembers[mpid][2])
+                        if server is None:
+                            server = "Unknown"
+                        embed.add_field(name = "Server", value = server, inline = True)
+                        embed.add_field(name = "Player ID", value = olmembers[mpid][3], inline = True)
+                        if player != None:
+                            location = player["city"] + ", " + player["country"]
+                            if player["distance"] != 0:
+                                dis = player['distance']
+                                if dis > 10:
+                                    dis = int(dis)
+                                location = f"Near **{location}**"
+                            embed.add_field(name = "Location", value = location, inline = False)
+
+                    embed.timestamp = datetime.now()
+                    embed.set_footer(text = f"TruckersMP • TruckyApp ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+                    
+                    await channel.send(embed = embed)
+                
+                if len(newof) > 0:
+                    ss = ""
+                    if len(newof) > 1:
+                        ss = "s"
+                    embed = discord.Embed(title = f"{len(olmembers.keys())} member{ss} went offline!", description = b64d(msg[1]), color = TMPCLR)
+                    for mpid in olmembers.keys():
+                        player = GetMapLoc(mpid)
+                        embed.add_field(name = "Name", value = f"[{olmembers[mpid][0]}](https://truckersmp.com/user/{mpid})", inline = True)
+                        embed.add_field(name = "TruckersMP ID", value = f"[{mpid}](https://truckersmp.com/user/{mpid})", inline = True)
+                        embed.add_field(name = "Role", value = f"[{olmembers[mpid][2]}](https://truckersmp.com/vtc/{vtcid}/members)", inline = True)
+                        
+                    embed.timestamp = datetime.now()
+                    embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+                    
+                    await channel.send(embed = embed)
+            
+            except:
+                import traceback
+                traceback.print_exc()
+                continue
+
+        await asyncio.sleep(30)
+
+async def OnlineUpd():
+    await bot.wait_until_ready()
+    await asyncio.sleep(5)
+    errs = []
+    while not bot.is_closed():
+        conn = newconn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT vtcid, channelid, messageid FROM onlineupd")
+        t = cur.fetchall()
+        for tt in t:
+            try:
+                vtcid = tt[0]
+                channelid = tt[1]
+                messageid = tt[2]
+                if errs.count((vtcid, channelid, messageid)) > 5:
+                    cur.execute(f"DELETE FROM onlineupd WHERE vtcid = {vtcid} AND channelid = {channelid} AND messageid = {messageid}")
+                    conn.commit()
+                    try:
+                        cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'error'")
+                        t = cur.fetchall()
+                        if len(t) != 0:
+                            errchannelid = t[0][0]
+                            errchannel = bot.get_channel(errchannelid)
+                            embed = discord.Embed(title=f"Staff Notice", description=f"Too many errors occurred will updating online VTC members. The embed will no longer be updated.\nMake sure VTC member list is public and the message is not deleted.", color=0x0000DD)
+                            await errchannel.send(embed=embed)
+                    except Exception as e:
+                        pass
+                    continue
+
+                channel = bot.get_channel(channelid)
+                if channel is None:
+                    errs.append((vtcid, channelid, messageid))
+                    continue
+                message = await channel.fetch_message(messageid)
+                if message is None:
+                    errs.append((vtcid, channelid, messageid))
+                    continue
+
+                vtc = GetVTCData(vtcid)
+                if vtc is None:
+                    errs.append((vtcid, channelid, messageid))
+                    continue
+
+                d = GetVTCMembers(vtcid)
+                if d is None:
+                    errs.append((vtcid, channelid, messageid))
+                    continue
+                else:
+                    roles = d[0]
+                    members = d[1]
+                    if roles == [] or members == []:
+                        errs.append((vtcid, channelid, messageid))
+                        continue
+                    else: 
+                        cnt = 0
+                        memberbyrole = {}
+                        drole = {}
+                        for role in roles:
+                            memberbyrole[role["roleid"]] = []
+                            drole[role["roleid"]] = (role["name"], role["order"])
+                        for member in members:
+                            mpid = member["mpid"]
+                            username = member["username"]
+                            roleid = member["roleid"]
+                            ol = "- *Offline*"
+                            if ID2Player(mpid) != None:
+                                pol = ID2Player(mpid)
+                                sv = ID2Server(pol[0])
+                                if sv is None:
+                                    sv = "Unknown Server"
+                                pid = pol[1]
+                                ol = f"- {sv} - {pid}"
+                            if ol == "- *Offline*":
+                                continue
+                            cnt += 1
+                            memberbyrole[roleid].append(f'[{username}](https://truckersmp.com/user/{mpid}) {ol}')
+                        if cnt == 0:
+                            embed = discord.Embed(title = vtc['name'], description = "**Members trucking at the moment:**\n\n*No member is online.*", url = f'https://truckersmp.com/vtc/{vtc["vtcid"]}', color = TMPCLR)
+                            
+                            embed.set_thumbnail(url = vtc["logo"])
+                            embed.timestamp = datetime.now()
+                            embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+                            await message.edit(embed = embed)
+
+                            continue
+
+                        rolebyorder = {}
+                        for roleid in memberbyrole:
+                            rolebyorder[drole[roleid][1]] = {"name": drole[roleid][0], "members": memberbyrole[roleid]}
+                        mbr = collections.OrderedDict(sorted(rolebyorder.items()))
+
+                        res = ""
+                        rres = ""
+                        exceeded = False
+                        for role in mbr:
+                            name = mbr[role]["name"]
+                            members = mbr[role]["members"]
+                            if len(members) == 0:
+                                continue
+                            res += f"**{name}**  \n"
+                            for member in members:
+                                res += f"{member}  \n"
+                                if len(res) <= 3500:
+                                    rres = res
+                                else:
+                                    exceeded = True
+                            res += "  \n"
+
+                        if exceeded:
+                            rres += "...\n\n*(Full member list in attached file)*\n"
+
+                        embed = discord.Embed(title = vtc['name'], description = f"**Members trucking at the moment:**\n\n{rres}", url = f'https://truckersmp.com/vtc/{vtc["vtcid"]}', color = TMPCLR)
+                        embed.set_thumbnail(url = vtc["logo"])
+                        embed.timestamp = datetime.now()
+                        embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+                        embeds.append(embed)
+
+                        f = io.BytesIO()
+                        f.write(res.encode())
+                        f.seek(0)
+                        embed.set_thumbnail(url = vtc["logo"], file=discord.File(fp=f, filename="OnlineMembers.MD"))
+                        embed.timestamp = datetime.now()
+                        embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+                        await message.edit(embed = embed)
+            except:
+                import traceback
+                traceback.print_exc()
+                errs.append((vtcid, channelid, messageid))
+                pass
+
+        await asyncio.sleep(30)
+
 bot.loop.create_task(EventPing())
+bot.loop.create_task(OnlinePing())
+bot.loop.create_task(OnlineUpd())

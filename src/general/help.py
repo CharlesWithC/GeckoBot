@@ -28,7 +28,7 @@ Use `/help` in bot for detailed help.
 
 <:truckersmp:964343306626662430> **TruckersMP**
 Various **TruckersMP** functions are supported for VTCs!  
-Including **traffic / player lookup**, **HR mode** and **VTC events**  
+Including **traffic / player lookup**, **HR mode** and **VTC info / members / events**, and get updates when members come online!  
 Find out more by `/help truckersmp`
 
 **Gecko Ranking**
@@ -670,7 +670,7 @@ Usage: `/dlsuggestion`"""
 
     "truckersmp": {
         "description": """<:truckersmp:964343306626662430> **TruckersMP**
-Gecko supports various **TruckersMP** functions, including **traffic / player lookup**, **HR mode** and **VTC events**.
+Gecko supports various **TruckersMP** functions, including **traffic / player lookup**, **HR mode**, **VTC info / members / events**, and updates when members come online.
 
 **Traffic lookup** 
 `/truckersmp` - General server information.
@@ -689,6 +689,8 @@ If you want to look up a player using `{steamid}`, a normal lookup is needed to 
 **VTC**
 `/vtc {optional: name} {optional: id} {optional: allmembers} {optional: onlinemembers}` - Get information of a VTC, and include all members or all online members.
 **NOTE** VTC Members are cached for 3 hours and new members might not show up. Online status is updated realtime for cached members.
+`/vtconline {required: channel}` - Post an embed containing online members and keep it updated.
+`/vtcping {required: channel} {optional: msg} {optional: disable}` - Get a message when a member came online / went offline.
 `/vtcevents {optional: name} {optional: id} {optional: listmode}` - Get the events a VTC is attending, if `{vtcid}` is not specified, get the events of the VTC the guild is bound to.
 If {listmode} is set to yes, all the events the VTC is attending will be displayed in a list. If the message is too long, it will only show the most recent ones, and a file will be attached for all the events.
 
@@ -720,6 +722,18 @@ Make sure you Gecko can see all invite links the guild has, and there's a valid 
 To unbind, set {unbind} to "Yes".
 
 Usage: `/vtcbind {required: vtcid} {optional: unbind}`""",
+
+        "vtcping": """<:truckersmp:964343306626662430> **TruckersMP**
+Send a (custom) message when a member came online / went offline.
+
+Usage: `/vtcping {required: channel} {optional: msg} {optional: disable}`""",
+
+        "vtconline": """<:truckersmp:964343306626662430> **TruckersMP**
+Post an embed containing online members and keep it updated.
+
+To stop the update, simply delete the message.
+
+Usage: `/vtconline {required: channel}`""",
 
         "vtceventping": """<:truckersmp:964343306626662430> **TruckersMP**
 Send a (custom) message before 1 hour and 5 minutes an event is starting.
