@@ -15,6 +15,7 @@ from datetime import datetime
 from random import randint
 import io
 import validators
+import chat_exporter, minify_html 
 
 from bot import bot
 from settings import *
@@ -60,26 +61,15 @@ class GeckoButton(Button):
                     await interaction.response.edit_message(embed = embed, view = None)
                     channel = bot.get_channel(channelid)
                     await channel.set_permissions(guild.default_role, send_messages = False)
+                    await channel.edit(name = f"closed-ticket-{ticketid}")
                     
-                    messages = await channel.history().flatten()
-                    data = []
-                    for message in messages:
-                        author = message.author
-                        if author.bot:
-                            author = f"**{author.name}#{author.discriminator}** (`{author.id}`)"
-                            author += " ***BOT***"     
-                        else:
-                            author = f"**{author.name}#{author.discriminator}** (`{author.id}`)"
-                        timestamp = message.created_at.timestamp()
-                        content = message.content
-                        if content == "" or content is None:
-                            content = "*No content*"
-                        data.append({"author": author, "timestamp": timestamp, "content": content})
-                    data = b64e(json.dumps(data))
-
+                    data = await chat_exporter.export(channel)
+                    data = data.replace(f"Channel: closed-ticket-{ticketid}", f"Ticket {ticketid}")
+                    data = minify_html.minify(data, minify_js=True, minify_css=True, remove_processing_instructions=True, remove_bangs=True)
+                    
                     closedBy = userid
                     closedTs = int(time())
-                    cur.execute(f"UPDATE ticketrecord SET data = '{data}', closedBy = {closedBy}, closedTs = {closedTs} WHERE ticketid = {ticketid}")
+                    cur.execute(f"UPDATE ticketrecord SET data = '{b64e(data)}', closedBy = {closedBy}, closedTs = {closedTs} WHERE ticketid = {ticketid}")
                     cur.execute(f"DELETE FROM buttonview WHERE buttonid = {-ticketid}")
                     conn.commit()
 
@@ -102,15 +92,6 @@ class GeckoButton(Button):
                     try:
                         creator = bot.get_user(creator)
                         dmchannel = await creator.create_dm()
-
-                        msgs = ""
-                        data = json.loads(b64d(data))
-                        for d in data:
-                            author = d["author"]
-                            timestamp = d["timestamp"]
-                            content = d["content"]
-                            dt = datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S UTC")
-                            msgs += f"{author} [{dt}]:  \n{content}  \n\n"
                         
                         embed = discord.Embed(title = "Ticket Record", description = "Conversation record in attached file", color = GECKOCLR)
                         embed.add_field(name = "Created By", value = f"<@{creator.id}> (`{creator.id}`)", inline = True)
@@ -119,10 +100,7 @@ class GeckoButton(Button):
                         embed.timestamp = datetime.now()
                         embed.set_footer(text = f"Gecko Ticket • ID: {ticketid} ", icon_url = GECKOICON)
 
-                        f = io.BytesIO()
-                        f.write(msgs.encode())
-                        f.seek(0)
-                        await dmchannel.send(embed = embed, file=discord.File(fp=f, filename='TicketRecord.MD'))
+                        await dmchannel.send(embed = embed, file=discord.File(io.BytesIO(data.encode()), filename=f"Ticket-{ticketid}.html"))
                     except:
                         pass
                 except:

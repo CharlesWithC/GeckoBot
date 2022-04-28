@@ -379,15 +379,6 @@ class ManageTicket(commands.Cog):
 
         closedBy = f"<@{closedBy}> (`{closedBy}`)"
         
-        msgs = ""
-        data = json.loads(b64d(data))
-        for d in data:
-            author = d["author"]
-            timestamp = d["timestamp"]
-            content = d["content"]
-            dt = datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S UTC")
-            msgs += f"{author} [{dt}]:  \n{content}  \n\n"
-        
         embed = discord.Embed(title = "Ticket Record", description = "Conversation record in attached file", color = GECKOCLR)
         embed.add_field(name = "Created By", value = f"<@{creator}> (`{creator}`)", inline = True)
         if closedBy != 0:
@@ -396,10 +387,7 @@ class ManageTicket(commands.Cog):
         embed.timestamp = datetime.now()
         embed.set_footer(text = f"Gecko Ticket • ID: {ticketid} ", icon_url = GECKOICON)
 
-        f = io.BytesIO()
-        f.write(msgs.encode())
-        f.seek(0)
-        await ctx.respond(embed = embed, file=discord.File(fp=f, filename='TicketRecord.MD'))
+        await ctx.respond(embed = embed, file=discord.File(io.BytesIO(b64d(data).encode()), filename=f"Ticket-{ticketid}.html"))
 
     @manage.command(name="deleterecord", description="Delete ticket records. Use '/ticket listrecord' to get a file of all ticket records in this guild.")
     async def deleterecord(self, ctx, ticketid: discord.Option(int, "Ticket record id, displayed when ticket is created, NOT ticket category id")):

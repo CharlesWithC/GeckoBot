@@ -2,6 +2,9 @@
 
 ## Update 2022.04.28
 
+**Version v1.21.1**  
+Improved Ticket System + `/transcript`  
+
 **Version v1.21**  
 Added Gecko Ticket Function  
 

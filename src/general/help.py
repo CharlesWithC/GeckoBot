@@ -842,6 +842,12 @@ DM a member through Gecko.
 
 Usage: `/dm {required: @member} {required: msg} {optional: showauthor}`""",
 
+    "transcript": """**Staff only command**
+
+Create transcript of a channel.
+
+Usage: `/transcript {optional: channel} {optional: limit}`""",
+
     "tts": """Turn text into speech and speak it in voice channel.
 
 Usage: `/tts {required: text} {optional: gender, default male} {optional: speed, default 1}`"""

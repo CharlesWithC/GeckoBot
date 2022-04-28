@@ -9,6 +9,7 @@ import asyncio
 import sys, os
 from time import time
 from datetime import datetime
+import chat_exporter, minify_html, io
 
 from bot import bot, shard
 from db import newconn
@@ -203,3 +204,22 @@ async def dm(ctx, user: discord.Option(discord.User, "Member to DM, must be in t
         import traceback
         traceback.print_exc()
         await ctx.respond(f"I cannot DM the member", ephemeral = True)
+
+@bot.slash_command(name="transcript", description="Create a transcript of the channel")
+async def transcript(ctx, channel: discord.Option(discord.TextChannel, "Channel to create transcript, default the channel where command is executed", required = False),
+        limit: discord.Option(int, "Message limit, default None", required = False)):
+    await ctx.defer()
+    if ctx.guild is None:
+        await ctx.respond(f"You can only use this command in guilds, not in DMs.")
+        return
+    if not isStaff(ctx.guild, ctx.author):
+        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+        return
+
+    if channel is None:
+        channel = ctx.channel
+
+    data = await chat_exporter.export(channel, limit = limit)
+    data = minify_html.minify(data, minify_js=True, minify_css=True, remove_processing_instructions=True, remove_bangs=True)
+    
+    await ctx.respond(content=f"Transcript of {channel.name} created by {ctx.author.name}#{ctx.author.discriminator}", file=discord.File(io.BytesIO(data.encode()), filename=f"transcript-{channel.name}.html"))
