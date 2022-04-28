@@ -1,5 +1,10 @@
 # Gecko Bot Update History
 
+## Update 2022.04.28
+
+**Version v1.21**  
+Added Gecko Ticket Function  
+
 ## Update 2022.04.27
 
 **Version v1.20.9**  

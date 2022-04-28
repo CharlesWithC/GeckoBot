@@ -11,6 +11,7 @@ from discord.ext import commands
 from discord.ui import Modal, InputText, Button, View
 from discord.enums import ButtonStyle
 from time import time
+from datetime import datetime
 from random import randint
 import io
 import validators
@@ -32,19 +33,142 @@ class GeckoButton(Button):
             custom_id=custom_id,
         )  
 
-    async def callback(self, interaction: discord.Interaction):        
-        custom_id = self.custom_id
-        if not custom_id.startswith("GeckoButton"):
-            return
-
+    async def callback(self, interaction: discord.Interaction):  
         user = interaction.user
         guild = interaction.guild
         userid = interaction.user.id
-        buttonid = int(custom_id.split("-")[1])
         guildid = interaction.guild_id
-
         conn = newconn()
         cur = conn.cursor()
+
+        custom_id = self.custom_id
+        if custom_id.startswith("GeckoTicket"):
+            custom_id = custom_id.split("-")
+            op = custom_id[1]
+            ticketid = int(custom_id[2])
+            if op == "closeconfirm":
+                cur.execute(f"SELECT channelid, userid FROM ticketrecord WHERE ticketid = {ticketid} AND closedBy = 0")
+                t = cur.fetchall()
+                if len(t) == 0:
+                    return
+                channelid = t[0][0]
+                creator = t[0][1]
+                try:                    
+                    embed = discord.Embed(title = "Ticket", description = f"Ticket closed by <@{userid}>\nYou can use `/ticket viewrecord {ticketid}` to view conversation.", color = GECKOCLR)
+                    embed.timestamp = datetime.now()
+                    embed.set_footer(text = f"Gecko Ticket • ID: {ticketid} ", icon_url = GECKOICON)
+                    await interaction.response.edit_message(embed = embed, view = None)
+                    channel = bot.get_channel(channelid)
+                    await channel.set_permissions(guild.default_role, send_messages = False)
+                    
+                    messages = await channel.history().flatten()
+                    data = []
+                    for message in messages:
+                        author = message.author
+                        if author.bot:
+                            author = f"**{author.name}#{author.discriminator}** (`{author.id}`)"
+                            author += " ***BOT***"     
+                        else:
+                            author = f"**{author.name}#{author.discriminator}** (`{author.id}`)"
+                        timestamp = message.created_at.timestamp()
+                        content = message.content
+                        if content == "" or content is None:
+                            content = "*No content*"
+                        data.append({"author": author, "timestamp": timestamp, "content": content})
+                    data = b64e(json.dumps(data))
+
+                    closedBy = userid
+                    closedTs = int(time())
+                    cur.execute(f"UPDATE ticketrecord SET data = '{data}', closedBy = {closedBy}, closedTs = {closedTs} WHERE ticketid = {ticketid}")
+                    cur.execute(f"DELETE FROM buttonview WHERE buttonid = {-ticketid}")
+                    conn.commit()
+
+                    await channel.delete()
+
+                    preserve = False
+                    cur.execute(f"SELECT gticketid FROM ticketrecord WHERE userid = {creator} AND closedBy = 0")
+                    p = cur.fetchall()
+                    for pp in p:
+                        gticketid = pp[0]
+                        cur.execute(f"SELECT categoryid FROM ticket WHERE gticketid = {gticketid}")
+                        c = cur.fetchall()
+                        if len(c) > 0:
+                            cid = c[0][0]
+                            if cid == interaction.channel.category.id:
+                                preserve = True
+                    if not preserve:
+                        await interaction.channel.category.set_permissions(user, view_channel = False)
+
+                    try:
+                        creator = bot.get_user(creator)
+                        dmchannel = await creator.create_dm()
+
+                        msgs = ""
+                        data = json.loads(b64d(data))
+                        for d in data:
+                            author = d["author"]
+                            timestamp = d["timestamp"]
+                            content = d["content"]
+                            dt = datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S UTC")
+                            msgs += f"{author} [{dt}]:  \n{content}  \n\n"
+                        
+                        embed = discord.Embed(title = "Ticket Record", description = "Conversation record in attached file", color = GECKOCLR)
+                        embed.add_field(name = "Created By", value = f"<@{creator.id}> (`{creator.id}`)", inline = True)
+                        embed.add_field(name = "Closed By", value = f"<@{closedBy}> (`{closedBy}`)", inline = True)
+                        embed.add_field(name = "Closed At", value = f"<t:{closedTs}>", inline = True)
+                        embed.timestamp = datetime.now()
+                        embed.set_footer(text = f"Gecko Ticket • ID: {ticketid} ", icon_url = GECKOICON)
+
+                        f = io.BytesIO()
+                        f.write(msgs.encode())
+                        f.seek(0)
+                        await dmchannel.send(embed = embed, file=discord.File(fp=f, filename='TicketRecord.MD'))
+                    except:
+                        pass
+                except:
+                    import traceback
+                    traceback.print_exc()
+                    
+                    embed = discord.Embed(title = "Ticket", description = f"Something went wrong.", color = GECKOCLR)
+                    embed.timestamp = datetime.now()
+                    embed.set_footer(text = f"Gecko Ticket • ID: {ticketid} ", icon_url = GECKOICON)
+                    await interaction.response.edit_message(embed = embed, view = None)
+
+            elif op == "close":
+                embed = discord.Embed(title = "Ticket", description = f"Are you sure to close ticket?", color = GECKOCLR)
+                embed.timestamp = datetime.now()
+                embed.set_footer(text = f"Gecko Ticket • ID: {ticketid} ", icon_url = GECKOICON)
+                view = View(timeout = 300)
+                uniq = f"{randint(1,100000)}{int(time()*100000)}"
+                custom_id = "GeckoTicket-closeconfirm-"+str(ticketid)+"-"+uniq
+                button = GeckoButton("Close", None, BTNSTYLE["red"], False, custom_id)
+                view.add_item(button)
+                custom_id = "GeckoTicket-closecancel-"+str(ticketid)+"-"+uniq
+                button = GeckoButton("Cancel", None, BTNSTYLE["grey"], False, custom_id)
+                view.add_item(button)
+                await interaction.response.send_message(embed = embed, view = view)
+
+            elif op == "closecancel":
+                embed = discord.Embed(title = "Ticket", description = f"Are you sure to close ticket?\nCancelled.", color = GECKOCLR)
+                embed.timestamp = datetime.now()
+                embed.set_footer(text = f"Gecko Ticket • ID: {ticketid} ", icon_url = GECKOICON)
+                view = View(timeout = 300)
+                uniq = f"{randint(1,100000)}{int(time()*100000)}"
+                custom_id = "GeckoTicket-closeconfirm-"+str(ticketid)+"-"+uniq
+                button = GeckoButton("Close", None, BTNSTYLE["red"], True, custom_id)
+                view.add_item(button)
+                custom_id = "GeckoTicket-closecancel-"+str(ticketid)+"-"+uniq
+                button = GeckoButton("Cancel", None, BTNSTYLE["grey"], True, custom_id)
+                view.add_item(button)
+                await interaction.response.edit_message(embed = embed, view = view)
+
+            return
+
+        if not custom_id.startswith("GeckoButton"):
+            return
+
+        buttonid = int(custom_id.split("-")[1])
+
         cur.execute(f"SELECT data FROM button WHERE buttonid = {buttonid}")
         t = cur.fetchall()
         if len(t) == 0:
@@ -60,10 +184,15 @@ class GeckoButton(Button):
         content = data["content"]
         embedid = data["embedid"]
         formid = data["formid"]
+        # below are update after release, old buttons might not contain this key
+        # hence need to do key check to prevent errors
+        gticketid = None
+        if "gticketid" in data.keys():
+            gticketid = data["gticketid"]
         roles = None
-        if "roles" in data.keys(): # as this is an update after release, old buttons might not contain this key
-            roles = data["roles"]  # hence need to do key check to prevent errors
-
+        if "roles" in data.keys():
+            roles = data["roles"] 
+        
         response = []
         
         if content != None:
@@ -122,6 +251,76 @@ class GeckoButton(Button):
                             d.append(b64d(pp))
                         response.append({"modal": FormModal(formid, d, None, "Submit Form"), "ephemeral": ephemeral})
         
+        if gticketid != None:
+            cur.execute(f"SELECT categoryid, channelformat, msg, moderator FROM ticket WHERE guildid = {guildid} AND gticketid = {gticketid}")
+            t = cur.fetchall()
+            if len(t) == 0:
+                response.append({"content": "The ticket does not exist any longer.", "ephemeral": True})
+            else:
+                cur.execute(f"SELECT COUNT(*) FROM ticketrecord")
+                ttt = cur.fetchall()
+                ticketid = 0
+                if len(ttt) > 0:
+                    ticketid = ttt[0][0]
+
+                categoryid = t[0][0]
+                name = b64d(t[0][1])
+                name = name.replace("{ticketid}", str(ticketid))
+                name = name.replace("{userid}", str(userid))
+                name = name.replace("{username}", user.name)
+
+                msg = b64d(t[0][2])
+
+                try:
+                    category = bot.get_channel(categoryid)
+                    await category.set_permissions(user, view_channel = True, read_message_history = True, send_messages = True)
+                    channel = await category.create_text_channel(name, reason = "Gecko Ticket")
+                    me = bot.get_user(BOTID)
+                    await channel.set_permissions(me, view_channel = True, read_message_history = True, send_messages = True)
+
+                    moderators = t[0][3]
+                    for mod in moderators.split(","):
+                        if mod.startswith("@&"):
+                            roleid = int(mod[2:])
+                            try:
+                                role = guild.get_role(roleid)
+                                if role != None:
+                                    await channel.set_permissions(role, view_channel = True, read_message_history = True, send_messages = True)
+                            except:
+                                import traceback
+                                traceback.print_exc()
+                        else:
+                            modid = int(mod[1:])
+                            try:
+                                mod = guild.get_member(modid)
+                                if mod != None:
+                                    await channel.set_permissions(mod, view_channel = True, read_message_history = True, send_messages = True)
+                            except:
+                                import traceback
+                                traceback.print_exc()
+                    await channel.set_permissions(guild.default_role, view_channel = False)
+
+                    embed = discord.Embed(title = "Ticket", description = msg, color = GECKOCLR)
+                    embed.timestamp = datetime.now()
+                    embed.set_footer(text = f"Gecko Ticket • ID: {ticketid} ", icon_url = GECKOICON)
+                    view = View(timeout = None)
+                    uniq = f"{randint(1,100000)}{int(time()*100000)}"
+                    custom_id = "GeckoTicket-close-"+str(ticketid)+"-"+uniq
+                    button = GeckoButton("Close Ticket", None, BTNSTYLE["red"], False, custom_id)
+                    view.add_item(button)
+                    cur.execute(f"INSERT INTO buttonview VALUES ({-ticketid}, '{custom_id}')")
+                    await channel.send(embed = embed, view = view)
+
+                    cur.execute(f"INSERT INTO ticketrecord VALUES ({ticketid}, {gticketid}, {userid}, {guildid}, {channel.id}, '', 0, 0)")
+                    conn.commit()
+
+                    response.append({"content": f"Ticket created <#{channel.id}>. ID: {ticketid}", "ephemeral": True})
+                
+                except:
+                    import traceback
+                    traceback.print_exc()
+                    response.append({"content": "An error occurred while creating the ticket.", "ephemeral": True})
+
         if roles != None:
             ret = ""
             r = roles.replace(" ","").split(",")
@@ -179,6 +378,8 @@ class ManageButton(commands.Cog):
             view = View(timeout=None)
             if dd[0].startswith("GeckoButton"):
                 view.add_item(GeckoButton("", None, BTNSTYLE["blurple"], False, dd[0]))
+            elif dd[0].startswith("GeckoTicket"):
+                view.add_item(GeckoButton("", None, BTNSTYLE["blurple"], False, dd[0]))
             elif dd[0].startswith("GeckoConnectFourGame"):
                 view.add_item(ConnectFourJoinButton("", dd[0]))
             self.bot.add_view(view)
@@ -193,6 +394,7 @@ class ManageButton(commands.Cog):
             content: discord.Option(str, "Content of message to send on click", required = False),
             embedid: discord.Option(int, "ID of embed to send on click", required = False),
             formid: discord.Option(int, "ID of form to display on click", required = False),
+            gticketid: discord.Option(str, "ID of guild ticket category", required = False),
             roles: discord.Option(str, "Roles to assign / unassign on click, separate with ',', start with '-' to unassign", required = False)):
         await ctx.defer()    
         if ctx.guild is None:
@@ -207,7 +409,7 @@ class ManageButton(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
 
-        cur.execute(f"SELECT COUNT(*) FROM button WHERE guildid = {guildid}")
+        cur.execute(f"SELECT COUNT(*) FROM button WHERE guildid = {guildid} AND buttonid > 0")
         c = cur.fetchall()
         if len(c) > 0:
             premium = GetPremium(ctx.guild)
@@ -304,6 +506,20 @@ class ManageButton(commands.Cog):
                 return
         data["formid"] = formid
 
+        if gticketid != None:
+            try:
+                if gticketid.startswith("g"):
+                    gticketid = int(gticketid[1:])
+            except:
+                await ctx.respond("Invalid guild ticket category ID!", ephemeral = True)
+                return
+            cur.execute(f"SELECT gticketid FROM ticket WHERE guildid = {ctx.guild.id} AND gticketid = {gticketid}")
+            t = cur.fetchall()
+            if len(t) == 0:
+                await ctx.respond("Guild ticket category not found.", ephemeral = True)
+                return
+        data["gticketid"] = gticketid
+
         if roles != None:
             r = roles.replace(" ","").replace("-","").split(",")
             for rr in r:
@@ -336,6 +552,7 @@ class ManageButton(commands.Cog):
             content: discord.Option(str, "Content of message to send on click", required = False),
             embedid: discord.Option(int, "ID of embed to send on click", required = False),
             formid: discord.Option(int, "ID of form to display on click", required = False),
+            gticketid: discord.Option(str, "ID of guild ticket category", required = False),
             roles: discord.Option(str, "Roles to assign / unassign on click, separate with space, start with '-' to unassign", required = False)):
         await ctx.defer()    
         if ctx.guild is None:
@@ -457,6 +674,22 @@ class ManageButton(commands.Cog):
                 await ctx.respond("Form not found.", ephemeral = True)
                 return
             data["formid"] = formid
+
+        if gticketid == "None":
+            data["gticketid"] = None
+        elif gticketid != None:
+            try:
+                if gticketid.startswith("g"):
+                    gticketid = int(gticketid[1:])
+            except:
+                await ctx.respond("Invalid guild ticket category ID!", ephemeral = True)
+                return
+            cur.execute(f"SELECT gticketid FROM ticket WHERE guildid = {ctx.guild.id} AND gticketid = {gticketid}")
+            t = cur.fetchall()
+            if len(t) == 0:
+                await ctx.respond("Guild ticket category not found.", ephemeral = True)
+                return
+            data["gticketid"] = gticketid
 
         if roles == "None":
             data["roles"] = None

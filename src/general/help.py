@@ -44,7 +44,11 @@ Find out more by `/help truckersmp`
 *Not only music, but also radio!*  
 274 radio stations are supported, and you can request your desired station to be added.  
 
-**Suggestion**
+**Gecko Ticket**  
+Create multiple tickets, with different moderators handling different kinds of tickets!
+Ticket conversation is stored so you can download it at any time!
+
+**Gecko Suggestion**
 Accept suggestions and improve the server!  
 Receive upvotes and downvotes, export all suggestions with one command!
 
@@ -666,6 +670,64 @@ Download all suggestions made in the server, even if their original messages are
 You will receive a Markdown file and you are recommended to view it using a Markdown reader.
 
 Usage: `/dlsuggestion`"""
+    },
+
+    "ticket": {
+        "description": """**Gecko Ticket**
+Create multiple tickets, with different moderators handling different kinds of tickets!
+Ticket conversation is stored so you can download it at any time (and of course you can delete it).
+
+**Important Note** There are two types of IDs related to ticketing system, guild ticket id (gticketid) and ticket id (ticketid).
+Guild ticket ID refers to the category of ticket you created, it's used only to bind the ticket with a button. Usually prefix `g` is added to separate it from Ticket ID to prevent confusion.
+Ticket ID is the ID of ticket record, it's used to download the ticket conversation. An unique ticket id is assigned for each user-created ticket.
+
+Subcommands of `/ticket` group:
+`create` `edit` `delete` `list` `viewrecord` `listrecord` `deleterecord`""",
+
+        "create": """**Gecko Ticket**
+Create a ticket category. The `category` can be understood as a type of ticket.
+The argument `{category}` is the guild category where Gecko will create channels.
+`{label}` is an easy-to-remember label in case you forgot the guild ticket ID, though you can retrieve them by `/ticket list`.
+`{format}` is the channel name format, which accept 3 variables: `{username} {userid} {ticketid}`, default format is `ticket-{username}`.
+`{msg}` is the message to send in the ticket channel when ticket is created.
+`{moderator}` can be either role or user, and can contain multiple items, you have to mention the role / user.
+
+Usage: `/ticket create {required: category} {optional: label} {optional: format} {optional: msg} {optional: moderator}`""",
+
+        "edit": """**Gecko Ticket**
+Edit a guild ticket category.
+You need to provide either guild ticket ID or label.
+See `/help ticket create` for more information about command arguments.
+
+Usage: `/ticket edit {optional: gticketid} {optional: label} {optional: category} {optional: newlabel} {optional: format} {optional: msg} {optional: moderator}`""",
+
+        "delete": """**Gecko Ticket**
+Delete a guild ticket category.
+**NOTE** This will not delete ticket records.
+
+Usage: `/ticket delete {optional: gticketid} {optional: label}`""",
+
+        "list": """**Gecko Ticket**
+List all guild ticket categories.
+
+Usage: `/ticket list`""",
+
+        "viewrecord": """**Gecko Ticket**
+View ticket record.
+You have to be either ticket creator or staff member to see the record.
+
+Usage: `/ticket viewrecord {required: ticketid}`""",
+
+        "listrecord": """**Gecko Ticket**
+List all ticket records in the guild.
+
+Usage: `/ticket listrecord`""",
+
+        "deleterecord": """**Gecko Ticket**
+Delete ticket record.
+You have to be either ticket creator or staff member to delete the record.
+
+Usage: `/ticket viewrecord {required: ticketid}`"""
     },
 
     "truckersmp": {

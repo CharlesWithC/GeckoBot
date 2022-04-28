@@ -101,6 +101,24 @@ CREATE INDEX index_formentry ON formentry (formid, userid);
 CREATE INDEX index_suggestion ON suggestion (guildid, userid, messageid);
 """
 
+# TICKET
+cur.execute(f"CREATE TABLE IF NOT EXISTS ticket (gticketid BIGINT, guildid BIGINT, categoryid BIGINT, channelformat TEXT, msg TEXT, moderator TEXT)")
+cur.execute(f"CREATE TABLE IF NOT EXISTS ticketrecord (ticketid BIGINT, gticketid BIGINT, userid BIGINT, guildid BIGINT, channelid BIGINT, data LONGTEXT, closedby BIGINT, closedTs BIGINT)")
+# ticketid = user ticket id (conversation) | gticketid = guild ticket id (management)
+"""
+CREATE INDEX index_ticket ON ticket (gticketid, guildid);
+CREATE INDEX index_ticketrecord ON ticketrecord (ticketid, gticketid);
+"""
+
+# ALIAS
+cur.execute(f"CREATE TABLE IF NOT EXISTS alias (guildid BIGINT, elementtype TEXT, elementid BIGINT, label TEXT)")
+# elementtype = embed, form, ticket
+# elementid = embedid, formid, gticketid
+# label = any alias
+"""
+CREATE INDEX index_alias ON alias (guildid, elementid);
+"""
+
 # MUSIC
 cur.execute(f"CREATE TABLE IF NOT EXISTS playlist (guildid BIGINT, userid BIGINT, title TEXT)")
 cur.execute(f"CREATE TABLE IF NOT EXISTS vcbind (guildid BIGINT, channelid BIGINT)")

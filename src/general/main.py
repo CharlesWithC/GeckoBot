@@ -29,6 +29,7 @@ import general.staff.form
 import general.staff.reaction_role
 import general.staff.staff
 import general.staff.stats_display
+import general.staff.ticket
 import general.staff.vcrecord
 
 from bot import bot, shard

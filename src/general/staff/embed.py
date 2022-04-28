@@ -140,7 +140,7 @@ class ManageEmbed(commands.Cog):
 
         guildid = ctx.guild.id
 
-        cur.execute(f"SELECT COUNT(*) FROM embed WHERE guildid = {guildid}")
+        cur.execute(f"SELECT COUNT(*) FROM embed WHERE guildid = {guildid} AND embedid > 0")
         c = cur.fetchall()
         if len(c) > 0:
             premium = GetPremium(ctx.guild)
@@ -340,6 +340,7 @@ class ManageEmbed(commands.Cog):
             await ctx.respond(file=discord.File(fp=f, filename='Embeds.MD'))
         else:
             embed=discord.Embed(title=f"Embeds in {ctx.guild}", description=msg, color=GECKOCLR)
+            embed.set_footer(text = f"Gecko Embed", icon_url = GECKOICON)
             await ctx.respond(embed = embed)
         
     @manage.command(name="send", description="Staff - Send an embed in public.")

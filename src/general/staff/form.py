@@ -252,7 +252,7 @@ class ManageForm(commands.Cog):
         cur = conn.cursor()
         guildid = ctx.guild.id
 
-        cur.execute(f"SELECT COUNT(*) FROM form WHERE guildid = {guildid}")
+        cur.execute(f"SELECT COUNT(*) FROM form WHERE guildid = {guildid} AND formid > 0")
         c = cur.fetchall()
         if len(c) > 0:
             premium = GetPremium(ctx.guild)
@@ -383,6 +383,7 @@ class ManageForm(commands.Cog):
             await ctx.respond(file=discord.File(fp=f, filename='Forms.MD'))
         else:
             embed=discord.Embed(title=f"Forms in {ctx.guild}", description=msg, color=GECKOCLR)
+            embed.set_footer(text = f"Gecko Form", icon_url = GECKOICON)
             await ctx.respond(embed = embed)     
 
     @manage.command(name="toggle", description="Staff - Toggle form status, whether it accepts new entries.")

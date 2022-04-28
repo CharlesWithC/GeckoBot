@@ -247,7 +247,7 @@ async def truckersmp(ctx,
         server = traffic[server]
         if "offline" in server.keys() and server["offline"]:
             embed = discord.Embed(title = server, description=f"Server offline", color = TMPCLR)
-            embed.set_thumbnail(url = "https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+            embed.set_thumbnail(url = "https://truckersmp.com/assets/img/avatar.png")
             embed.set_footer(text = f"TruckersMP • traffic.krashnz.com ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
             await ctx.respond(embed = embed)
             return
@@ -266,7 +266,7 @@ async def truckersmp(ctx,
         embed.add_field(name = loc, value = f"**{severity}** ({players})", inline = True)
 
         embed.timestamp = datetime.fromtimestamp(lastupd)
-        embed.set_thumbnail(url = "https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+        embed.set_thumbnail(url = "https://truckersmp.com/assets/img/avatar.png")
         embed.set_footer(text = f"TruckersMP • traffic.krashnz.com ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
 
         await ctx.respond(embed = embed)
@@ -280,7 +280,7 @@ async def truckersmp(ctx,
         server = traffic[server]
         if "offline" in server.keys() and server["offline"]:
             embed = discord.Embed(title = server, description=f"Server offline", color = TMPCLR)
-            embed.set_thumbnail(url = "https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+            embed.set_thumbnail(url = "https://truckersmp.com/assets/img/avatar.png")
             embed.set_footer(text = f"TruckersMP • traffic.krashnz.com ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
             await ctx.respond(embed = embed)
             return
@@ -302,7 +302,7 @@ async def truckersmp(ctx,
             embed.add_field(name = loc, value = f"**{severity}** ({players})", inline = True)
 
         embed.timestamp = datetime.fromtimestamp(lastupd)
-        embed.set_thumbnail(url = "https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+        embed.set_thumbnail(url = "https://truckersmp.com/assets/img/avatar.png")
         embed.set_footer(text = f"TruckersMP • traffic.krashnz.com ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
 
         await ctx.respond(embed = embed)
@@ -313,7 +313,7 @@ async def truckersmp(ctx,
         server = traffic[server]
         if "offline" in server.keys() and server["offline"]:
             embed = discord.Embed(title = server, description=f"Server offline", color = TMPCLR)
-            embed.set_thumbnail(url = "https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+            embed.set_thumbnail(url = "https://truckersmp.com/assets/img/avatar.png")
             embed.set_footer(text = f"TruckersMP • traffic.krashnz.com ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
             await ctx.respond(embed = embed)
             return
@@ -327,7 +327,7 @@ async def truckersmp(ctx,
             embed.add_field(name = loc, value = f"**{severity}** ({players})", inline = True)
         
         embed.timestamp = datetime.fromtimestamp(lastupd)
-        embed.set_thumbnail(url = "https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+        embed.set_thumbnail(url = "https://truckersmp.com/assets/img/avatar.png")
         embed.set_footer(text = f"TruckersMP • traffic.krashnz.com ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
 
         await ctx.respond(embed = embed)
@@ -354,7 +354,7 @@ async def truckersmp(ctx,
             lastupd = server["lastupd"]
         
         embed.timestamp = datetime.fromtimestamp(lastupd)
-        embed.set_thumbnail(url = "https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+        embed.set_thumbnail(url = "https://truckersmp.com/assets/img/avatar.png")
         embed.set_footer(text = f"TruckersMP • traffic.krashnz.com ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
 
         await ctx.respond(embed = embed)
@@ -689,7 +689,7 @@ class EventButton(Button):
         embed.add_field(name = "Attendance", value = f"**{confirmed}** confirmed, **{unsure}** unsure", inline = False)
 
         embed.timestamp = datetime.fromtimestamp(ts)
-        embed.set_thumbnail(url = "https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+        embed.set_thumbnail(url = "https://truckersmp.com/assets/img/avatar.png")
         if emap != None:
             embed.set_image(url = emap)
         embed.set_footer(text = f"TruckersMP • Event #{eid} ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
@@ -755,7 +755,7 @@ async def vtcevents(ctx, vtcname: discord.Option(str, "VTC Name (cache)" , name=
 
         embed = discord.Embed(title = f"{VTCID2Name(vtcid)} - Events attending", description=tmsg, url=f"https://truckersmp.com/vtc/{vtcid}/events/attending", color = TMPCLR)
         embed.timestamp = datetime.now()
-        embed.set_thumbnail(url = "https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+        embed.set_thumbnail(url = "https://truckersmp.com/assets/img/avatar.png")
         if len(msg) > len(tmsg):
             f = io.BytesIO()
             f.write(msg.encode())
@@ -808,7 +808,7 @@ async def vtcevents(ctx, vtcname: discord.Option(str, "VTC Name (cache)" , name=
     embed.add_field(name = "Attendance", value = f"**{confirmed}** confirmed, **{unsure}** unsure", inline = False)
 
     embed.timestamp = datetime.fromtimestamp(ts)
-    embed.set_thumbnail(url = "https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+    embed.set_thumbnail(url = "https://truckersmp.com/assets/img/avatar.png")
     if emap != None:
         embed.set_image(url = emap)
     embed.set_footer(text = f"TruckersMP • Event #{eid} ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
@@ -1157,7 +1157,7 @@ async def EventPing():
                 embed.add_field(name = "Attendance", value = f"**{confirmed}** confirmed, **{unsure}** unsure", inline = False)
 
                 embed.timestamp = datetime.fromtimestamp(ts)
-                embed.set_thumbnail(url = "https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+                embed.set_thumbnail(url = "https://truckersmp.com/assets/img/avatar.png")
                 if emap != None:
                     embed.set_image(url = emap)
                 embed.set_footer(text = f"TruckersMP • Event #{eid} ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
