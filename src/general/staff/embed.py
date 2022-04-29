@@ -97,6 +97,7 @@ class EmbedModal(Modal):
             data = b64e(title) + "|" + b64e(url) + "|" + b64e(description) + "|" + b64e(footer) + "|" + b64e(thumbnail_url[0]) + "|" + b64e(thumbnail_url[1])
             data += "|" + color
             cur.execute(f"UPDATE embed SET data = '{data}' WHERE embedid = {embedid} AND guildid = {guildid}")
+            cur.execute(f"UPDATE alias SET label = '{b64e(title)}' WHERE elementid = {embedid} AND elementtype = 'embed' AND guildid = {guildid}")
             conn.commit()
             
             await interaction.response.send_message(f"Embed #{embedid} updated.", ephemeral = False)
@@ -112,6 +113,7 @@ class EmbedModal(Modal):
             data = b64e(title) + "|" + b64e(url) + "|" + b64e(description) + "|" + b64e(footer) + "|" + b64e(thumbnail_url[0]) + "|" + b64e(thumbnail_url[1])
             data += "|" + color
             cur.execute(f"INSERT INTO embed VALUES ({embedid}, {guildid}, '{data}')")
+            cur.execute(f"INSERT INTO alias VALUES ({guildid}, 'embed', {embedid}, '{b64e(title)}')")
             conn.commit()
 
             await interaction.response.send_message(f"Embed created. Embed ID: `{embedid}`. Use `/embed send` to post it.", ephemeral = False)
@@ -124,8 +126,7 @@ class ManageEmbed(commands.Cog):
     manage = SlashCommandGroup("embed", "Manage embed")
 
     @manage.command(name="create", description="Staff - Create embed. Detailed information will be edited in modal.")
-    async def create(self, ctx,
-        color: discord.Option(str, "Color in RGB (default 158 132 46)", required = False)):
+    async def create(self, ctx, color: discord.Option(str, "Color in RGB (default 158 132 46)", required = False)):
         
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -174,8 +175,31 @@ class ManageEmbed(commands.Cog):
 
         await ctx.send_modal(EmbedModal(-1, ctx.guild.id, color, "Create embed"))
     
+    def AliasSearch(self, guildid, value):
+        if value is None:
+            return []
+        value = value.lower()
+        conn = newconn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT elementid, label FROM alias WHERE guildid = {guildid} AND elementtype = 'embed'")
+        t = cur.fetchall()
+        alias = {}
+        for tt in t:
+            alias[f"{b64d(tt[1])} ({tt[0]})"] = tt[0]
+        if value.replace(" ", "") == "":
+            return list(alias.keys())[:10]
+        res = process.extract(value, alias.keys(), score_cutoff = 60, limit = 10)
+        ret = []
+        for t in res:
+            ret.append(t[0])
+        return ret
+
+    async def AliasAutocomplete(self, ctx: discord.AutocompleteContext):
+        return self.AliasSearch(ctx.interaction.guild_id, ctx.value)
+
     @manage.command(name="edit", description="Staff - Edit embed. Detailed information will be edited in modal.")
-    async def edit(self, ctx, embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
+    async def edit(self, ctx, embedid: discord.Option(str, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = False),
+        title: discord.Option(str, "Embed title, alias to embed id", required = False, autocomplete = AliasAutocomplete),
         color: discord.Option(str, "Color in RGB. Leave empty to remain unchanged.", required = False)):
          
         if ctx.guild is None:
@@ -186,11 +210,18 @@ class ManageEmbed(commands.Cog):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
 
-        try:
-            embedid = int(embedid)
-        except:
-            await ctx.respond("Invalid embed ID!", ephemeral = True)
-            return
+        if embedid is None:
+            embedid = self.AliasSearch(ctx.guild.id, title)
+            if len(embedid) == 0:
+                await ctx.respond("Failed to get embed ID by title.\nPlease use embedid instead.\nOr use `/embed list` to list all embeds in this guild.", ephemeral = True)
+                return
+            embedid = embedid[0][embedid[0].rfind("(") + 1 : embedid[0].rfind(")")]
+        else:
+            try:
+                embedid = abs(int(embedid))
+            except:
+                await ctx.respond("Invalid embed ID!", ephemeral = True)
+                return
 
         conn = newconn()
         cur = conn.cursor()
@@ -221,7 +252,8 @@ class ManageEmbed(commands.Cog):
         await ctx.send_modal(EmbedModal(embedid, ctx.guild.id, color, "Edit embed"))
     
     @manage.command(name="delete", description="Staff - Delete embed from database. This will not delete messages already sent.")
-    async def delete(self, ctx, embedid: discord.Option(int, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True)):
+    async def delete(self, ctx, embedid: discord.Option(int, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = False),
+            title: discord.Option(str, "Embed title, alias to embed id", required = False, autocomplete = AliasAutocomplete)):
         
         await ctx.defer()    
         if ctx.guild is None:
@@ -232,11 +264,18 @@ class ManageEmbed(commands.Cog):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
 
-        try:
-            embedid = int(embedid)
-        except:
-            await ctx.respond("Invalid embed ID!", ephemeral = True)
-            return
+        if embedid is None:
+            embedid = self.AliasSearch(ctx.guild.id, title)
+            if len(embedid) == 0:
+                await ctx.respond("Failed to get embed ID by title.\nPlease use embedid instead.\nOr use `/embed list` to list all embeds in this guild.", ephemeral = True)
+                return
+            embedid = embedid[0][embedid[0].rfind("(") + 1 : embedid[0].rfind(")")]
+        else:
+            try:
+                embedid = abs(int(embedid))
+            except:
+                await ctx.respond("Invalid embed ID!", ephemeral = True)
+                return
 
         conn = newconn()
         cur = conn.cursor()
@@ -247,14 +286,16 @@ class ManageEmbed(commands.Cog):
             await ctx.respond("Embed not found.", ephemeral = True)
             return
 
-        cur.execute(f"UPDATE embed SET data = '', guildid = -1 WHERE guildid = {ctx.guild.id} AND embedid = {embedid}")
+        cur.execute(f"UPDATE embed SET embedid = -embedid WHERE guildid = {ctx.guild.id} AND embedid = {embedid}")
+        cur.execute(F"DELETE FROM alias WHERE guildid = {ctx.guild.id} AND elementtype = 'embed' AND elementid = {embedid}")
         conn.commit()
 
         await ctx.respond(f"Embed #{embedid} deleted from database. Note that messages sent in guilds are not affected.")
         await log(f"Embed", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) updated embed #{embedid}", ctx.guild.id)
     
     @manage.command(name="preview", description="Staff - Preview an embed privately before posting it in public.")
-    async def preview(self, ctx, embedid: discord.Option(int, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
+    async def preview(self, ctx, embedid: discord.Option(int, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = False),
+            title: discord.Option(str, "Embed title, alias to embed id", required = False, autocomplete = AliasAutocomplete),
             showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"]),
             timestamp: discord.Option(str, "Add timestamp?", required = False, choices = ["Yes", "No"])):
         
@@ -267,11 +308,18 @@ class ManageEmbed(commands.Cog):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
 
-        try:
-            embedid = int(embedid)
-        except:
-            await ctx.respond("Invalid embed ID!", ephemeral = True)
-            return
+        if embedid is None:
+            embedid = self.AliasSearch(ctx.guild.id, title)
+            if len(embedid) == 0:
+                await ctx.respond("Failed to get embed ID by title.\nPlease use embedid instead.\nOr use `/embed list` to list all embeds in this guild.", ephemeral = True)
+                return
+            embedid = embedid[0][embedid[0].rfind("(") + 1 : embedid[0].rfind(")")]
+        else:
+            try:
+                embedid = abs(int(embedid))
+            except:
+                await ctx.respond("Invalid embed ID!", ephemeral = True)
+                return
 
         conn = newconn()
         cur = conn.cursor()
@@ -345,7 +393,8 @@ class ManageEmbed(commands.Cog):
         
     @manage.command(name="send", description="Staff - Send an embed in public.")
     async def send(self, ctx, channel: discord.Option(discord.TextChannel, "Channel to post the embed.", required = True),
-            embedid: discord.Option(int, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
+            embedid: discord.Option(int, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = False),
+            title: discord.Option(str, "Embed title, alias to embed id", required = False, autocomplete = AliasAutocomplete),
             showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"]),
             timestamp: discord.Option(str, "Add timestamp?", required = False, choices = ["Yes", "No"])):
         
@@ -360,11 +409,18 @@ class ManageEmbed(commands.Cog):
 
         channelid = channel.id
 
-        try:
-            embedid = int(embedid)
-        except:
-            await ctx.respond("Invalid embed ID!", ephemeral = True)
-            return
+        if embedid is None:
+            embedid = self.AliasSearch(ctx.guild.id, title)
+            if len(embedid) == 0:
+                await ctx.respond("Failed to get embed ID by title.\nPlease use embedid instead.\nOr use `/embed list` to list all embeds in this guild.", ephemeral = True)
+                return
+            embedid = embedid[0][embedid[0].rfind("(") + 1 : embedid[0].rfind(")")]
+        else:
+            try:
+                embedid = abs(int(embedid))
+            except:
+                await ctx.respond("Invalid embed ID!", ephemeral = True)
+                return
 
         conn = newconn()
         cur = conn.cursor()
@@ -409,7 +465,8 @@ class ManageEmbed(commands.Cog):
         
     @manage.command(name="update", description="Staff - Update an embed in a message. The message must be sent by Gecko.")
     async def update(self, ctx, msglink: discord.Option(str, "Link to the message to update.", required = True),
-            embedid: discord.Option(int, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = True),
+            embedid: discord.Option(int, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = False),
+            title: discord.Option(str, "Embed title, alias to embed id", required = False, autocomplete = AliasAutocomplete),
             showauthor: discord.Option(str, "Show author? (Your avatar and name will be displayed)", required = False, choices = ["Yes", "No"]),
             timestamp: discord.Option(str, "Add timestamp?", required = False, choices = ["Yes", "No"])):
         
@@ -428,11 +485,18 @@ class ManageEmbed(commands.Cog):
         messageid = int(msglink[-2])
         channelid = int(msglink[-3])
 
-        try:
-            embedid = int(embedid)
-        except:
-            await ctx.respond("Invalid embed ID!", ephemeral = True)
-            return
+        if embedid is None:
+            embedid = self.AliasSearch(ctx.guild.id, title)
+            if len(embedid) == 0:
+                await ctx.respond("Failed to get embed ID by title.\nPlease use embedid instead.\nOr use `/embed list` to list all embeds in this guild.", ephemeral = True)
+                return
+            embedid = embedid[0][embedid[0].rfind("(") + 1 : embedid[0].rfind(")")]
+        else:
+            try:
+                embedid = abs(int(embedid))
+            except:
+                await ctx.respond("Invalid embed ID!", ephemeral = True)
+                return
 
         conn = newconn()
         cur = conn.cursor()

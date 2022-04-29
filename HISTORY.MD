@@ -1,5 +1,11 @@
 # Gecko Bot Update History
 
+## Update 2022.04.29  
+
+**Version v1.21.2**  
+1.Added label alias to ID  
+2.Update help  
+
 ## Update 2022.04.28
 
 **Version v1.21.1**  

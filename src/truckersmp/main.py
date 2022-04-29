@@ -1190,6 +1190,25 @@ async def OnlinePing():
                     continue
                 msg = tt[3].split("|")
                 
+                premium = GetPremiumByID(guildid)
+                if premium == 0:
+                    cur.execute(f"DELETE FROM onlineping WHERE vtcid = {vtcid}")
+                    conn.commit()
+                    embed = discord.Embed(title = vtc['name'], description = "*Online Member Notification Function disabled as premium expired*", url = f'https://truckersmp.com/vtc/{vtc["vtcid"]}', color = TMPCLR)
+                    
+                    embed.set_thumbnail(url = vtc["logo"])
+                    embed.timestamp = datetime.now()
+                    embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+                    await channel.send(embed = embed)
+                    return
+
+                cur.execute(f"SELECT guildid FROM vtcbind WHERE vtcid = {vtcid}")
+                p = cur.fetchall()
+                if len(p) == 0:
+                    cur.execute(f"DELETE FROM onlineping WHERE vtcid = {vtcid}")
+                    conn.commit()
+                    continue
+                
                 d = GetVTCMembers(vtcid)
                 roles = d[0]
                 members = d[1]
@@ -1332,6 +1351,14 @@ async def OnlineUpd():
                         pass
                     continue
 
+                cur.execute(f"SELECT guildid FROM vtcbind WHERE vtcid = {vtcid}")
+                p = cur.fetchall()
+                if len(p) == 0:
+                    cur.execute(f"DELETE FROM onlineupd WHERE vtcid = {vtcid}")
+                    conn.commit()
+                    continue
+                guildid = p[0][0]
+
                 channel = bot.get_channel(channelid)
                 if channel is None:
                     errs.append((vtcid, channelid, messageid))
@@ -1340,6 +1367,18 @@ async def OnlineUpd():
                 if message is None:
                     errs.append((vtcid, channelid, messageid))
                     continue
+                
+                premium = GetPremiumByID(guildid)
+                if premium == 0:
+                    cur.execute(f"DELETE FROM onlineupd WHERE vtcid = {vtcid}")
+                    conn.commit()
+                    embed = discord.Embed(title = vtc['name'], description = "**Members trucking at the moment:**\n\n*Function disabled as premium expired*", url = f'https://truckersmp.com/vtc/{vtc["vtcid"]}', color = TMPCLR)
+                    
+                    embed.set_thumbnail(url = vtc["logo"])
+                    embed.timestamp = datetime.now()
+                    embed.set_footer(text = f"TruckersMP ", icon_url = f"https://forum.truckersmp.com/uploads/monthly_2020_10/android-chrome-256x256.png")
+                    await message.edit(embed = embed)
+                    return
 
                 vtc = GetVTCData(vtcid)
                 if vtc is None:

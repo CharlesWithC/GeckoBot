@@ -177,6 +177,7 @@ CREATE INDEX index_settings ON settings (guildid);
 """
 
 cur.execute(f"UPDATE vcrecord SET laststart = 0")
+cur.execute(f"DELETE FROM settings WHERE skey = 'transcript'")
 conn.commit()
 del cur
 

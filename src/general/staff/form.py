@@ -20,12 +20,13 @@ from functions import *
 from db import newconn
 
 class FormEditModal(Modal):
-    def __init__(self, formid, onetime, cb, *args, **kwargs) -> None:
+    def __init__(self, formid, onetime, cb, label, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         self.formid = formid
         self.onetime = onetime
         self.cb = cb
+        self.label = label
 
         d = None
 
@@ -59,6 +60,7 @@ class FormEditModal(Modal):
         formid = self.formid
         onetime = self.onetime
         cb = self.cb
+        label = self.label
 
         data = ""
         for i in range(5):
@@ -86,6 +88,13 @@ class FormEditModal(Modal):
             cur.execute(f"UPDATE form SET data = '{data}' WHERE formid = {formid}")
             if cb != None:
                 cur.execute(f"UPDATE form SET callback = '{b64e(cb)}' WHERE formid = {formid}")
+            if label != None:
+                cur.execute(f"SELECT * FROM alias WHERE elementid = {formid} AND elementtype = 'form' AND guildid = {guildid}")
+                p = cur.fetchall()
+                if len(p) > 0:
+                    cur.execute(f"UPDATE alias SET label = '{b64e(label)}' WHERE elementid = {formid} AND elementtype = 'form' AND guildid = {guildid}")
+                else:
+                    cur.execute(f"INSERT INTO alias VALUES ({guildid}, 'form', {formid}, '{b64e(label)}')")
             conn.commit()
             await interaction.response.send_message(f"Form #{formid} edited.", ephemeral = False)
             await log(f"Form", f"[Guild {interaction.guild} {guildid}] {interaction.user} ({interaction.user.id}) edited form #{formid}", guildid)
@@ -97,6 +106,8 @@ class FormEditModal(Modal):
                 formid = t[0][0]
             data += str(onetime)
             cur.execute(f"INSERT INTO form VALUES ({formid}, {guildid}, '{data}', '{b64e(cb)}')")
+            if label != None:
+                cur.execute(f"INSERT INTO alias VALUES ({guildid}, 'form', {formid}, '{b64e(label)}')")
             conn.commit()
             await interaction.response.send_message(f"Form created. Form ID: `{formid}`. Bind it to a button using `/button create` and post it using `/button send`.", ephemeral = False)
             await log(f"Form", f"[Guild {interaction.guild} {guildid}] {interaction.user} ({interaction.user.id}) created form #{formid}", guildid)
@@ -237,7 +248,8 @@ class ManageForm(commands.Cog):
     manage = SlashCommandGroup("form", "Manage form")
 
     @manage.command(name="create", description="Staff - Create form. Detailed information will be edited in modal.")
-    async def create(self, ctx, callback: discord.Option(str, "The message to show after the form is submitted, Markdown is accepted", required = False),
+    async def create(self, ctx, label: discord.Option(str, "A easy-to-remember label, not visible to members, alias of form ID", required = False),
+        callback: discord.Option(str, "The message to show after the form is submitted, Markdown is accepted", required = False),
         onetime: discord.Option(str, "Allow member to submit form only once?", required = False, choices = ["Yes", "No"])):
         
         if ctx.guild is None:
@@ -278,10 +290,34 @@ class ManageForm(commands.Cog):
         if callback is None:
             callback = "Thanks for submitting the form."
 
-        await ctx.send_modal(FormEditModal(-1, ot, callback, "Create form"))
+        await ctx.send_modal(FormEditModal(-1, ot, callback, label, "Create form"))
+    
+    def AliasSearch(self, guildid, value):
+        if value is None:
+            return []
+        value = value.lower()
+        conn = newconn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT elementid, label FROM alias WHERE guildid = {guildid} AND elementtype = 'form'")
+        t = cur.fetchall()
+        alias = {}
+        for tt in t:
+            alias[f"{b64d(tt[1])} ({tt[0]})"] = tt[0]
+        if value.replace(" ", "") == "":
+            return list(alias.keys())[:10]
+        res = process.extract(value, alias.keys(), score_cutoff = 60, limit = 10)
+        ret = []
+        for t in res:
+            ret.append(t[0])
+        return ret
+
+    async def AliasAutocomplete(self, ctx: discord.AutocompleteContext):
+        return self.AliasSearch(ctx.interaction.guild_id, ctx.value)
 
     @manage.command(name="edit", description="Staff - Edit form. Detailed information will be edited in modal.")
-    async def edit(self, ctx, formid: discord.Option(int, "Form ID, provided when form was created. Use '/form list' to see a list of forms and IDs.", required = True),
+    async def edit(self, ctx, formid: discord.Option(int, "Form ID, provided when form was created. Use '/form list' to see a list of forms and IDs.", required = False),
+        oldlabel: discord.Option(str, "Form label, alias of form ID", required = False, autocomplete = AliasAutocomplete),
+        label: discord.Option(str, "New form label", name = "newlabel", required = False),
         callback: discord.Option(str, "The message to show after the form is submitted, leave empty to remain unchanged", required = False),
         onetime: discord.Option(str, "Allow member to submit form only once?", required = False, choices = ["Yes", "No"])):
         
@@ -293,11 +329,18 @@ class ManageForm(commands.Cog):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
 
-        try:
-            formid = abs(int(formid))
-        except:
-            await ctx.respond(f"Form ID {formid} is invalid.", ephemeral = True)
-            return
+        if formid is None:
+            formid = self.AliasSearch(ctx.guild.id, oldlabel)
+            if len(formid) == 0:
+                await ctx.respond("Failed to get form ID by label.\nPlease use formid instead.\nOr use `/form list` to list all forms in this guild.", ephemeral = True)
+                return
+            formid = formid[0][formid[0].rfind("(") + 1 : formid[0].rfind(")")]
+        else:
+            try:
+                formid = abs(int(formid))
+            except:
+                await ctx.respond("Invalid form ID!", ephemeral = True)
+                return
 
         conn = newconn()
         cur = conn.cursor()
@@ -317,10 +360,11 @@ class ManageForm(commands.Cog):
             await ctx.respond("The length of callback message cannot be greater than 400!", ephemeral = True)
             return
 
-        await ctx.send_modal(FormEditModal(formid, ot, callback, "Edit form"))
+        await ctx.send_modal(FormEditModal(formid, ot, callback, label, "Edit form"))
 
     @manage.command(name="delete", description="Staff - Delete a form and all submitted entries.")
-    async def delete(self, ctx, formid: discord.Option(int, "Form ID", required = True)):
+    async def delete(self, ctx, formid: discord.Option(int, "Form ID", required = False),
+        label: discord.Option(str, "Form label, alias of form ID", required = False, autocomplete = AliasAutocomplete)):
         await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -330,11 +374,18 @@ class ManageForm(commands.Cog):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
 
-        try:
-            formid = abs(int(formid))
-        except:
-            await ctx.respond(f"Form ID {formid} is invalid.", ephemeral = True)
-            return
+        if formid is None:
+            formid = self.AliasSearch(ctx.guild.id, label)
+            if len(formid) == 0:
+                await ctx.respond("Failed to get form ID by label.\nPlease use formid instead.\nOr use `/form list` to list all forms in this guild.", ephemeral = True)
+                return
+            formid = formid[0][formid[0].rfind("(") + 1 : formid[0].rfind(")")]
+        else:
+            try:
+                formid = abs(int(formid))
+            except:
+                await ctx.respond("Invalid form ID!", ephemeral = True)
+                return
 
         conn = newconn()
         cur = conn.cursor()
@@ -347,6 +398,7 @@ class ManageForm(commands.Cog):
 
         cur.execute(f"UPDATE form SET formid = -formid WHERE formid = {formid} AND guildid = {guildid}")
         cur.execute(f"UPDATE formentry SET formid = -formid WHERE formid = {formid} AND guildid = {ctx.guild.id}")
+        cur.execute(F"DELETE FROM alias WHERE guildid = {ctx.guild.id} AND elementtype = 'form' AND elementid = {formid}")
         conn.commit()
 
         await ctx.respond(f"Form #{formid} and entries are deleted.")
@@ -387,7 +439,8 @@ class ManageForm(commands.Cog):
             await ctx.respond(embed = embed)     
 
     @manage.command(name="toggle", description="Staff - Toggle form status, whether it accepts new entries.")
-    async def toggle(self, ctx, formid: discord.Option(int, "Form ID, provided when form was created. Use '/form list' to see a list of forms and IDs.", required = True)):
+    async def toggle(self, ctx, formid: discord.Option(int, "Form ID, provided when form was created. Use '/form list' to see a list of forms and IDs.", required = False),
+            label: discord.Option(str, "Form label, alias of form ID", required = False, autocomplete = AliasAutocomplete)):
         await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -397,11 +450,18 @@ class ManageForm(commands.Cog):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
 
-        try:
-            formid = abs(int(formid))
-        except:
-            await ctx.respond(f"Form ID {formid} is invalid.", ephemeral = True)
-            return
+        if formid is None:
+            formid = self.AliasSearch(ctx.guild.id, label)
+            if len(formid) == 0:
+                await ctx.respond("Failed to get form ID by label.\nPlease use formid instead.\nOr use `/form list` to list all forms in this guild.", ephemeral = True)
+                return
+            formid = formid[0][formid[0].rfind("(") + 1 : formid[0].rfind(")")]
+        else:
+            try:
+                formid = abs(int(formid))
+            except:
+                await ctx.respond("Invalid form ID!", ephemeral = True)
+                return
 
         conn = newconn()
         cur = conn.cursor()
@@ -513,7 +573,8 @@ class ManageForm(commands.Cog):
                 await ctx.respond(f"You haven't submitted this form before or the creator deleted the form.", ephemeral = True)
 
     @manage.command(name="download", description="Staff - Download all entries of a form.")
-    async def download(self, ctx, formid: discord.Option(int, "Form ID", required = True)):
+    async def download(self, ctx, formid: discord.Option(int, "Form ID", required = False),
+            label: discord.Option(str, "Form label, alias of form ID", required = False, autocomplete = AliasAutocomplete)):
         await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -523,11 +584,18 @@ class ManageForm(commands.Cog):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
 
-        try:
-            formid = abs(int(formid))
-        except:
-            await ctx.respond(f"Form ID {formid} is invalid.", ephemeral = True)
-            return
+        if formid is None:
+            formid = self.AliasSearch(ctx.guild.id, label)
+            if len(formid) == 0:
+                await ctx.respond("Failed to get form ID by label.\nPlease use formid instead.\nOr use `/form list` to list all forms in this guild.", ephemeral = True)
+                return
+            formid = formid[0][formid[0].rfind("(") + 1 : formid[0].rfind(")")]
+        else:
+            try:
+                formid = abs(int(formid))
+            except:
+                await ctx.respond("Invalid form ID!", ephemeral = True)
+                return
             
         conn = newconn()
         cur = conn.cursor()

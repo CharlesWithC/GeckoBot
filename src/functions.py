@@ -180,6 +180,15 @@ def GetPremium(guild):
         return t[0][0]
     return 0
 
+def GetPremiumByID(guildid):
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT tier FROM premium WHERE guildid = {guildid} AND expire > {int(time())}")
+    t = cur.fetchall()
+    if len(t) > 0:
+        return t[0][0]
+    return 0
+
 def CheckPremium(guild, tier):
     conn = newconn()
     cur = conn.cursor()

@@ -363,7 +363,7 @@ class ManageButton(commands.Cog):
             self.bot.add_view(view)
 
     @manage.command(name="create", description="Staff - Create a button")
-    async def create(self, ctx, label: discord.Option(str, "Button label", required = True),
+    async def create(self, ctx, label: discord.Option(str, "Button label, the text to display on button, also can be used as an alias to button ID", required = True),
             color: discord.Option(str,"Button color, default blurple", required = False, choices = ["blurple", "grey", "green", "red"]),
             emoji: discord.Option(str, "Button emoji", required = False),
             disabled: discord.Option(str, "Whether button can be clicked or not, default Yes", required = False, choices = ["Yes", "No"]),
@@ -514,14 +514,38 @@ class ManageButton(commands.Cog):
         if len(t) > 0:
             buttonid = t[0][0]
         cur.execute(f"INSERT INTO button VALUES ({buttonid}, {guildid}, '{data}')")
+        cur.execute(f"INSERT INTO alias VALUES ({guildid}, 'button', {buttonid}, '{b64e(label)}')")
         conn.commit()
 
         await ctx.respond(f"Button created. Button ID: {buttonid}.\nUse `/button send` to post it.")
         await log("Button", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) created button #{buttonid}", guildid)
 
-    @manage.command(name="edit", description="Staff - Edit a button. Use 'None' to clear a parameter.")
-    async def edit(self, ctx, buttonid: discord.Option(int, "Button ID, provided when button was created", required = True),
-            label: discord.Option(str, "Button label", required = False),
+    def AliasSearch(self, guildid, value):
+        if value is None:
+            return []
+        value = value.lower()
+        conn = newconn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT elementid, label FROM alias WHERE guildid = {guildid} AND elementtype = 'button'")
+        t = cur.fetchall()
+        alias = {}
+        for tt in t:
+            alias[f"{b64d(tt[1])} ({tt[0]})"] = tt[0]
+        if value.replace(" ", "") == "":
+            return list(alias.keys())[:10]
+        res = process.extract(value, alias.keys(), score_cutoff = 60, limit = 10)
+        ret = []
+        for t in res:
+            ret.append(t[0])
+        return ret
+
+    async def AliasAutocomplete(self, ctx: discord.AutocompleteContext):
+        return self.AliasSearch(ctx.interaction.guild_id, ctx.value)
+        
+    @manage.command(name="edit", description="Staff - Edit a button. Use 'None' to clear a parameter, leave empty to remain unchanged.")
+    async def edit(self, ctx, buttonid: discord.Option(int, "Button ID, provided when button was created", required = False),
+            oldlabel: discord.Option(str, "Old button label, alias of button ID", required = False, autocomplete = AliasAutocomplete),
+            label: discord.Option(str, "New button label, leave empty to remain unchanged", name="newlabel", required = False),
             color: discord.Option(str,"Button color, default blurple", required = False, choices = ["blurple", "grey", "green", "red"]),
             emoji: discord.Option(str, "Button emoji", required = False),
             disabled: discord.Option(str, "Whether button can be clicked or not, default Yes", required = False, choices = ["Yes", "No"]),
@@ -547,12 +571,19 @@ class ManageButton(commands.Cog):
         
         if content != None:
             content = content.replace("\\n", "\n")
-
-        try:
-            buttonid = int(buttonid)
-        except:
-            await ctx.respond("Invalid button ID!", ephemeral = True)
-            return
+        
+        if buttonid is None:
+            buttonid = self.AliasSearch(ctx.guild.id, oldlabel)
+            if len(buttonid) == 0:
+                await ctx.respond("Failed to get button by label.\nPlease use buttonid instead.\nOr use `/button list` to list all buttons in this guild.", ephemeral = True)
+                return
+            buttonid = buttonid[0][buttonid[0].rfind("(") + 1 : buttonid[0].rfind(")")]
+        else:
+            try:
+                buttonid = abs(int(buttonid))
+            except:
+                await ctx.respond("Invalid button ID!", ephemeral = True)
+                return
         cur.execute(f"SELECT data FROM button WHERE guildid = {ctx.guild.id} AND buttonid = {buttonid}")
         t = cur.fetchall()
         if len(t) == 0:
@@ -681,13 +712,16 @@ class ManageButton(commands.Cog):
 
         data = b64e(json.dumps(data))
         cur.execute(f"UPDATE button SET data = '{data}' WHERE guildid = {guildid} AND buttonid = {buttonid}")
+        if label != None:
+            cur.execute(f"UPDATE alias SET label = '{label}' WHERE guildid = {guildid} AND elementid = {buttonid} AND elementtype = 'button'")
         conn.commit()
 
         await ctx.respond(f"Button #{buttonid} edited.")
         await log("Button", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) edited button #{buttonid}", guildid)
 
     @manage.command(name="delete", description="Staff - Delete a button from database, previously posted button will become invalid.")
-    async def delete(self, ctx, buttonid: discord.Option(int, "Button ID, provided when button was created", required = True)):
+    async def delete(self, ctx, buttonid: discord.Option(int, "Button ID, provided when button was created", required = False),
+            label: discord.Option(str, "Button label, alias of Button ID", required = False, autocomplete = AliasAutocomplete)):
         await ctx.defer()    
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -698,11 +732,18 @@ class ManageButton(commands.Cog):
             await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
             return
 
-        try:
-            buttonid = int(buttonid)
-        except:
-            await ctx.respond("Invalid button ID!", ephemeral = True)
-            return
+        if buttonid is None:
+            buttonid = self.AliasSearch(ctx.guild.id, label)
+            if len(buttonid) == 0:
+                await ctx.respond("Failed to get button by label.\nPlease use buttonid instead.\nOr use `/button list` to list all buttons in this guild.", ephemeral = True)
+                return
+            buttonid = buttonid[0][buttonid[0].rfind("(") + 1 : buttonid[0].rfind(")")]
+        else:
+            try:
+                buttonid = abs(int(buttonid))
+            except:
+                await ctx.respond("Invalid button ID!", ephemeral = True)
+                return
             
         conn = newconn()
         cur = conn.cursor()
@@ -713,7 +754,8 @@ class ManageButton(commands.Cog):
             await ctx.respond("Button not found.", ephemeral = True)
             return
         
-        cur.execute(f"UPDATE button SET data = '', guildid = -1 WHERE guildid = {ctx.guild.id} AND buttonid = {buttonid}")
+        cur.execute(f"UPDATE button SET buttonid = -buttonid WHERE guildid = {ctx.guild.id} AND buttonid = {buttonid}")
+        cur.execute(f"DELETE FROM alias WHERE guildid = {ctx.guild.id} AND elementid = {buttonid} AND elementtype = 'button'")
         conn.commit()
 
         await ctx.respond(f"Button #{buttonid} deleted.")

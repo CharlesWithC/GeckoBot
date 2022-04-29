@@ -293,9 +293,11 @@ async def Premium(ctx):
     embed.add_field(name = "Buttons", value = "Free: **10**\nTier 1: **30**\nTier 2: **100**", inline = True)
     embed.add_field(name = "Embeds", value = "Free: **10**\nTier 1: **30**\nTier 2: **100**", inline = True)
     embed.add_field(name = "Forms", value = "Free: **5**\nTier 1: **30**\nTier 2: **50**", inline = True)
+    embed.add_field(name = "Ticket", value = "Free: **3**\nTier 1: **15**\nTier 2: **50**", inline = True)
+    embed.add_field(name = "Transcript (Messages)", value = "Free: **50**\nTier 1: **150**\nTier 2: **300**", inline = True)
     embed.add_field(name = "Reaction Role (Messages)", value = "Free: **10**\nTier 1: **30**\nTier 2: **50**", inline = True)
     embed.add_field(name = "Voice Channel Recorder", value = "Free: **10 hours / month**\nTier 1: **30 hours / month**\nTier 2: **100 hours / month**", inline = True)
-    embed.add_field(name = "Other", value = "Any Premium Tier: **Radio**, **Rank Card with image background**", inline = False)
+    embed.add_field(name = "Other", value = "Any Premium Tier: **Radio**, **Rank Card with image background**, **TruckersMP VTC Online Member Update**", inline = False)
     embed.add_field(name = "Note", value = f"Gecko is giving away **Free Premium** to the first 100 guilds!\nIf your guild isn't given premium ,join [support server]({SUPPORT}) and ask for it!", inline = False)
 
     embed.timestamp = datetime.now()

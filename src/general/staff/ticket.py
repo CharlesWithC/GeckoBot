@@ -26,7 +26,7 @@ class ManageTicket(commands.Cog):
 
     @manage.command(name="create", description="Staff - Create a new category of ticket.")
     async def create(self, ctx, category: discord.Option(discord.CategoryChannel, "Guild category where tickets will be created"),
-            label: discord.Option(str, "A easy-to-remember label, not visible to members, used as ticket id only when managing ticket", required = False),
+            label: discord.Option(str, "A easy-to-remember label, not visible to members, alias of gticketid", required = False),
             channelformat: discord.Option(str, "Channel name format, accept {username} {userid} {ticketid} variables, default 'ticket-{username}'", name="format", default = "ticket-{username}", required = False),
             msg: discord.Option(str, "Message to send after user created ticket", default = "", required = False),
             moderator: discord.Option(str, "Mention Roles or Users who can view the ticket, separate with spaces, default administrative staff", default = "", required = False)):
@@ -82,8 +82,11 @@ class ManageTicket(commands.Cog):
         conn.commit()
 
         await ctx.respond(f"Guild ticket category created!\nID: g{gticketid}\nTickets will be created under {category.mention}\n\nBind ticket category to button to start receiving tickets! `/button create`")
+        await log("Ticket", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) created guild ticket category {gticketid}.", ctx.guild.id)
 
     def AliasSearch(self, guildid, value):
+        if value is None:
+            return []
         value = value.lower()
         conn = newconn()
         cur = conn.cursor()
@@ -105,7 +108,7 @@ class ManageTicket(commands.Cog):
 
     @manage.command(name="edit", description="Staff - Edit a ticket category.")
     async def edit(self, ctx, gticketid: discord.Option(int, "Ticket category id", required = False),
-            label: discord.Option(str, "Ticket label, can be used as gticketid", required = False, autocomplete = AliasAutocomplete),
+            label: discord.Option(str, "Ticket label, alias of gticketid", required = False, autocomplete = AliasAutocomplete),
             category: discord.Option(discord.CategoryChannel, "Guild category where tickets will be created", required = False),
             newlabel: discord.Option(str, "A easy-to-remember label, not visible to members, used as ticket id only when managing ticket", required = False),
             channelformat: discord.Option(str, "Channel name format, accept {username} {userid} {ticketid} variables, default 'ticket-{username}'", name="format", required = False),
@@ -128,7 +131,7 @@ class ManageTicket(commands.Cog):
             return
 
         if gticketid is None:
-            gticketid = self.AliasSearch(guildid, label)
+            gticketid = self.AliasSearch(ctx.guild.id, label)
             if len(gticketid) == 0:
                 await ctx.respond("Failed to get gticketid by label.\nPlease use gticketid instead.\nOr use `/ticket list` to list all ticket categories in this guild.", ephemeral = True)
                 return
@@ -178,10 +181,11 @@ class ManageTicket(commands.Cog):
         conn.commit()
 
         await ctx.respond(f"Guild ticket category updated!\nID: g{gticketid}\nTickets will be created under {category.mention}\n\nBind ticket category to button to start receiving tickets! `/button create`")
+        await log("Ticket", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) edited guild ticket category {gticketid}.", ctx.guild.id)
 
     @manage.command(name="delete", description="Staff - Delete a ticket category.")
     async def delete(self, ctx, gticketid: discord.Option(str, "Ticket category id (g...)", required = False),
-            label: discord.Option(str, "Ticket label, can be used as gticketid", required = False, autocomplete = AliasAutocomplete)):
+            label: discord.Option(str, "Ticket label, alias of gticketid", required = False, autocomplete = AliasAutocomplete)):
         
         if ctx.guild is None:
             await ctx.respond("You can only run this command in guilds!")
@@ -200,7 +204,7 @@ class ManageTicket(commands.Cog):
             return
 
         if gticketid is None:
-            gticketid = self.AliasSearch(guildid, label)
+            gticketid = self.AliasSearch(ctx.guild.id, label)
             if len(gticketid) == 0:
                 await ctx.respond("Failed to get gticketid by label.\nPlease use gticketid instead.\nOr use `/ticket list` to list all ticket categories in this guild.", ephemeral = True)
                 return
@@ -224,6 +228,7 @@ class ManageTicket(commands.Cog):
         conn.commit()
 
         await ctx.respond("Ticket category deleted!\n\nBe aware that ticket records are not deleted.\nYou have to use `/ticket deleterecord` to delete them.")
+        await log("Ticket", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) deleted guild ticket category {gticketid}.", ctx.guild.id)
     
     @manage.command(name="list", description="Staff - List all ticket categories.")
     async def list(self, ctx):
@@ -414,5 +419,6 @@ class ManageTicket(commands.Cog):
         conn.commit()
 
         await ctx.respond("Ticket record deleted!")
+        await log("Ticket", f"[Guild {ctx.guild} {ctx.guild.id}] {ctx.author} ({ctx.author.id}) edited ticket record {ticketid}.", ctx.guild.id)
 
 bot.add_cog(ManageTicket(bot))

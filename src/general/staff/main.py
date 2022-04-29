@@ -219,7 +219,31 @@ async def transcript(ctx, channel: discord.Option(discord.TextChannel, "Channel 
     if channel is None:
         channel = ctx.channel
 
+    premium = GetPremium(ctx.guild)
+    if limit >= 300 and premium >= 2:
+        await ctx.respond("Max transcript messages: 300.\n\nThis cannot be increased as it will dramatically slow down the bot.", ephemeral = True)
+        return
+    elif limit >= 150 and premium == 1:
+        await ctx.respond("Premium Tier 1: 150 transcript messages.\nPremium Tier 2: 300 transcript messages.\n\nFind out more by using `/premium`", ephemeral = True)
+        return
+    elif limit >= 50 and premium == 0:
+        await ctx.respond("Free guilds: 50 transcript messages.\nPremium Tier 1: 150 transcript messages.\nPremium Tier 2: 300 transcript messages.\n\nFind out more by using `/premium`", ephemeral = True)
+        return
+
+    conn = newconn()
+    cur = conn.cursor()
+    cur.execute(f"SELECT * FROM settings WHERE skey = 'transcript' AND guildid = {ctx.guild.id}")
+    t = cur.fetchall()
+    if len(t) > 0:
+        await ctx.respond("Gecko can create transcript of only one channel at the same time.", ephemeral = True)
+        return
+    cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 'transcript', 0)")
+    conn.commit()
+
     data = await chat_exporter.export(channel, limit = limit)
     data = minify_html.minify(data, minify_js=True, minify_css=True, remove_processing_instructions=True, remove_bangs=True)
-    
+
     await ctx.respond(content=f"Transcript of {channel.name} created by {ctx.author.name}#{ctx.author.discriminator}", file=discord.File(io.BytesIO(data.encode()), filename=f"transcript-{channel.name}.html"))
+
+    cur.execute(f"DELETE FROM settings WHERE skey = 'transcript' AND guildid = {ctx.guild.id}")
+    conn.commit()

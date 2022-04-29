@@ -159,16 +159,17 @@ You can provide none of the content / embed / form to make the button a decorati
 
 Usage: `/button create {required: label} {optional: color, default blurple} {optional: emoji} {optional: disabled, default No} {optional: ephemeral, default Yes} {optional: url} {optional: content} {optional: embedid} {optional: formid} {optional: roles}`""",
 
-        "edit": """Edit the button by the given button ID provided when it's created.
+        "edit": """Edit the button by the given button ID / label provided when it's created.
 If you forgot the button ID, use `/button get` to get all buttons in a message, or `/button list` to get all buttons created in the server.ButtonStyle()
+You can also specify {oldlabel} as an alias to button ID.
 
-Usage: `/button edit {required: buttonid} {required: label} {optional: color, default blurple} {optional: emoji} {optional: disabled, default No} {optional: ephemeral, default Yes} {optional: url} {optional: content} {optional: embedid} {optional: formid} {optional: roles}`""",
+Usage: `/button edit {optional: buttonid} {optional: oldlabel} {optional: newlabel} {optional: color, default blurple} {optional: emoji} {optional: disabled, default No} {optional: ephemeral, default Yes} {optional: url} {optional: content} {optional: embedid} {optional: formid} {optional: roles}`""",
 
-        "delete": """Delete a button from database by the given button ID. 
+        "delete": """Delete a button from database by the given button ID / label. 
 **Note** This will only delete the button from database but not any button already posted. Posted buttons will no longer work and needed to be deleted manually.
 To remove all buttons from a message, use `/button clear`. To add some buttons back, use `/button attach`.
 
-Usage: `/button delete {required: buttonid}`""",
+Usage: `/button delete {optional: buttonid} {optional: label}`""",
 
         "get": """Get all buttons included in a message by message link.
 To get message link, right click or hold on the message, and select 'Message Link' from the popup.
@@ -238,6 +239,64 @@ You only need to provide the keywords to be removed, other keywords will not be 
 
 Usage: `/chat remove {required: keywords} {required: action}"""},
 
+    "embed": {
+        "description": """**Gecko Embed**
+You can create embeds with up to 4000 characters description, thumbnail, image, footer, author, timestamp etc.
+
+Subcommands of `embed` group
+`create` `edit` `delete` `preview` `list` `send` `update`""",
+
+        "create": """Create an embed and store it in database. (Use `/embed send` to post it)
+Command is simple as all the stuff will be edited in modal.
+
+Footer field accepts icon url, add it in the format `[ICON URL] TEXT` (the [] is needed).
+Thumbnail and image is separated with `|`, if you don't put `|`, it will be considered thumbnail.
+
+Usage: `/embed {optional: color, default 158 132 46}`""",
+
+        "edit": """Edit an embed by the given embed ID provided when it's created / title.
+
+Usage: `/embed {optional: embedid} {optional: title} {optional: color}`""",
+
+        "delete": """Delete an embed by the given embed ID provided when it's created / title.
+    
+Usage: `/embed {optional: embedid} {optional: title}`""",
+
+        "preview": """Post the embed in the channel you run the command for preview.
+    
+Usage: `/embed preview {optional: embedid} {optional: title} {optional: showauthor, default False} {optional: timestamp}`""",
+
+        "list": """List all embeds created in the server.
+No argument is needed.
+
+Usage: `/embed list`""",
+
+        "send": """Post an embed in a channel.
+
+Usage: `/embed send {required: #channel} {optional: embedid} {optional: title} {optional: showauthor, default False} {optional: timestamp}`""",
+
+        "update": """Update embed in a message.
+
+Usage: `/embed update {required: msglink} {optional: embedid} {optional: title} {optional: showauthor, default False} {optional: timestamp}`"""
+    },
+
+    "eventlog": {
+        "description": """Log events in the server.
+Supported events: `message_delete, bulk_message_delete, message_edit, guild_channel_create, guild_channel_delete, member_join, member_remove, member_update, member_ban, member_unban, invite_create`
+
+Event log does not have a command group
+Supported commands: `/eventlog` `/logging`""",
+
+        "eventlog": """Enable / Disable the log for an event.
+Event name can be selected from autocomplete results.
+
+Usage: `/eventlog {required: event} {optional: enable / disable, default enable}`""",
+
+        "logging" : """Check what events are being logged.
+
+Usage: `/logging`"""
+    },
+
     "form": {
         "description": """**Gecko Form**, submit forms without leaving Discord.
 **Gecko Form** works with **Gecko Button**. When you create a form, you need to create a button whose interaction form id is the id of form you created. Then the form will popup when the member clicked the button.
@@ -254,23 +313,25 @@ Detailed information (the form fields) will be edited in a modal popped up.
 
 To stop receiving new entries, use `/form toggle`. You are recommended to disabled the button by `/button edit` as well.
 
-Usage: `/form create {optional: callback, default "Thanks for submitting the form"} {optional: onetime, default No}`""",
+`{label}` is an alias to Form ID which not visible by members.
 
-        "edit": """Edit a form by the given form id.
+Usage: `/form create {optional: label} {optional: callback, default "Thanks for submitting the form"} {optional: onetime, default No}`""",
+
+        "edit": """Edit a form by the given form id / label.
 By command argument, you can set the callback message - the message to send to members when they submit the form. And whether the form acceptes only one submission of each member (onetime).
 If you leave them empty, they will keep unchanged.
 Detailed information (the form fields) will be edited in a modal popped up.
 
 In case you forgot the form id, use `/form list` to get all forms created in the guild.
 
-Usage: `/form edit {required: formid} {optional: callback, default "Thanks for submitting the form"} {optional: onetime, default No}`""",
+Usage: `/form edit {optional: formid} {optional: oldlabel} {optional: newlabel} {optional: callback, default "Thanks for submitting the form"} {optional: onetime, default No}`""",
 
-        "delete": """Delete a form from database by the given form id.
+        "delete": """Delete a form from database by the given form id / label.
 This will delete the form and all entries! Make sure to back them up before deleting them.
 After you deleted the form, the submit button will become invalid and you'd better delete it. 
 If you only want to stop receiving new entries, use `/form toggle`
 
-Usage: `/form delete {required: formid}`""",
+Usage: `/form delete {optional: formid} {optional: label}`""",
 
         "list": """List all forms created in the guild.
 No argument is needed .
@@ -280,17 +341,17 @@ Usage: `/form list`""",
         "toggle": """Toggle whether the form accepts new entries.
 This will only disable the form. To disable the submit button, use `/button edit`
 
-Usage: `/form toggle {required: formid}""",
+Usage: `/form toggle {optional: formid} {optional: label}`""",
 
         "entry": """For members, this command allows them to view their own submitted entry of a form.
 For staff, this command allows them to view any users' entry of a form.
 
-Usage: `/form entry {required: formid} {optional: user, only staff can use this argument}""",
+Usage: `/form entry {required: formid} {optional: user, only staff can use this argument}`""",
 
         "download": """Download all entries of a submitted form.
 Gecko will send you a Markdown file including all entries, you are suggested to open it using a Markdown viewer / editor.
 
-Usage: `/form download {required: formid}`"""},
+Usage: `/form download {optional: formid} {optional: label}`"""},
 
     "reaction_role": {
         "description": """**Gecko Reaction Role**, add role when members add a reaction.
@@ -398,6 +459,64 @@ No argument is required for this command.
 
 Usage: `/stats_display destroy`"""},
 
+    "ticket": {
+        "description": """**Gecko Ticket**
+Create multiple tickets, with different moderators handling different kinds of tickets!
+Ticket conversation is stored so you can download it at any time (and of course you can delete it).
+
+**Important Note** There are two types of IDs related to ticketing system, guild ticket id (gticketid) and ticket id (ticketid).
+Guild ticket ID refers to the category of ticket you created, it's used only to bind the ticket with a button. Usually prefix `g` is added to separate it from Ticket ID to prevent confusion.
+Ticket ID is the ID of ticket record, it's used to download the ticket conversation. An unique ticket id is assigned for each user-created ticket.
+
+Subcommands of `/ticket` group:
+`create` `edit` `delete` `list` `viewrecord` `listrecord` `deleterecord`""",
+
+        "create": """**Gecko Ticket**
+Create a ticket category. The `category` can be understood as a type of ticket.
+The argument `{category}` is the guild category where Gecko will create channels.
+`{label}` is an easy-to-remember label in case you forgot the guild ticket ID, though you can retrieve them by `/ticket list`.
+`{format}` is the channel name format, which accept 3 variables: `{username} {userid} {ticketid}`, default format is `ticket-{username}`.
+`{msg}` is the message to send in the ticket channel when ticket is created.
+`{moderator}` can be either role or user, and can contain multiple items, you have to mention the role / user.
+
+Usage: `/ticket create {required: category} {optional: label} {optional: format} {optional: msg} {optional: moderator}`""",
+
+        "edit": """**Gecko Ticket**
+Edit a guild ticket category.
+You need to provide either guild ticket ID or label.
+See `/help ticket create` for more information about command arguments.
+
+Usage: `/ticket edit {optional: gticketid} {optional: label} {optional: category} {optional: newlabel} {optional: format} {optional: msg} {optional: moderator}`""",
+
+        "delete": """**Gecko Ticket**
+Delete a guild ticket category.
+**NOTE** This will not delete ticket records.
+
+Usage: `/ticket delete {optional: gticketid} {optional: label}`""",
+
+        "list": """**Gecko Ticket**
+List all guild ticket categories.
+
+Usage: `/ticket list`""",
+
+        "viewrecord": """**Gecko Ticket**
+View ticket record.
+You have to be either ticket creator or staff member to see the record.
+
+Usage: `/ticket viewrecord {required: ticketid}`""",
+
+        "listrecord": """**Gecko Ticket**
+List all ticket records in the guild.
+
+Usage: `/ticket listrecord`""",
+
+        "deleterecord": """**Gecko Ticket**
+Delete ticket record.
+You have to be either ticket creator or staff member to delete the record.
+
+Usage: `/ticket viewrecord {required: ticketid}`"""
+    },
+
     "vcrecord": {
         "description": """**Gecko Voice Channel Recorder**, AKA **GeckoVCR**
 **GeckoVCR** helps you record the conversation in a voice channel. The recording will be separated by each member.
@@ -416,16 +535,6 @@ Gecko sends you all the audio files through DM once the recording is finished. N
 Music will have to be stopped before VCR is started.
 Gecko locks music function when VCR starts.""",
 
-        "join": """Let Gecko join the voice channel you are in and lock music function.
-This will not start recording immediately.
-Use `/vcrecord start` to start recording.
-
-Usage: `/vcrecord join`""",
-
-        "leave": """Let Gecko leave the voice channel, and if it's being recorded, stop the recording and send you the recorded audio files through DM.
-        
-Usage: `/vcrecord leave`""",
-
         "start": """Start recording the voice channel.
 Gecko must have joined the voice channel before recording starts.
 
@@ -434,7 +543,11 @@ Usage: `/vcrecord start`""",
         "stop": """Stop recording the voice channel and send you the audio files.
 Make sure your DM is open!
 
-Usage: `/vcrecord stop`"""},
+Usage: `/vcrecord stop`""",
+
+        "unlock": """Unlock Gecko VC in case it's not unlocked automatically.
+        
+Usage: `/vcrecord unlock`"""},
 
     "setup": """Send the server owner a DM about the necessary things needed to be done when Gecko is added to a guild.
 This command can only be executed by the server owner.
@@ -446,6 +559,76 @@ For detailed information, use `/setup`.
 This command can only be executed by the server owner.
 
 Usage: `/setchannel {required: #channel}`""",
+
+    "ranking": {
+        "description": """**Gecko Ranking**
+*Rankcard supports any background image from the web! For free!*  
+Staff can set any xp rate, yes, even to 100! Also level roles, members will be given the role when the reach the level.
+There's also thumb XP function, message authors will be given XP if it's reacted with thumb-up by other members.
+
+Maximum level is 100, after reaching maximum level, xp still goes up but level doesn't go up.
+
+Supported slash commands:
+`rank` `card` `leaderboard` `givexp` `xprate` `levelrole` `resetxp` `thumbxp`
+Supported traditional commands:
+`g?rank` `g?leaderboard`""",
+
+        "rank": """Get your rank, or other member's rank.
+
+Usage: `/rank {optional: @member}`
+For `g?` commands, you can only get your own rank, usage: `g?rank`""",
+
+        "card": """Customize your rank card!
+You can set any **background image** from the web! For free!
+Or choose **solid color**, using RGB format.
+Foreground is the rank and level text color, must be in RGB format.
+You can also set a **global** layout, which will be used anywhere, except servers you have set specific layouts.
+
+**RGB Format**: `r g b`, example: `144 255 144`
+
+Usage: /card {optional: background, url / RGB} {optional: foreground, RGB} {optional: globallayout} {optional: remove}`
+*You must provide at least one of the arguments*""",
+
+        "leaderboard": """Get the leaderboard
+You can specify the page of the leaderboard, 10 members are displayed on each page.
+
+Usage: `/leaderboard {optional: page, default 1}`
+For `g?` commands, you can only get the first page, usage: `g?leaderboard`""",
+
+        "givexp": """**Staff-only command**
+Give / remove XP from a member.
+Set {xp} to negative integars to remove xp.
+
+Usage: `/givexp {required: @member} {required: xp}`""",
+
+        "xprate": """**Staff-only command**
+Set the XP rate.
+Higher rate will result in faster level increase.
+
+**NOTE** This also works for `thumbsxp`, find out more with `/help thumbsxp`.
+
+Usage: `/xprate {required: xprate}`""",
+
+        "levelrole": """**Staff-only command**
+Set the role to be assigned to members when they reach a certain role.
+Set `remove` to `Yes` to remove the level role.
+
+Usage: `/levelrole {required: level} {required: @role} {optional: remove}`""",
+
+        "resetxp": """**Staff-only command**
+Reset everyone's XP in the guild.
+:warning: **WARNING** this operation cannot be undone.
+
+Usage: `/resetxp`""",
+
+        "thumbxp": """**Staff-only command**
+Enable / Disable thumb XP function.
+Message authors will be given XP if it's reacted with thumb-up by other members.
+
+**NOTE** Message authors won't lose XP if it's reacted with thumb-down (to prevent abuse).
+
+Usage: `/thumbup`"""
+    },
 
     "music": {
         "description": """**Gecko Music**, and **Radio**
@@ -563,74 +746,23 @@ Usage: `/radio {required: radio station}`""",
 Usage: `/radiolist`"""
     },
 
-    "ranking": {
-        "description": """**Gecko Ranking**
-*Rankcard supports any background image from the web! For free!*  
-Staff can set any xp rate, yes, even to 100! Also level roles, members will be given the role when the reach the level.
-There's also thumb XP function, message authors will be given XP if it's reacted with thumb-up by other members.
+    "suggestion": {
+        "description": """**Suggestion**
+Accept suggestions and improve the server!
+Receive upvotes and downvotes, export all suggestions with one command!
+Edit your suggestion message at any time in case you made a mistake.
 
-Maximum level is 100, after reaching maximum level, xp still goes up but level doesn't go up.
+**NOTE** To enable suggestion function, use `/setchannel` to specify a channel where suggestions will be posted.
 
-Supported slash commands:
-`rank` `card` `leaderboard` `givexp` `xprate` `levelrole` `resetxp` `thumbxp`
-Supported traditional commands:
-`g?rank` `g?leaderboard`""",
+Usage: `/suggestion {optional: editlink}`
 
-        "rank": """Get your rank, or other member's rank.
+To download all suggestions, use `/dlsuggestion`""",
 
-Usage: `/rank {optional: @member}`
-For `g?` commands, you can only get your own rank, usage: `g?rank`""",
+        "dlsuggestion": """**Suggestion**
+Download all suggestions made in the server, even if their original messages are deleted.
+You will receive a Markdown file and you are recommended to view it using a Markdown reader.
 
-        "card": """Customize your rank card!
-You can set any **background image** from the web! For free!
-Or choose **solid color**, using RGB format.
-Foreground is the rank and level text color, must be in RGB format.
-You can also set a **global** layout, which will be used anywhere, except servers you have set specific layouts.
-
-**RGB Format**: `r g b`, example: `144 255 144`
-
-Usage: /card {optional: background, url / RGB} {optional: foreground, RGB} {optional: globallayout} {optional: remove}`
-*You must provide at least one of the arguments*""",
-
-        "leaderboard": """Get the leaderboard
-You can specify the page of the leaderboard, 10 members are displayed on each page.
-
-Usage: `/leaderboard {optional: page, default 1}`
-For `g?` commands, you can only get the first page, usage: `g?leaderboard`""",
-
-        "givexp": """**Staff-only command**
-Give / remove XP from a member.
-Set {xp} to negative integars to remove xp.
-
-Usage: `/givexp {required: @member} {required: xp}`""",
-
-        "xprate": """**Staff-only command**
-Set the XP rate.
-Higher rate will result in faster level increase.
-
-**NOTE** This also works for `thumbsxp`, find out more with `/help thumbsxp`.
-
-Usage: `/xprate {required: xprate}`""",
-
-        "levelrole": """**Staff-only command**
-Set the role to be assigned to members when they reach a certain role.
-Set `remove` to `Yes` to remove the level role.
-
-Usage: `/levelrole {required: level} {required: @role} {optional: remove}`""",
-
-        "resetxp": """**Staff-only command**
-Reset everyone's XP in the guild.
-:warning: **WARNING** this operation cannot be undone.
-
-Usage: `/resetxp`""",
-
-        "thumbxp": """**Staff-only command**
-Enable / Disable thumb XP function.
-Message authors will be given XP if it's reacted with thumb-up by other members.
-
-**NOTE** Message authors won't lose XP if it's reacted with thumb-down (to prevent abuse).
-
-Usage: `/thumbup`"""
+Usage: `/dlsuggestion`"""
     },
 
     "translate": {
@@ -651,83 +783,6 @@ If `{disable}` is set to `Yes`, auto translation will be turned off.
 *This function is premium-only*
 
 Usage: `/autotranslate {optional: channel} {optional: fromlang} {optional: tolang} {optional: disable}`"""
-    },
-
-    "suggestion": {
-        "description": """**Suggestion**
-Accept suggestions and improve the server!
-Receive upvotes and downvotes, export all suggestions with one command!
-Edit your suggestion message at any time in case you made a mistake.
-
-**NOTE** To enable suggestion function, use `/setchannel` to specify a channel where suggestions will be posted.
-
-Usage: `/suggestion {optional: editlink}`
-
-To download all suggestions, use `/dlsuggestion`""",
-
-        "dlsuggestion": """**Suggestion**
-Download all suggestions made in the server, even if their original messages are deleted.
-You will receive a Markdown file and you are recommended to view it using a Markdown reader.
-
-Usage: `/dlsuggestion`"""
-    },
-
-    "ticket": {
-        "description": """**Gecko Ticket**
-Create multiple tickets, with different moderators handling different kinds of tickets!
-Ticket conversation is stored so you can download it at any time (and of course you can delete it).
-
-**Important Note** There are two types of IDs related to ticketing system, guild ticket id (gticketid) and ticket id (ticketid).
-Guild ticket ID refers to the category of ticket you created, it's used only to bind the ticket with a button. Usually prefix `g` is added to separate it from Ticket ID to prevent confusion.
-Ticket ID is the ID of ticket record, it's used to download the ticket conversation. An unique ticket id is assigned for each user-created ticket.
-
-Subcommands of `/ticket` group:
-`create` `edit` `delete` `list` `viewrecord` `listrecord` `deleterecord`""",
-
-        "create": """**Gecko Ticket**
-Create a ticket category. The `category` can be understood as a type of ticket.
-The argument `{category}` is the guild category where Gecko will create channels.
-`{label}` is an easy-to-remember label in case you forgot the guild ticket ID, though you can retrieve them by `/ticket list`.
-`{format}` is the channel name format, which accept 3 variables: `{username} {userid} {ticketid}`, default format is `ticket-{username}`.
-`{msg}` is the message to send in the ticket channel when ticket is created.
-`{moderator}` can be either role or user, and can contain multiple items, you have to mention the role / user.
-
-Usage: `/ticket create {required: category} {optional: label} {optional: format} {optional: msg} {optional: moderator}`""",
-
-        "edit": """**Gecko Ticket**
-Edit a guild ticket category.
-You need to provide either guild ticket ID or label.
-See `/help ticket create` for more information about command arguments.
-
-Usage: `/ticket edit {optional: gticketid} {optional: label} {optional: category} {optional: newlabel} {optional: format} {optional: msg} {optional: moderator}`""",
-
-        "delete": """**Gecko Ticket**
-Delete a guild ticket category.
-**NOTE** This will not delete ticket records.
-
-Usage: `/ticket delete {optional: gticketid} {optional: label}`""",
-
-        "list": """**Gecko Ticket**
-List all guild ticket categories.
-
-Usage: `/ticket list`""",
-
-        "viewrecord": """**Gecko Ticket**
-View ticket record.
-You have to be either ticket creator or staff member to see the record.
-
-Usage: `/ticket viewrecord {required: ticketid}`""",
-
-        "listrecord": """**Gecko Ticket**
-List all ticket records in the guild.
-
-Usage: `/ticket listrecord`""",
-
-        "deleterecord": """**Gecko Ticket**
-Delete ticket record.
-You have to be either ticket creator or staff member to delete the record.
-
-Usage: `/ticket viewrecord {required: ticketid}`"""
     },
 
     "truckersmp": {
