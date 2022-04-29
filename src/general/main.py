@@ -16,6 +16,7 @@ import general.dev
 import general.help
 import general.level
 import general.music
+import general.poll
 import general.suggestion
 import general.translate
 import general.vc

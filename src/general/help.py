@@ -44,6 +44,9 @@ Find out more by `/help truckersmp`
 *Not only music, but also radio!*  
 274 radio stations are supported, and you can request your desired station to be added.  
 
+**Gecko Poll**
+Polls can be sent across servers!
+
 **Gecko Ticket**  
 Create multiple tickets, with different moderators handling different kinds of tickets!
 Ticket conversation is stored so you can download it at any time!
@@ -243,7 +246,7 @@ Usage: `/chat remove {required: keywords} {required: action}"""},
         "description": """**Gecko Embed**
 You can create embeds with up to 4000 characters description, thumbnail, image, footer, author, timestamp etc.
 
-Subcommands of `embed` group
+Subcommands of `/embed` group
 `create` `edit` `delete` `preview` `list` `send` `update`""",
 
         "create": """Create an embed and store it in database. (Use `/embed send` to post it)
@@ -744,6 +747,43 @@ Usage: `/radio {required: radio station}`""",
         "radiolist": """Get a list of supported radio station.
 
 Usage: `/radiolist`"""
+    },
+
+    "poll": {
+        "description": """**Gecko Poll**
+A poll can be sent across servers!
+
+Subcommands of `/poll` group
+`create` `resend` `result`""",
+
+        "create": """**Gecko Poll**
+Create a new poll. Poll description & choices are edited in modal after you sent the command.
+**Note** Poll description & choices cannot be edited after created, so be careful!
+
+`{expire}` is when the poll will expire, leave empty to make it never expire.
+The format is `{expire}` is number + unit, unit supports `s` (seconds), `m` (minutes), `h` (hours), `d` (days).
+Example: `6h` (6 hours), `7d` (7 days)
+
+`{allowforward}` is whether allow any user who have voted to resend the poll, if No, only creator can resend it.
+Users who haven't voted cannot resend the poll to prevent data leak.
+
+Usage: `/poll create {optional: expire} {optional: allowforward, default No}`""",
+
+        "resend": """**Gecko Poll**
+Resend the poll by a given poll ID.
+
+If you are the poll creator, you can resend it anywhere.
+If you are not but creator allowed any user who voted to resend it, then you can also resend it anywhere.
+Only users who haven't voted cannot resend to prevent data leak.
+
+Usage: `/poll resend {required: pollid}`""",
+
+        "result": """**Gecko Poll**
+View the result of a poll.
+
+Only users who haven't voted cannot view result to prevent data leak.
+
+Usage: `/poll result {required: pollid}`"""
     },
 
     "suggestion": {

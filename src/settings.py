@@ -27,6 +27,11 @@ GECKOICON = "https://cdn.discordapp.com/app-icons/954034331230285838/4ba646d5c58
 MUSIC_ICON = "https://cdn.discordapp.com/app-assets/954034331230285838/958539534830796851.png"
 FFMPEG_OPTIONS = "-reconnect 1 -reconnect_at_eof 1 -reconnect_streamed 1 -reconnect_delay_max 2"
 
+SOLID = "<:solid:969525055006605312>"
+ONETHREE = "<:onethree:969527265077628960>"
+HALF = "<:half:969525054788472893>"
+THREEONE = "<:threeone:969527265304121354>"
+SPACE = "<:space:969525054603919402>"
 
 import pyttsx3
 VOICES = []

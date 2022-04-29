@@ -207,7 +207,7 @@ async def dm(ctx, user: discord.Option(discord.User, "Member to DM, must be in t
 
 @bot.slash_command(name="transcript", description="Create a transcript of the channel")
 async def transcript(ctx, channel: discord.Option(discord.TextChannel, "Channel to create transcript, default the channel where command is executed", required = False),
-        limit: discord.Option(int, "Message limit, default None", required = False)):
+        limit: discord.Option(int, "Message limit, limitted by premium tier", required = False)):
     await ctx.defer()
     if ctx.guild is None:
         await ctx.respond(f"You can only use this command in guilds, not in DMs.")
@@ -220,15 +220,23 @@ async def transcript(ctx, channel: discord.Option(discord.TextChannel, "Channel 
         channel = ctx.channel
 
     premium = GetPremium(ctx.guild)
-    if limit >= 300 and premium >= 2:
-        await ctx.respond("Max transcript messages: 300.\n\nThis cannot be increased as it will dramatically slow down the bot.", ephemeral = True)
-        return
-    elif limit >= 150 and premium == 1:
-        await ctx.respond("Premium Tier 1: 150 transcript messages.\nPremium Tier 2: 300 transcript messages.\n\nFind out more by using `/premium`", ephemeral = True)
-        return
-    elif limit >= 50 and premium == 0:
-        await ctx.respond("Free guilds: 50 transcript messages.\nPremium Tier 1: 150 transcript messages.\nPremium Tier 2: 300 transcript messages.\n\nFind out more by using `/premium`", ephemeral = True)
-        return
+    if limit != None:
+        if limit >= 300 and premium >= 2:
+            await ctx.respond("Max transcript messages: 300.\n\nThis cannot be increased as it will dramatically slow down the bot.", ephemeral = True)
+            return
+        elif limit >= 150 and premium == 1:
+            await ctx.respond("Premium Tier 1: 150 transcript messages.\nPremium Tier 2: 300 transcript messages.\n\nFind out more by using `/premium`", ephemeral = True)
+            return
+        elif limit >= 50 and premium == 0:
+            await ctx.respond("Free guilds: 50 transcript messages.\nPremium Tier 1: 150 transcript messages.\nPremium Tier 2: 300 transcript messages.\n\nFind out more by using `/premium`", ephemeral = True)
+            return
+    else:
+        if premium == 0:
+            limit = 50
+        elif premium == 1:
+            limit = 150
+        elif premium == 2:
+            limit = 300
 
     conn = newconn()
     cur = conn.cursor()

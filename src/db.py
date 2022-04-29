@@ -110,6 +110,14 @@ CREATE INDEX index_ticket ON ticket (gticketid, guildid);
 CREATE INDEX index_ticketrecord ON ticketrecord (ticketid, gticketid);
 """
 
+# POLL
+cur.execute(f"CREATE TABLE IF NOT EXISTS poll (pollid BIGINT, userid BIGINT, data TEXT, expire BIGINT, allowforward BIGINT)")
+cur.execute(f"CREATE TABLE IF NOT EXISTS pollvote (pollid BIGINT, userid BIGINT, choiceid BIGINT)")
+"""
+CREATE INDEX index_poll ON poll (pollid);
+CREATE INDEX index_poll ON pollvote (pollid, choiceid);
+"""
+
 # ALIAS
 cur.execute(f"CREATE TABLE IF NOT EXISTS alias (guildid BIGINT, elementtype TEXT, elementid BIGINT, label TEXT)")
 # elementtype = embed, form, ticket

@@ -2,6 +2,9 @@
 
 ## Update 2022.04.29  
 
+**Version v1.22**  
+Added **Gecko Poll** function
+
 **Version v1.21.2**  
 1.Added label alias to ID  
 2.Update help  

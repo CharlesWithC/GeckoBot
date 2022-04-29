@@ -30,6 +30,10 @@ Find out more by `/help truckersmp`
 *Not only music, but also radio!*  
 274 radio stations are supported, and you can request your desired station to be added.  
 
+## Gecko Poll
+
+Polls can be sent across servers!  
+
 ## Gecko Ticket
 
 Create multiple tickets, with different moderators handling different kinds of tickets!  

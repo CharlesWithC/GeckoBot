@@ -142,6 +142,87 @@ class GeckoButton(Button):
 
             return
 
+        if custom_id.startswith("GeckoPoll"):
+            custom_id = custom_id.split("-")
+            pollid = int(custom_id[1])
+            choiceid = int(custom_id[2])
+            cur.execute(f"SELECT expire, data FROM poll WHERE pollid = {pollid}")
+            p = cur.fetchall()
+            if len(p) > 0:
+                expire = p[0][0]
+                data = json.loads(b64d(p[0][1]))
+                description = data["description"]
+                choices = data["choices"]
+
+                if choiceid != 0:
+                    cur.execute(f"SELECT choiceid FROM pollvote WHERE pollid = {pollid} AND userid = {userid}")
+                    p = cur.fetchall()
+                    if len(p) > 0:
+                        await interaction.response.send_message(f"You have already voted: **{choices[p[0][0]-1]}**.", ephemeral = True)
+                        return
+
+                cur.execute(f"SELECT choiceid FROM pollvote WHERE pollid = {pollid}")
+                p = cur.fetchall()
+                votes = {1: 0, 2: 0, 3: 0, 4: 0}
+                tot = 0
+                for pp in p:
+                    votes[pp[0]] += 1
+                    tot += 1
+                
+                embed = discord.Embed(title="Poll (Ongoing)", description=description, color=GECKOCLR)
+                if expire != -1 and expire < int(time()):
+                    embed = discord.Embed(title="Poll (Ended)", description=description, color=GECKOCLR)
+                else:
+                    if choiceid != 0:
+                        votes[choiceid] += 1
+                        tot += 1
+                        cur.execute(f"INSERT INTO pollvote VALUES ({pollid}, {userid}, {choiceid})")
+                        conn.commit()
+                    # choiceid = 0 ==> only refresh
+
+                for choiceid in range(len(choices)):
+                    pct = 0
+                    pctf = 0
+                    solid = 0
+                    space = 10
+                    half = 0
+                    ot = 0
+                    to = 0
+                    if tot != 0: # in case expire
+                        pct = round(votes[choiceid + 1] / tot * 100)
+                        pctf = round(votes[choiceid + 1] / tot * 100, 2)
+                        solid = int(pct / 10)
+                        k = pct / 10 - int(pct / 10)
+                        if k >= 0.75:
+                            to = 1
+                        elif k >= 0.5:
+                            half = 1
+                        elif k >= 0.25:
+                            ot = 1
+                        space = (10 - solid - half - ot - to)
+                    embed.add_field(name=choices[choiceid], value=SOLID * solid + ONETHREE * ot + HALF * half + THREEONE * to + SPACE * space + f" {pctf}%", inline=False)
+
+                embed.add_field(name = "Voted", value = f"{tot}", inline = True)
+
+                embed.set_footer(text = f"Gecko Poll • ID: {pollid} • Refresh to sync between servers", icon_url = GECKOICON)
+
+                if expire != -1:
+                    if expire < int(time()):
+                        embed.add_field(name="End", value = f"Ended <t:{expire}:R>", inline=True)
+                        await interaction.response.edit_message(embed = embed, view = None)
+                    else:
+                        embed.add_field(name="End", value = f"<t:{expire}:R>", inline=True)
+                        await interaction.response.edit_message(embed = embed)
+                else:
+                    embed.add_field(name="End", value = "Never", inline=True)
+                    await interaction.response.edit_message(embed = embed)
+
+                return
+
+            else:
+                await interaction.response.send_message("Poll not found.", ephemeral = True)
+                return
+
         if not custom_id.startswith("GeckoButton"):
             return
 
@@ -357,6 +438,8 @@ class ManageButton(commands.Cog):
             if dd[0].startswith("GeckoButton"):
                 view.add_item(GeckoButton("", None, BTNSTYLE["blurple"], False, dd[0]))
             elif dd[0].startswith("GeckoTicket"):
+                view.add_item(GeckoButton("", None, BTNSTYLE["blurple"], False, dd[0]))
+            elif dd[0].startswith("GeckoPoll"):
                 view.add_item(GeckoButton("", None, BTNSTYLE["blurple"], False, dd[0]))
             elif dd[0].startswith("GeckoConnectFourGame"):
                 view.add_item(ConnectFourJoinButton("", dd[0]))
