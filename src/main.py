@@ -12,8 +12,9 @@ import json, asyncio
 
 import general.main
 import traditional.main
-import globaltrucking.main
 import truckersmp.main
+import globaltrucking.main
+import atthemile.main
 from truckersmp.tmp import UpdateTMPMap, UpdateTMPTraffic
 from datetime import datetime
 

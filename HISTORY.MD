@@ -1,5 +1,10 @@
 # Gecko Bot Update History
 
+## Update 2022.04.30
+
+**Version v1.22b**  
+Added At The Mile Logistics Exclusive Functions  
+
 ## Update 2022.04.29  
 
 **Version v1.22**  

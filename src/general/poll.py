@@ -64,7 +64,7 @@ class PollEditModal(Modal):
 
         view = View(timeout = None)
 
-        embed = discord.Embed(title="Poll", description=description, color=GECKOCLR)
+        embed = discord.Embed(title="Poll (Ongoing)", description=description, color=GECKOCLR)
         i = 0
         for choice in choices:
             embed.add_field(name=choice, value=f"{SPACE * 10} 0.00%", inline=False)
@@ -139,22 +139,24 @@ class Poll(commands.Cog):
     async def resend(self, ctx, pollid: discord.Option(int, "Poll ID")):
         conn = newconn()
         cur = conn.cursor()
-        cur.execute(f"SELECT data, expire, allowforward FROM poll WHERE pollid = {pollid}")
+        cur.execute(f"SELECT data, expire, allowforward, userid FROM poll WHERE pollid = {pollid}")
         t = cur.fetchall()
         if len(t) == 0:
             await ctx.respond("Invalid poll ID", ephemeral = True)
             return
 
+        creator = t[0][3]
         allowforward = t[0][2]
-        if allowforward == 0:
+        if creator != ctx.author.id and allowforward == 0:
             await ctx.respond("Poll creator disabled forwarding by other users.", ephemeral = True)
             return
 
-        cur.execute(f"SELECT * FROM pollvote WHERE pollid = {pollid} AND userid = {ctx.author.id}")
-        p = cur.fetchall()
-        if len(p) == 0:
-            await ctx.respond("Only voted user can resend poll to prevent data leak.", ephemeral = True)
-            return
+        if creator != ctx.author.id:
+            cur.execute(f"SELECT * FROM pollvote WHERE pollid = {pollid} AND userid = {ctx.author.id}")
+            p = cur.fetchall()
+            if len(p) == 0:
+                await ctx.respond("Only voted user can resend poll to prevent data leak.", ephemeral = True)
+                return
 
         user = ctx.author
         userid = user.id
@@ -243,11 +245,13 @@ class Poll(commands.Cog):
             await ctx.respond("Invalid poll ID", ephemeral = True)
             return
 
-        cur.execute(f"SELECT * FROM pollvote WHERE pollid = {pollid} AND userid = {ctx.author.id}")
-        p = cur.fetchall()
-        if len(p) == 0:
-            await ctx.respond("Only voted user can view poll result to prevent data leak.", ephemeral = True)
-            return
+        creator = t[0][3]
+        if creator != ctx.author.id:
+            cur.execute(f"SELECT * FROM pollvote WHERE pollid = {pollid} AND userid = {ctx.author.id}")
+            p = cur.fetchall()
+            if len(p) == 0:
+                await ctx.respond("Only voted user can view poll result to prevent data leak.", ephemeral = True)
+                return
 
         user = ctx.author
         userid = user.id
@@ -315,5 +319,24 @@ class Poll(commands.Cog):
         else:
             embed.add_field(name="End", value = "Never", inline=True)
             await ctx.respond(embed = embed, view = view)
+
+    @poll.command(name="stop", description="Stop a poll")
+    async def stop(self, ctx, pollid: discord.Option(int, "Poll ID")):
+        conn = newconn()
+        cur = conn.cursor()
+        cur.execute(f"SELECT userid FROM poll WHERE pollid = {pollid}")
+        t = cur.fetchall()
+        if len(t) == 0:
+            await ctx.respond("Invalid poll ID", ephemeral = True)
+            return
+
+        creator = t[0][0]
+        if creator != ctx.author.id:
+            await ctx.respond("Only creator can stop a poll", ephemeral = True)
+            return
+
+        cur.execute(f"UPDATE poll SET expire = {int(time())} WHERE pollid = {pollid}")
+        conn.commit()
+        await ctx.respond("Poll stopped.", ephemeral = True)
 
 bot.add_cog(Poll(bot))

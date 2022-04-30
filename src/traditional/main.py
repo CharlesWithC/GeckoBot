@@ -214,7 +214,12 @@ async def tping(ctx):
 
 @tbot.command(name="parse", description="Get original text message", guild_ids = [DEVGUILD])
 async def ParseMsg(ctx):
-    await ctx.send(f"```{' '.join(ctx.message.content.split(' ')[1:])}```")
+    if ctx.message.reference != None:
+        message = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+        if message != None:
+            await message.reply(f"```{message.content}```", mention_author = False)
+    if len(ctx.message.content.split(' ')) > 1:
+        await ctx.reply(f"```{' '.join(ctx.message.content.split(' ')[1:])}```", mention_author = False)
 
 @tbot.command(name="premium", description="Get Gecko Premium subscription status, and information about premium.")
 async def Premium(ctx):

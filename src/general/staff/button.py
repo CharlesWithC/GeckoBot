@@ -209,7 +209,9 @@ class GeckoButton(Button):
                 if expire != -1:
                     if expire < int(time()):
                         embed.add_field(name="End", value = f"Ended <t:{expire}:R>", inline=True)
-                        await interaction.response.edit_message(embed = embed, view = None)
+                        message = interaction.message
+                        await message.edit(embed = embed, view = None)
+                        await interaction.response.send_message("Poll has ended. Your vote was invalid.", ephemeral = True)
                     else:
                         embed.add_field(name="End", value = f"<t:{expire}:R>", inline=True)
                         await interaction.response.edit_message(embed = embed)
