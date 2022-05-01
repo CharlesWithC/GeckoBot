@@ -99,14 +99,14 @@ class AtTheMile(commands.Cog):
         
         cur.execute(f"SELECT userid, totpnt, mile, eventpnt FROM atm ORDER BY totpnt DESC")
         t = cur.fetchall()
-        msg = "**Driver Rankings**\n"
+        msg = "**Driver Rankings**\n*Miles + Event Points = **Total Points***\n"
         lstlvl = 0
         for tt in t:
             lvl = self.GetLevel(tt[1])
             if lvl != lstlvl:
                 msg += f"\n<@&{lvl}>\n"
                 lstlvl = lvl
-            msg += f"<@{tt[0]}> {TSeparator(tt[2])} miles + {TSeparator(tt[3])} event points = {TSeparator(tt[1])} points\n"
+            msg += f"<@{tt[0]}> {TSeparator(tt[2])} + {TSeparator(tt[3])} = **{TSeparator(tt[1])}**\n"
         
         embed = discord.Embed(title = "At The Mile Logistics", description = msg, color = TMPCLR)
         embed.set_thumbnail(url = "https://cdn.discordapp.com/icons/929761730089877626/a_0df4f6de129299542fc0a6ca4b72d737.gif")
@@ -195,15 +195,15 @@ class AtTheMile(commands.Cog):
         
         cur.execute(f"SELECT userid, totpnt, mile, eventpnt FROM atm ORDER BY totpnt DESC")
         t = cur.fetchall()
-        msg = "**Driver Rankings**\n"
+        msg = "**Driver Rankings**\n*Miles + Event Points = **Total Points***\n"
         lstlvl = 0
         for tt in t:
             lvl = self.GetLevel(tt[1])
             if lvl != lstlvl:
                 msg += f"\n<@&{lvl}>\n"
                 lstlvl = lvl
-            msg += f"<@{tt[0]}> {TSeparator(tt[2])} miles + {TSeparator(tt[3])} event points = {TSeparator(tt[1])} points\n"
-        
+            msg += f"<@{tt[0]}> {TSeparator(tt[2])} + {TSeparator(tt[3])} = **{TSeparator(tt[1])}**\n"
+            
         embed = discord.Embed(title = "At The Mile Logistics", description = msg, color = TMPCLR)
         embed.set_thumbnail(url = "https://cdn.discordapp.com/icons/929761730089877626/a_0df4f6de129299542fc0a6ca4b72d737.gif")
         embed.set_footer(text = f"Powered by Gecko | CharlesWithC ", icon_url = GECKOICON)

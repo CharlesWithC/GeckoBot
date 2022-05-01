@@ -6,9 +6,9 @@
 
 import os, asyncio
 import discord
-from discord.commands import CommandPermission, SlashCommandGroup
 from discord.ext import commands
-from discord.ui import Modal, InputText
+from discord.ui import Button, View
+from discord.enums import ButtonStyle
 from time import time
 from random import randint
 import io
@@ -18,10 +18,10 @@ from settings import *
 from functions import *
 from db import newconn
 from rapidfuzz import process
+from general.staff.button import GeckoButton
 
-ABOUT = """Gecko is a **multi-purpose moderation bot**.
-Games, Music and a lot of staff functions are supported.  
-`/(auto)translate` can make your community international.  
+ABOUT = """Gecko is a **multi-purpose moderation-utility bot**.
+Games, Music, poll, ticket, suggestion and a lot of staff functions are supported.  
 Use `/help` in bot for detailed help.
 
 **NOTE** Gecko supports prefix commands for very few commands, as listed in `/help`.  
@@ -56,14 +56,9 @@ Accept suggestions and improve the server!
 Receive upvotes and downvotes, export all suggestions with one command!
 
 **Staff Functions**
-Button, embed, form, chat action, voice channel recorder, reaction role, server stats, staff management, event logging and more.
-
-Join [Gecko Community](https://discord.gg/wNTaaBZ5qd) to discuss, get help and have a look at the plans.
-Gecko is created and maintained by [CharlesWithC](https://charlws.com)"""
+Button, embed, form, chat action, voice channel recorder, reaction role, server stats, staff management, event logging and more."""
 
 HELP = {
-    "about": ABOUT,
-
 ##### GAMES
     "games": {
         "description": """It's Gecko Playground!
@@ -996,7 +991,15 @@ async def HelpAutocomplete(ctx: discord.AutocompleteContext):
 
 @bot.slash_command(name="about", description="About Gecko")
 async def about(ctx):
-    await ctx.respond(HELP["about"])
+    embed = discord.Embed(title = "About Gecko", description = ABOUT, color = GECKOCLR)
+    view = View(timeout = None)
+    button = GeckoButton("Charles's Site", "https://charlws.com/", BTNSTYLE["blurple"], False, None)
+    view.add_item(button)
+    button = GeckoButton("Gecko Community", "https://discord.gg/wNTaaBZ5qd", BTNSTYLE["blurple"], False, None)
+    view.add_item(button)
+    button = GeckoButton("Invite", "https://discord.com/api/oauth2/authorize?client_id=954034331230285838&permissions=1100320468054&scope=bot%20applications.commands", BTNSTYLE["blurple"], False, None)
+    view.add_item(button)
+    await ctx.respond(embed = embed, view = view)
 
 @bot.slash_command(name="help", description="Get help.")
 async def help(ctx, cmd: discord.Option(str, "Type category or command to get detailed help.", required = False, autocomplete = HelpAutocomplete)):

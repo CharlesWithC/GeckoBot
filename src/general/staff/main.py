@@ -22,7 +22,7 @@ Use /about for basic information about Gecko and /help for help.
 You should set up dedicated channels for specific functions, tell me by using `/setchannel`.
 **NOTE** If you don't set up those channels, relevant functions might not work.
 **Necessary**
-GeckoUPD   - The channel to follow #gecko-upd from **Gecko Community** where updates / maintenance schedules are published.
+GeckoUPD   - The channel to follow #gecko-upd from [Gecko Community](https://discord.gg/wNTaaBZ5qd) where updates / maintenance schedules are published.
 Error      - Where important error notifications will be sent. (This should be rare)
 **Optional**
 Four       - Where players will play connect four games.
@@ -248,9 +248,16 @@ async def transcript(ctx, channel: discord.Option(discord.TextChannel, "Channel 
     cur.execute(f"INSERT INTO settings VALUES ({ctx.guild.id}, 'transcript', 0)")
     conn.commit()
 
-    data = await chat_exporter.export(channel, limit = limit)
-    data = minify_html.minify(data, minify_js=True, minify_css=True, remove_processing_instructions=True, remove_bangs=True)
-
+    try:
+        data = await chat_exporter.export(channel, limit = limit)
+        data = minify_html.minify(data, minify_js=True, minify_css=True, remove_processing_instructions=True, remove_bangs=True)
+    except:
+        import traceback
+        traceback.print_exc()
+        await ctx.respond("I cannot create transcript. Make sure I have read_message_history permission.", ephemeral = True)
+        cur.execute(f"DELETE FROM settings WHERE skey = 'transcript' AND guildid = {ctx.guild.id}")
+        conn.commit()
+        return
     await ctx.respond(content=f"Transcript of {channel.name} created by {ctx.author.name}#{ctx.author.discriminator}", file=discord.File(io.BytesIO(data.encode()), filename=f"transcript-{channel.name}.html"))
 
     cur.execute(f"DELETE FROM settings WHERE skey = 'transcript' AND guildid = {ctx.guild.id}")
