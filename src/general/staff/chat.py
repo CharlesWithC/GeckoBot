@@ -352,6 +352,8 @@ class ManageChat(commands.Cog):
 conn = newconn()
 @bot.event
 async def on_member_join(member):
+    if member.bot: 
+        return
     global conn
     try:
         cur = conn.cursor()
@@ -471,6 +473,8 @@ async def on_member_join(member):
                     
 @bot.event
 async def on_member_remove(member):
+    if member.bot: 
+        return
     global conn
     try:
         cur = conn.cursor()
@@ -584,6 +588,8 @@ async def on_message(message):
     msg = message.content
     msg = " "+msg.lower()+" "
     if user.id == BOTID or message.guild is None:
+        return
+    if user.bot: # prevent lock
         return
 
     if message.content.lower().startswith("g?") or message.content.lower().startswith("g!"):
@@ -802,6 +808,8 @@ async def on_message(message):
 
 @bot.event
 async def on_reaction_remove(reaction, user):
+    if user.bot: # prevent lock
+        return
     message = reaction.message
     UPVOTE = '✅'
     DOWNVOTE = '❌'
@@ -820,6 +828,8 @@ async def on_reaction_remove(reaction, user):
 
 @bot.event
 async def on_reaction_add(reaction, user):
+    if user.bot: # prevent lock
+        return
     message = reaction.message
     conn = newconn()
     cur = conn.cursor()

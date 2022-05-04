@@ -471,7 +471,7 @@ async def StatsDisplayUpdate():
                 guildid = dd[0]
                 categoryid = dd[1]
 
-                if ss_get_channel_fail.count((guildid, 0)) > 3:
+                if ss_get_channel_fail.count((guildid, 0)) > 10:
                     while ss_get_channel_fail.count((guildid, 0)) > 0:
                         ss_get_channel_fail.remove((guildid, 0))
 
@@ -498,7 +498,7 @@ async def StatsDisplayUpdate():
                     channelid = tt[0]
                     conf = b64d(tt[1])
 
-                    if ss_get_channel_fail.count((guildid, channelid)) > 3:
+                    if ss_get_channel_fail.count((guildid, channelid)) > 10:
                         while ss_get_channel_fail.count((guildid, channelid)) > 0:
                             ss_get_channel_fail.remove((guildid, channelid))
                         cur.execute(f"DELETE FROM statsconfig WHERE guildid = {guildid} AND categoryid = {categoryid} AND channelid = {channelid}")
@@ -562,6 +562,9 @@ async def StatsDisplayUpdate():
                     
                     if chnname != channel.name:
                         channel = await channel.edit(name = chnname, reason = "Gecko Server Stats")
+
+                    while ss_get_channel_fail.count((guildid, channelid)) > 0:
+                        ss_get_channel_fail.remove((guildid, channelid))
                 
                     await asyncio.sleep(0.5)
             

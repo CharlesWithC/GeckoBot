@@ -258,7 +258,8 @@ async def transcript(ctx, channel: discord.Option(discord.TextChannel, "Channel 
         cur.execute(f"DELETE FROM settings WHERE skey = 'transcript' AND guildid = {ctx.guild.id}")
         conn.commit()
         return
-    await ctx.respond(content=f"Transcript of {channel.name} created by {ctx.author.name}#{ctx.author.discriminator}", file=discord.File(io.BytesIO(data.encode()), filename=f"transcript-{channel.name}.html"))
 
     cur.execute(f"DELETE FROM settings WHERE skey = 'transcript' AND guildid = {ctx.guild.id}")
     conn.commit()
+
+    await ctx.respond(content=f"Transcript of {channel.name} created by {ctx.author.name}#{ctx.author.discriminator}", file=discord.File(io.BytesIO(data.encode()), filename=f"transcript-{channel.name}.html"))

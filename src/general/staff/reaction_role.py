@@ -304,7 +304,7 @@ async def ReactionRoleUpdate():
                     rolebind.append((dd[0], dd[1]))
                     rolebindtxt = f"<@&{dd[0]}> => {b64d(dd[1])} "
 
-                if reactionrole_fail.count((channelid, msgid)) > 3:
+                if reactionrole_fail.count((channelid, msgid)) > 10:
                     while reactionrole_fail.count((channelid, msgid)) > 0:
                         reactionrole_fail.remove((channelid, msgid))
                     cur.execute(f"DELETE FROM reactionrole WHERE guildid = {guildid} AND channelid = {channelid} AND msgid = {msgid}")
