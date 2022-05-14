@@ -184,12 +184,6 @@ cur.execute(f"CREATE TABLE IF NOT EXISTS settings (guildid BIGINT, skey TEXT, sv
 CREATE INDEX index_settings ON settings (guildid);
 """
 
-# At The Mile Logistics
-cur.execute(f"CREATE TABLE IF NOT EXISTS atm (userid BIGINT, mile BIGINT, eventpnt BIGINT, totpnt BIGINT)")
-"""
-CREATE INDEX index_atm ON atm (userid);
-"""
-
 cur.execute(f"UPDATE vcrecord SET laststart = 0")
 cur.execute(f"DELETE FROM settings WHERE skey = 'transcript'")
 conn.commit()

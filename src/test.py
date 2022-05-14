@@ -13,7 +13,6 @@ import json, asyncio
 import general.main
 import traditional.main
 import globaltrucking.main
-import truckersmp.main
 from truckersmp.tmp import UpdateTMPMap, UpdateTMPTraffic
 
 import threading

@@ -334,10 +334,12 @@ class GeckoButton(Button):
 
                 try:
                     category = bot.get_channel(categoryid)
-                    await category.set_permissions(user, view_channel = True, read_message_history = True, send_messages = True)
+                    # await category.set_permissions(user, view_channel = True, read_message_history = True, send_messages = True)
                     channel = await category.create_text_channel(name, reason = "Gecko Ticket")
                     me = bot.get_user(BOTID)
                     await channel.set_permissions(me, view_channel = True, read_message_history = True, send_messages = True)
+                    await channel.set_permissions(guild.default_role, view_channel = False)
+                    await channel.set_permissions(user, view_channel = True, read_message_history = True, send_messages = True)
 
                     moderators = t[0][3]
                     for mod in moderators.split(","):
@@ -359,7 +361,6 @@ class GeckoButton(Button):
                             except:
                                 import traceback
                                 traceback.print_exc()
-                    await channel.set_permissions(guild.default_role, view_channel = False)
 
                     embed = discord.Embed(title = "Ticket", description = msg, color = GECKOCLR)
                     embed.timestamp = datetime.now()

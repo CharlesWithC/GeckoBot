@@ -14,7 +14,6 @@ import general.main
 import traditional.main
 import truckersmp.main
 import globaltrucking.main
-import atthemile.main
 from truckersmp.tmp import UpdateTMPMap, UpdateTMPTraffic
 from datetime import datetime
 

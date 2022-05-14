@@ -349,6 +349,8 @@ async def ReactionRoleUpdate():
                 for reaction in reactions:
                     emoji = b64e(str(reaction.emoji))
                     existing_emojis.append(emoji)
+                    if not emoji in rolebind.keys():
+                        continue
                     roleid = rolebind[emoji]
                     role = discord.utils.get(guild.roles, id=roleid)
                     inrole = []
