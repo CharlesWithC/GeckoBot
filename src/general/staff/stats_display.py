@@ -286,7 +286,7 @@ class ManageStatsDisplay(commands.Cog):
                         await ctx.respond(f"{ctx.author.name}, invalid strftime format: {var.repalce('time:','')}", ephemeral = True)
                         return
 
-                if not var.startswith("time:") or var != "members" and var != "online":
+                if not var.startswith("time:") and var != "members" and var != "online":
                     var = var.split()
                     role = var[0]
                     if not role.startswith("<@&") or not role.endswith(">") or len(var) == 2 and var[1] != "online" or len(var) > 2:
@@ -474,7 +474,6 @@ async def StatsDisplayUpdate():
                 if ss_get_channel_fail.count((guildid, 0)) > 10:
                     while ss_get_channel_fail.count((guildid, 0)) > 0:
                         ss_get_channel_fail.remove((guildid, 0))
-
                     cur.execute(f"DELETE FROM serverstats WHERE guildid = {guildid}")
                     cur.execute(f"DELETE FROM statsconfig WHERE guildid = {guildid}")
                     conn.commit()
@@ -525,6 +524,8 @@ async def StatsDisplayUpdate():
                             ss_get_channel_fail.append((guildid, channelid))
                             continue
                     except:
+                        import traceback
+                        traceback.print_exc()
                         ss_get_channel_fail.append((guildid, channelid))
                         continue
                     
@@ -559,7 +560,6 @@ async def StatsDisplayUpdate():
                                         elif not mustonline:
                                             cnt += 1
                             chnname = chnname.replace(f"{{{orgvar}}}", str(cnt))
-                    
                     if chnname != channel.name:
                         channel = await channel.edit(name = chnname, reason = "Gecko Server Stats")
 
@@ -575,6 +575,8 @@ async def StatsDisplayUpdate():
                     await log("ERROR",f"[Guild {guildid}] Server Stats update error: {str(e)}")
                     ss_get_channel_fail.append((guildid, 0))
                 except:
+                    import traceback
+                    traceback.print_exc()
                     pass
 
         await asyncio.sleep(60)

@@ -82,7 +82,7 @@ async def on_guild_join(guild):
 
     cur.execute(f"INSERT INTO premium VALUES ({guildid}, {tier}, {expire})")
     conn.commit()
-    dt = datetime.datetime.fromtimestamp(expire)
+    dt = datetime.fromtimestamp(expire)
     try:
         channel = bot.get_channel(GUILDUPD[1])
         await channel.send(f"**Premium** `{guildid}` Tier **{tier}** Expire **{datetime.fromtimestamp(expire).strftime('%Y-%m-%d')}** *Auto*")
@@ -221,7 +221,8 @@ async def stats(ctx):
 
 async def UpdateBotStatus():
     await bot.wait_until_ready()
-    await asyncio.sleep(10)
+    while not bot.is_ready():
+        await asyncio.sleep(3)
     while not bot.is_closed():
         conn = newconn()
         cur = conn.cursor()
@@ -268,7 +269,7 @@ async def UpdateBotStatus():
 async def Ping(ctx):
     await ctx.respond(f"Pong! {int(bot.latency * 1000)}ms.")
 
-@bot.slash_command(name="parse", description="Get original text message", guild_ids = [DEVGUILD])
+@bot.slash_command(name="parse", description="Get original text message")
 async def ParseMsg(ctx, msg: discord.Option(str, "Message", required = True)):
     await ctx.respond(f"```{msg}```")
 
