@@ -89,17 +89,26 @@ class GeckoButton(Button):
                     if not preserve:
                         await interaction.channel.category.set_permissions(user, view_channel = False)
 
-                    try:
-                        creator = bot.get_user(creator)
-                        dmchannel = await creator.create_dm()
-                        
-                        embed = discord.Embed(title = "Ticket Record", description = "Conversation record in attached file", color = GECKOCLR)
-                        embed.add_field(name = "Created By", value = f"<@{creator.id}> (`{creator.id}`)", inline = True)
-                        embed.add_field(name = "Closed By", value = f"<@{closedBy}> (`{closedBy}`)", inline = True)
-                        embed.add_field(name = "Closed At", value = f"<t:{closedTs}>", inline = True)
-                        embed.timestamp = datetime.now()
-                        embed.set_footer(text = f"Gecko Ticket • ID: {ticketid} ", icon_url = GECKOICON)
+                    creator = bot.get_user(creator)
+                    embed = discord.Embed(title = "Ticket Record", description = "Conversation record in attached file", color = GECKOCLR)
+                    embed.add_field(name = "Created By", value = f"<@{creator.id}> (`{creator.id}`)", inline = True)
+                    embed.add_field(name = "Closed By", value = f"<@{closedBy}> (`{closedBy}`)", inline = True)
+                    embed.add_field(name = "Closed At", value = f"<t:{closedTs}>", inline = True)
+                    embed.timestamp = datetime.now()
+                    embed.set_footer(text = f"Gecko Ticket • ID: {ticketid} ", icon_url = GECKOICON)
 
+                    try:
+                        cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'transcript'")
+                        t = cur.fetchall()
+                        if len(t) > 0:
+                            channel = bot.get_channel(t[0][0])
+                            if channel != None:
+                                await channel.send(embed = embed, file=discord.File(io.BytesIO(data.encode()), filename=f"Ticket-{ticketid}.html"))
+                    except:
+                        pass
+
+                    try:
+                        dmchannel = await creator.create_dm()
                         await dmchannel.send(embed = embed, file=discord.File(io.BytesIO(data.encode()), filename=f"Ticket-{ticketid}.html"))
                     except:
                         pass
@@ -342,12 +351,14 @@ class GeckoButton(Button):
                     await channel.set_permissions(user, view_channel = True, read_message_history = True, send_messages = True)
 
                     moderators = t[0][3]
+                    moderatorping = ""
                     for mod in moderators.split(","):
                         if mod.startswith("@&"):
                             roleid = int(mod[2:])
                             try:
                                 role = guild.get_role(roleid)
                                 if role != None:
+                                    moderatorping += "<@&" + str(roleid) + "> "
                                     await channel.set_permissions(role, view_channel = True, read_message_history = True, send_messages = True)
                             except:
                                 import traceback
@@ -357,6 +368,7 @@ class GeckoButton(Button):
                             try:
                                 mod = guild.get_member(modid)
                                 if mod != None:
+                                    moderatorping += "<@" + str(modid) + "> "
                                     await channel.set_permissions(mod, view_channel = True, read_message_history = True, send_messages = True)
                             except:
                                 import traceback
@@ -371,7 +383,7 @@ class GeckoButton(Button):
                     button = GeckoButton("Close Ticket", None, BTNSTYLE["red"], False, custom_id)
                     view.add_item(button)
                     cur.execute(f"INSERT INTO buttonview VALUES ({-ticketid}, '{custom_id}')")
-                    await channel.send(embed = embed, view = view)
+                    await channel.send(content = moderatorping, embed = embed, view = view)
 
                     cur.execute(f"INSERT INTO ticketrecord VALUES ({ticketid}, {gticketid}, {userid}, {guildid}, {channel.id}, '', 0, 0)")
                     conn.commit()

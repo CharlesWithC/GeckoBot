@@ -34,6 +34,7 @@ Level      - Where level updates will be posted.
              If not set, levels will still be counted but updates will not be posted.
 Suggestion - Where suggestions will be posted and voted.
 **Optional (for staff)**
+Transcript - Where transcipts will be sent, including ticket transcripts and manually generated ones.
 Form       - Where notifications will be sent when a user submit an entry. 
              If not set, forms will still be accepted but updates will not be posted.
              You can retrieve en entry with `/form entry`.
@@ -59,7 +60,7 @@ async def BotSetup(ctx):
         await ctx.respond(f"Hi, {ctx.author.name}\n" + SETUP_MSG)
 
 @bot.slash_command(name="setchannel", description="Staff - Set default channels where specific messages will be dealt with.")
-async def SetChannel(ctx, category: discord.Option(str, "The category of message.", required = True, choices = ["GeckoUPD", "Error", "Four", "Finance", "Music", "Level", "Suggestion", "Form", "EventLog", "BotLog"]),
+async def SetChannel(ctx, category: discord.Option(str, "The category of message.", required = True, choices = ["GeckoUPD", "Error", "Four", "Finance", "Music", "Level", "Suggestion", "Transcript", "Form", "EventLog", "BotLog"]),
     channel: discord.Option(str, "Channel for messages, type 'all' for four / finance / music to allow all channels", required = True),
     remove: discord.Option(str, "Whether to unbind the category and the channel", required = False, choices = ["Yes", "No"])):
     
@@ -77,10 +78,6 @@ async def SetChannel(ctx, category: discord.Option(str, "The category of message
     cur = conn.cursor()
 
     category = category.lower()
-
-    if not category in ["geckoupd", "error", "four", "finance", "music", "level", "suggestion", "form", "eventlog", "botlog"]:
-        await ctx.respond(f"{category} is not a valid category.", ephemeral = True)
-        return
 
     if remove == "Yes":
         if category == "geckoupd":
@@ -262,4 +259,18 @@ async def transcript(ctx, channel: discord.Option(discord.TextChannel, "Channel 
     cur.execute(f"DELETE FROM settings WHERE skey = 'transcript' AND guildid = {ctx.guild.id}")
     conn.commit()
 
-    await ctx.respond(content=f"Transcript of {channel.name} created by {ctx.author.name}#{ctx.author.discriminator}", file=discord.File(io.BytesIO(data.encode()), filename=f"transcript-{channel.name}.html"))
+    try:
+        cur.execute(f"SELECT channelid FROM channelbind WHERE guildid = {guildid} AND category = 'transcript'")
+        t = cur.fetchall()
+        if len(t) > 0:
+            channel = bot.get_channel(t[0][0])
+            if channel != None:
+                await channel.send(content=f"Transcript of {channel.name} created by {ctx.author.name}#{ctx.author.discriminator}", file=discord.File(io.BytesIO(data.encode()), filename=f"transcript-{channel.name}.html"))
+                await ctx.respond(content=f"Transcript saved in <#{channel.id}>", ephemeral = True)
+            else:
+                await ctx.respond(content=f"Transcript of {channel.name} created by {ctx.author.name}#{ctx.author.discriminator}", file=discord.File(io.BytesIO(data.encode()), filename=f"transcript-{channel.name}.html"))
+        else:
+            await ctx.respond(content=f"Transcript of {channel.name} created by {ctx.author.name}#{ctx.author.discriminator}", file=discord.File(io.BytesIO(data.encode()), filename=f"transcript-{channel.name}.html"))
+    except:
+        await ctx.respond(content=f"Transcript of {channel.name} created by {ctx.author.name}#{ctx.author.discriminator}", file=discord.File(io.BytesIO(data.encode()), filename=f"transcript-{channel.name}.html"))
+    
