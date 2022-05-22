@@ -21,9 +21,11 @@ Use /about for basic information about Gecko and /help for help.
 
 You should set up dedicated channels for specific functions, tell me by using `/setchannel`.
 **NOTE** If you don't set up those channels, relevant functions might not work.
+
 **Necessary**
 GeckoUPD   - The channel to follow #gecko-upd from [Gecko Community](https://discord.gg/wNTaaBZ5qd) where updates / maintenance schedules are published.
 Error      - Where important error notifications will be sent. (This should be rare)
+
 **Optional**
 Four       - Where players will play connect four games.
 Finance    - Where players will play finance games.
@@ -33,6 +35,7 @@ Music      - Where players will request for songs. If you don't set this up, onl
 Level      - Where level updates will be posted. 
              If not set, levels will still be counted but updates will not be posted.
 Suggestion - Where suggestions will be posted and voted.
+
 **Optional (for staff)**
 Transcript - Where transcipts will be sent, including ticket transcripts and manually generated ones.
 Form       - Where notifications will be sent when a user submit an entry. 
@@ -40,6 +43,7 @@ Form       - Where notifications will be sent when a user submit an entry.
              You can retrieve en entry with `/form entry`.
 EventLog   - Where server events (messages / members etc) will be logged.
 BotLog     - Where bot audit log will be sent.
+
 **NOTE** 
 1.For four, finance and music, you can set channel to "all" so that player can use relevant commands in any channels.
 2.For level, if you set channel to "all", the level update will be posted at the channel where the user sent the last message before upgrading.
@@ -49,15 +53,17 @@ BotLog     - Where bot audit log will be sent.
 async def BotSetup(ctx):
     await ctx.defer()
     guild = ctx.guild
+    embed = discord.Embed(title="Gecko Setup", description=SETUP_MSG, color=GECKOCLR)
+    embed.set_footer(text="Gecko is made by CharlesWithC#7777 with love.")
     if not guild is None:
         try:
             channel = await ctx.author.create_dm()
-            await channel.send(f"Hi, {ctx.author.name}\n" + SETUP_MSG)
+            await channel.send(f"Hi, {ctx.author.name}\n", embed = embed)
             await ctx.respond(f"Check your DM")
         except:
             await ctx.respond(f"I cannot DM you")
     else:
-        await ctx.respond(f"Hi, {ctx.author.name}\n" + SETUP_MSG)
+        await ctx.respond(f"Hi, {ctx.author.name}\n", embed = embed)
 
 @bot.slash_command(name="setchannel", description="Staff - Set default channels where specific messages will be dealt with.")
 async def SetChannel(ctx, category: discord.Option(str, "The category of message.", required = True, choices = ["GeckoUPD", "Error", "Four", "Finance", "Music", "Level", "Suggestion", "Transcript", "Form", "EventLog", "BotLog"]),
