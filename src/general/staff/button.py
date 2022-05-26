@@ -86,8 +86,8 @@ class GeckoButton(Button):
                             cid = c[0][0]
                             if cid == interaction.channel.category.id:
                                 preserve = True
-                    if not preserve:
-                        await interaction.channel.category.set_permissions(user, view_channel = False)
+                    # if not preserve:
+                    #     await interaction.channel.category.set_permissions(user, view_channel = False)
 
                     creator = bot.get_user(creator)
                     embed = discord.Embed(title = "Ticket Record", description = "Conversation record in attached file", color = GECKOCLR)
