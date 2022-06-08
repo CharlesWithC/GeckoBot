@@ -104,6 +104,18 @@ async def stats(ctx):
     formcnt = cur.fetchone()[0]
     cur.execute(f"SELECT COUNT(*) FROM embed")
     embedcnt = cur.fetchone()[0]
+    cur.execute(f"SELECT COUNT(*) FROM suggestion")
+    suggestioncnt = cur.fetchone()[0]
+    cur.execute(f"SELECT COUNT(*) FROM ticketrecord")
+    ticketreccnt = cur.fetchone()[0]
+    cur.execute(f"SELECT COUNT(*) FROM pollvote")
+    pollvotecnt = cur.fetchone()[0]
+    cur.execute(f"SELECT COUNT(*) FROM truckersmp")
+    tmpcnt = cur.fetchone()[0]
+    cur.execute(f"SELECT COUNT(*) FROM vtc")
+    vtccnt = cur.fetchone()[0]
+    cur.execute(f"SELECT COUNT(*) FROM vtcbind")
+    vtcbindcnt = cur.fetchone()[0]
     
     embed = discord.Embed(title="Gecko Stats", description="Shard refers to prefix command bot.", color=GECKOCLR)
     embed.set_thumbnail(url=GECKOICON)
@@ -114,7 +126,15 @@ async def stats(ctx):
     embed.add_field(name="Buttons", value=f"```{btncnt}```")
     embed.add_field(name="Forms", value=f"```{formcnt}```")
     embed.add_field(name="Embeds", value=f"```{embedcnt}```")
-    
+
+    embed.add_field(name="Suggestions", value=f"```{suggestioncnt}```")
+    embed.add_field(name="Tickets", value=f"```{ticketreccnt}```")
+    embed.add_field(name="Poll Votes", value=f"```{pollvotecnt}```")
+
+    embed.add_field(name="TMP Players", value=f"```{tmpcnt}```")
+    embed.add_field(name="Cached VTC", value=f"```{vtccnt}```")
+    embed.add_field(name="Bound VTC", value=f"```{vtcbindcnt}```")
+
     embed.add_field(name="Shard", value=f"```{len(tbot.shards)}```")
     embed.add_field(name="Ping", value=f"```{int(ping*1000)}ms```")
 
