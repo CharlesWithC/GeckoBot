@@ -208,21 +208,27 @@ def SearchVoice(inp):
 from libretranslatepy import LibreTranslateAPI
 from langdetect import detect as ldetect
 
-config_txt = ""
-config_txt = open("./bot.conf","r").read()
-config = json.loads(config_txt)
-lt = LibreTranslateAPI(config["libretranslate"]["host"])
-lt.api_key = config["libretranslate"]["key"]
-langs = lt.languages()
+
 name2code = {}
 code2name = {}
 allcode = []
-for lang in langs:
-    name2code[lang["name"] + f" ({lang['code']})"] = lang["code"]
-    code2name[lang["code"]] = lang["name"] + f" ({lang['code']})"
-    allcode.append(lang["code"])
 
 def DetectLang(text):
+    global name2code
+    global code2name
+    global allcode 
+
+    config_txt = ""
+    config_txt = open("./bot.conf","r").read()
+    config = json.loads(config_txt)
+    lt = LibreTranslateAPI(config["libretranslate"]["host"])
+    lt.api_key = config["libretranslate"]["key"]
+    langs = lt.languages()
+    for lang in langs:
+        name2code[lang["name"] + f" ({lang['code']})"] = lang["code"]
+        code2name[lang["code"]] = lang["name"] + f" ({lang['code']})"
+        allcode.append(lang["code"])
+
     t = lt.detect(text)[0]
     if t["confidence"] == 0.0: # libretranslate failed
         fromlang = ldetect(text)
@@ -234,6 +240,21 @@ def DetectLang(text):
     return fromlang
 
 def Translate(text, tolang = "en", fromlang = None):
+    global name2code
+    global code2name
+    global allcode 
+
+    config_txt = ""
+    config_txt = open("./bot.conf","r").read()
+    config = json.loads(config_txt)
+    lt = LibreTranslateAPI(config["libretranslate"]["host"])
+    lt.api_key = config["libretranslate"]["key"]
+    langs = lt.languages()
+    for lang in langs:
+        name2code[lang["name"] + f" ({lang['code']})"] = lang["code"]
+        code2name[lang["code"]] = lang["name"] + f" ({lang['code']})"
+        allcode.append(lang["code"])
+        
     if fromlang == None:
         fromlang = DetectLang(text)
     if fromlang == tolang:
