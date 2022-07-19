@@ -1,5 +1,11 @@
 # Gecko Bot Update History
 
+## Update 2022.07.19  
+
+**Version v1.23**  
+1.Bug fixes  
+2.Removed role changes on chat action  
+
 ## Update 2022.05.04
 
 **Version v1.22b.2**  

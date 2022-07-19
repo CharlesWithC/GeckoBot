@@ -6,7 +6,7 @@
 
 import os, asyncio
 import discord
-from discord.commands import CommandPermission, SlashCommandGroup
+from discord.commands import SlashCommandGroup
 from discord.ext import commands
 from datetime import datetime
 import requests, io
@@ -436,12 +436,8 @@ async def on_member_join(member):
                         continue
                     if not rmv and not role in member.roles:
                         await member.add_roles(role, reason = "Gecko Chat Action Auto-Role")
-                        if not haveresp:
-                            await channel.send(f"<@{member.id}>, you are given {role.name} role.")
                     if rmv and role in member.roles:
                         await member.remove_roles(role, reason = "Gecko Chat Action Auto-Unrole")
-                        if not haveresp:
-                            await channel.send(f"<@{member.id}>, {role.name} role is removed.")
                 elif action == "embed":
                     embedid = int(keyword.split("|")[1])
                     cur.execute(f"SELECT data FROM embed WHERE guildid = {guild.id} AND embedid = {embedid}")
@@ -741,19 +737,9 @@ async def on_message(message):
                         if not rmv:
                             if not role in user.roles:
                                 await user.add_roles(role, reason = "Gecko Chat Action Auto-Role")
-                                if not haveresp:
-                                    await message.channel.send(f"<@{user.id}>, you are given {role.name} role.")
-                            else:
-                                if not haveresp:
-                                    await message.channel.send(f"<@{user.id}>, you already have {role.name} role.")
                         if rmv:
                             if role in user.roles:
                                 await user.remove_roles(role, reason = "Gecko Chat Action Auto-Unrole")
-                                if not haveresp:
-                                    await message.channel.send(f"<@{user.id}>, {role.name} role is removed.")
-                            else:
-                                if not haveresp:
-                                    await message.channel.send(f"<@{user.id}>, you don't have {role.name} role.")
                     elif action == "embed":
                         embedid = int(keyword.split("|")[1])
                         cur.execute(f"SELECT data FROM embed WHERE guildid = {message.guild.id} AND embedid = {embedid}")

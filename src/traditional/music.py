@@ -6,7 +6,7 @@
 
 import os, asyncio
 import discord
-from discord.commands import CommandPermission, SlashCommandGroup
+from discord.commands import SlashCommandGroup
 from discord.ext import commands
 from time import time
 import requests

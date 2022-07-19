@@ -6,7 +6,7 @@
 
 import os, json, asyncio
 import discord
-from discord.commands import CommandPermission, SlashCommandGroup
+from discord.commands import SlashCommandGroup
 from discord.ext import commands
 from discord.ui import Modal, InputText, Button, View
 from discord.enums import ButtonStyle
