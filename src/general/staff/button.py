@@ -313,13 +313,13 @@ class GeckoButton(Button):
                             d = []
                             for pp in p:
                                 d.append(b64d(pp))
-                            response.append({"modal": FormModal(formid, d, None, "Submit Form"), "ephemeral": ephemeral})
+                            response.append({"modal": FormModal(formid, d, None, title = "Submit Form"), "ephemeral": ephemeral})
                     else:
                         p = data.split("|")[:-1]
                         d = []
                         for pp in p:
                             d.append(b64d(pp))
-                        response.append({"modal": FormModal(formid, d, None, "Submit Form"), "ephemeral": ephemeral})
+                        response.append({"modal": FormModal(formid, d, None, title = "Submit Form"), "ephemeral": ephemeral})
         
         if gticketid != None:
             cur.execute(f"SELECT categoryid, channelformat, msg, moderator FROM ticket WHERE guildid = {guildid} AND gticketid = {gticketid}")

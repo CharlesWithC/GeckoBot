@@ -48,11 +48,11 @@ async def suggestion(ctx, editlink: discord.Option(str, "Specify a suggestion me
         if t[0][2] != ctx.author.id:
             await ctx.respond("You can only edit your own suggestions.", ephemeral = True)
             return
-        modal = FormModal(-int(messageid), ["[Short] Subject", "[Long] Content"], [subject, content], "Edit Suggestion")
+        modal = FormModal(-int(messageid), ["[Short] Subject", "[Long] Content"], [subject, content], title = "Edit Suggestion")
         await ctx.send_modal(modal)
         return
     
-    modal = FormModal(-1, ["[Short] Subject", "[Long] Content"], None, "Make Suggestion")
+    modal = FormModal(-1, ["[Short] Subject", "[Long] Content"], None, title = "Make Suggestion")
     await ctx.send_modal(modal)
 
 @bot.slash_command(name="dlsuggestion", description="Download all suggestions")

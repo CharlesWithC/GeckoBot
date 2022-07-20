@@ -132,7 +132,7 @@ class Poll(commands.Cog):
         else:
             allowforward = False
 
-        modal = PollEditModal(expire, allowforward, "Create Poll")
+        modal = PollEditModal(expire, allowforward, title = "Create Poll")
         await ctx.send_modal(modal)
 
     @poll.command(name="resend", description="Resend a poll with results preserved, can be used cross-server")

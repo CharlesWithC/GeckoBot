@@ -290,7 +290,7 @@ class ManageForm(commands.Cog):
         if callback is None:
             callback = "Thanks for submitting the form."
 
-        await ctx.send_modal(FormEditModal(-1, ot, callback, label, "Create form"))
+        await ctx.send_modal(FormEditModal(-1, ot, callback, label, title = "Create form"))
     
     def AliasSearch(self, guildid, value):
         if value is None:
@@ -360,7 +360,7 @@ class ManageForm(commands.Cog):
             await ctx.respond("The length of callback message cannot be greater than 400!", ephemeral = True)
             return
 
-        await ctx.send_modal(FormEditModal(formid, ot, callback, label, "Edit form"))
+        await ctx.send_modal(FormEditModal(formid, ot, callback, label, title = "Edit form"))
 
     @manage.command(name="delete", description="Staff - Delete a form and all submitted entries.")
     async def delete(self, ctx, formid: discord.Option(int, "Form ID", required = False),

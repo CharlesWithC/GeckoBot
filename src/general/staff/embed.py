@@ -173,7 +173,7 @@ class ManageEmbed(commands.Cog):
                     await ctx.respond(f"{color} is not a valid RGB color code.", ephemeral = True)
                     return
 
-        await ctx.send_modal(EmbedModal(-1, ctx.guild.id, color, "Create embed"))
+        await ctx.send_modal(EmbedModal(-1, ctx.guild.id, color, title = "Create embed"))
     
     def AliasSearch(self, guildid, value):
         if value is None:
@@ -249,7 +249,7 @@ class ManageEmbed(commands.Cog):
                     await ctx.respond(f"{color} is not a valid RGB color code.", ephemeral = True)
                     return
 
-        await ctx.send_modal(EmbedModal(embedid, ctx.guild.id, color, "Edit embed"))
+        await ctx.send_modal(EmbedModal(embedid, ctx.guild.id, color, title = "Edit embed"))
     
     @manage.command(name="delete", description="Staff - Delete embed from database. This will not delete messages already sent.")
     async def delete(self, ctx, embedid: discord.Option(int, "Embed id, provided when the it's created. Use /embed list to see all embeds in this guild.", required = False),
