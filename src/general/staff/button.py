@@ -60,8 +60,10 @@ class GeckoButton(Button):
                     embed.set_footer(text = f"Gecko Ticket • ID: {ticketid} ", icon_url = GECKOICON)
                     await interaction.response.edit_message(embed = embed, view = None)
                     channel = bot.get_channel(channelid)
-                    await channel.set_permissions(guild.default_role, send_messages = False)
                     await channel.edit(name = f"closed-ticket-{ticketid}")
+                    perms = channel.overwrites_for(guild.default_role)
+                    perms.send_messages=False
+                    await channel.set_permissions(guild.default_role, overwrite=perms)
                     
                     data = await chat_exporter.export(channel)
                     data = data.replace(f"Channel: closed-ticket-{ticketid}", f"Ticket {ticketid}")
@@ -343,12 +345,12 @@ class GeckoButton(Button):
 
                 try:
                     category = bot.get_channel(categoryid)
-                    # await category.set_permissions(user, view_channel = True, read_message_history = True, send_messages = True)
+                    # await category.set_permissions(user, view_channel = True, read_message_history = True)
                     channel = await category.create_text_channel(name, reason = "Gecko Ticket")
                     me = bot.get_user(BOTID)
-                    await channel.set_permissions(me, view_channel = True, read_message_history = True, send_messages = True)
+                    await channel.set_permissions(me, view_channel = True, read_message_history = True)
                     await channel.set_permissions(guild.default_role, view_channel = False)
-                    await channel.set_permissions(user, view_channel = True, read_message_history = True, send_messages = True)
+                    await channel.set_permissions(user, view_channel = True, read_message_history = True)
 
                     moderators = t[0][3]
                     moderatorping = ""
@@ -359,7 +361,7 @@ class GeckoButton(Button):
                                 role = guild.get_role(roleid)
                                 if role != None:
                                     moderatorping += "<@&" + str(roleid) + "> "
-                                    await channel.set_permissions(role, view_channel = True, read_message_history = True, send_messages = True)
+                                    await channel.set_permissions(role, view_channel = True, read_message_history = True)
                             except:
                                 import traceback
                                 traceback.print_exc()
@@ -369,7 +371,7 @@ class GeckoButton(Button):
                                 mod = guild.get_member(modid)
                                 if mod != None:
                                     moderatorping += "<@" + str(modid) + "> "
-                                    await channel.set_permissions(mod, view_channel = True, read_message_history = True, send_messages = True)
+                                    await channel.set_permissions(mod, view_channel = True, read_message_history = True)
                             except:
                                 import traceback
                                 traceback.print_exc()

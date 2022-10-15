@@ -17,7 +17,7 @@ from general.radiolist import radiolist, radioname, radiolink, SearchRadio, Sear
 from requests import get
 from youtube_dl import YoutubeDL
 
-YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True', 'quite': True, 'ignoreerrors': True}
+YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist': True, 'quite': True, 'ignoreerrors': True}
 def search(arg):
     with YoutubeDL(YDL_OPTIONS) as ydl:
         try:
