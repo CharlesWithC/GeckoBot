@@ -36,6 +36,10 @@ class GeckoButton(Button):
 
     async def callback(self, interaction: discord.Interaction):  
         user = interaction.user
+        roles = user.roles
+        roleids = []
+        for role in roles:
+            roleids.append(role.id)
         guild = interaction.guild
         userid = interaction.user.id
         guildid = interaction.guild_id
@@ -124,6 +128,30 @@ class GeckoButton(Button):
                     await interaction.response.edit_message(embed = embed, view = None)
 
             elif op == "close":
+                cur.execute(f"SELECT channelid, userid, gticketid FROM ticketrecord WHERE ticketid = {ticketid} AND closedBy = 0")
+                t = cur.fetchall()
+                if len(t) == 0:
+                    return
+                channelid = t[0][0]
+                creator = t[0][1]
+                gticketid = t[0][2]
+                cur.execute(f"SELECT moderator FROM ticket WHERE gticketid = {gticketid}")
+                p = cur.fetchall()
+                moderator = p[0][0].split(",")
+                is_moderator = False
+                for mod in moderator:
+                    mod = mod.replace("@&","").replace("@","")
+                    if userid == int(mod):
+                        is_moderator = True
+                    if int(mod) in roleids:
+                        is_moderator = True
+                if userid == creator and not is_moderator:
+                    embed = discord.Embed(title = "Ticket", description = f"You are not allowed to close the ticket.", color = GECKOCLR)
+                    embed.timestamp = datetime.now()
+                    embed.set_footer(text = f"Gecko Ticket • ID: {ticketid} ", icon_url = GECKOICON)
+                    await interaction.response.send_message(embed = embed, ephemeral = True)
+                    return
+                    
                 embed = discord.Embed(title = "Ticket", description = f"Are you sure to close ticket?", color = GECKOCLR)
                 embed.timestamp = datetime.now()
                 embed.set_footer(text = f"Gecko Ticket • ID: {ticketid} ", icon_url = GECKOICON)
