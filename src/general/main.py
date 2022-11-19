@@ -149,7 +149,7 @@ async def getuser(ctx, user: discord.Option(discord.User, "User", required = Tru
         embed.add_field(name = "Boosting Since", value = f"<t:{int(user.premium_since.timestamp())}>", inline = True)
         
     roles = ""
-    for role in user.roles:
+    for role in user.roles[::-1]:
         if role != user.guild.default_role:
             roles += f"<@&{role.id}> "
     embed.add_field(name = "Roles", value = roles, inline = False)

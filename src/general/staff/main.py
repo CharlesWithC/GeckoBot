@@ -171,9 +171,14 @@ async def dm(ctx, user: discord.Option(discord.User, "Member to DM, must be in t
         await ctx.respond("You can only run this command in guilds!")
         return
     
-    if not isStaff(ctx.guild, ctx.author):
-        await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+    # if not isStaff(ctx.guild, ctx.author):
+    #     await ctx.respond("Only staff are allowed to run the command!", ephemeral = True)
+    #     return
+
+    if ctx.author.id not in [954034331230285838, 958416966228516944, 710535657650651157, 763197983797149726]:
+        await ctx.respond("Only <@954034331230285838> Administrators are allowed to use this command!", ephemeral = True)
         return
+
     
     if user.bot:
         await ctx.respond("You can't DM bots.", ephemeral = True)
