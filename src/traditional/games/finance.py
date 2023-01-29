@@ -272,6 +272,8 @@ async def FinanceRichest(ctx):
     msg = ""
     rank = 0
     for tt in t:
+        if tbot.get_user(tt[0]) is None:
+            continue
         rank += 1
         if rank > 10:
             break

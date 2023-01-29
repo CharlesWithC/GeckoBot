@@ -179,7 +179,7 @@ class ConnectFour(commands.Cog):
             await ctx.respond(f"{gameid} is not a valid game ID.", ephemeral = True)
             return
 
-        cur.execute(f"SELECT COUNT(*) FROM connectfour")
+        cur.execute(f"SELECT COUNT(*) FROM connectfour WHERE gameid >= 0")
         t = cur.fetchall()
         if len(t) == 0 or t[0][0] < gameid:
             await ctx.respond(f"{gameid} is not a valid game ID.", ephemeral = True)

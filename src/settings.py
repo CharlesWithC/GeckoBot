@@ -18,7 +18,7 @@ ATSID = 270880
 
 FINANCE_CHECKIN_BASE_REWARD = 400
 RANK_EMOJI = ["", ":first_place:", ":second_place:", ":third_place:", ":four:", ":five:", \
-    ":six:", ":seven:", ":eight:", ":nine:", ":ten:"]
+    ":six:", ":seven:", ":eight:", ":nine:", ":keycap_ten:"]
 from discord.enums import ButtonStyle
 BTNSTYLE = {"blurple": ButtonStyle.blurple, "grey": ButtonStyle.grey, "gray": ButtonStyle.gray, 
     "green": ButtonStyle.green, "red": ButtonStyle.red}

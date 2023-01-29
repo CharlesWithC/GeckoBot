@@ -264,7 +264,7 @@ class ManageForm(commands.Cog):
         cur = conn.cursor()
         guildid = ctx.guild.id
 
-        cur.execute(f"SELECT COUNT(*) FROM form WHERE guildid = {guildid} AND formid > 0")
+        cur.execute(f"SELECT COUNT(*) FROM form WHERE guildid = {guildid} AND formid >= 0")
         c = cur.fetchall()
         if len(c) > 0:
             premium = GetPremium(ctx.guild)
@@ -418,7 +418,7 @@ class ManageForm(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
         
-        cur.execute(f"SELECT formid FROM form WHERE guildid = {ctx.guild.id}")
+        cur.execute(f"SELECT formid FROM form WHERE guildid = {ctx.guild.id} AND formid >= 0")
         t = cur.fetchall()
         if len(t) == 0:
             await ctx.respond("There's no form created in this guild. Use `/form create` to create one.")

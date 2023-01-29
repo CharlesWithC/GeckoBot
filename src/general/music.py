@@ -17,6 +17,8 @@ from general.radiolist import radiolist, radioname, radiolink, SearchRadio, Sear
 from requests import get
 from youtube_dl import YoutubeDL
 
+WHITELIST = [955721720440975381, 929761730089877626, 648872349516693515]
+
 YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist': True, 'quite': True, 'ignoreerrors': True}
 def search(arg):
     with YoutubeDL(YDL_OPTIONS) as ydl:
@@ -54,7 +56,7 @@ class ManageMusic(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
-    manage = SlashCommandGroup("music", "Manage music")
+    manage = SlashCommandGroup("music", "Manage music", guild_ids = WHITELIST)
 
     @manage.command(name="toggle", description="Staff - Music - Toggle 'Now Playing' auto post, whether Gecko should send it or not.")
     async def toggle(self, ctx): 
@@ -129,7 +131,7 @@ class ManageMusic(commands.Cog):
             conn.commit()
             await ctx.respond(f"Loop playback disabled for playlist!")
 
-@bot.slash_command(name="pause", description="Staff - Music - Pause music.")
+@bot.slash_command(name="pause", description="Staff - Music - Pause music.", guild_ids = WHITELIST)
 async def pause(ctx):  
     await ctx.defer()
     if ctx.guild is None:
@@ -149,7 +151,7 @@ async def pause(ctx):
     await ctx.guild.change_voice_state(channel = voice_client.channel, self_mute = True)
     await ctx.respond(f"Music paused! You can use /music resume to restart from where it paused.")
 
-@bot.slash_command(name="resume", description="Staff - Music - Resume music.")
+@bot.slash_command(name="resume", description="Staff - Music - Resume music.", guild_ids = WHITELIST)
 async def resume(ctx): 
     await ctx.defer()
     if ctx.guild is None:
@@ -169,7 +171,7 @@ async def resume(ctx):
     await ctx.guild.change_voice_state(channel = voice_client.channel, self_mute = False)
     await ctx.respond(f"Music resumed!")
 
-@bot.slash_command(name="play", description="Staff - Music - Play a song.")
+@bot.slash_command(name="play", description="Staff - Music - Play a song.", guild_ids = WHITELIST)
 async def PlayMusic(ctx, song: discord.Option(str, "Keywords for searching, if not specified, play the music on last quit", required = False, autocomplete = suggest)):
     await ctx.defer()    
     guildid = 0
@@ -274,7 +276,7 @@ async def PlayMusic(ctx, song: discord.Option(str, "Keywords for searching, if n
     embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = icon_url)
     await ctx.respond(embed = embed)
 
-@bot.slash_command(name="next", description="Music - Play next song in queue.")
+@bot.slash_command(name="next", description="Music - Play next song in queue.", guild_ids = WHITELIST)
 async def NextSong(ctx):    
     await ctx.defer()    
     guildid = 0
@@ -367,7 +369,7 @@ async def NextSong(ctx):
     embed.set_footer(text=f"Requested by {username}", icon_url = avatar)
     await ctx.respond(embed = embed)
 
-@bot.slash_command(name="queue", description="Music - Queue your song to the play list.")
+@bot.slash_command(name="queue", description="Music - Queue your song to the play list.", guild_ids = WHITELIST)
 async def PlayMusic(ctx, song: discord.Option(str, "Keywords for searching", required = True, autocomplete = suggest)):    
     await ctx.defer()    
     guildid = 0
@@ -437,7 +439,7 @@ async def GetQueueList(ctx: discord.AutocompleteContext):
         ret.append(dd[0])
     return ret[:10]
 
-@bot.slash_command(name="dequeue", description="Music - Remove a song from play list.")
+@bot.slash_command(name="dequeue", description="Music - Remove a song from play list.", guild_ids = WHITELIST)
 async def UnqueueMusic(ctx, song: discord.Option(str, "Song, must be one from the autocomplete options", required = True, autocomplete = GetQueueList)): 
     await ctx.defer()    
     guildid = 0
@@ -470,7 +472,7 @@ async def UnqueueMusic(ctx, song: discord.Option(str, "Song, must be one from th
     conn.commit()
     await ctx.respond(f"**{song}** removed from queue.")
 
-@bot.slash_command(name="fav", description="Music - Add the current song to your favourite list. Or add a custom one by providing its name.")
+@bot.slash_command(name="fav", description="Music - Add the current song to your favourite list. Or add a custom one by providing its name.", guild_ids = WHITELIST)
 async def FavouriteMusic(ctx, song: discord.Option(str, "Keywords for searching", required = False, autocomplete = suggest)):
     await ctx.defer()    
     if ctx.guild is None:
@@ -544,7 +546,7 @@ async def GetfavouriteList(ctx: discord.AutocompleteContext):
         ret.append(dd[0])
     return ret[:10]
 
-@bot.slash_command(name="unfav", description="Music - Remove a song from your favourite list.")
+@bot.slash_command(name="unfav", description="Music - Remove a song from your favourite list.", guild_ids = WHITELIST)
 async def UnFavouriteMusic(ctx, song: discord.Option(str, "Song, must be one from the autocomplete options", required = True, autocomplete = GetfavouriteList)):
     await ctx.defer()    
     if ctx.guild is None:
@@ -567,7 +569,7 @@ async def UnFavouriteMusic(ctx, song: discord.Option(str, "Song, must be one fro
 
     await ctx.respond(f"**{song}** is removed from your favourite list.", ephemeral = True)
 
-@bot.slash_command(name="favlist", description="Music - Get your favourite list.")
+@bot.slash_command(name="favlist", description="Music - Get your favourite list.", guild_ids = WHITELIST)
 async def FavouriteList(ctx):
     await ctx.defer()    
     conn = newconn()
@@ -597,7 +599,7 @@ async def FavouriteList(ctx):
         f.seek(0)
         await ctx.respond(file=discord.File(fp=f, filename='favourites.MD'))
 
-@bot.slash_command(name="qfav", description="Music - Queue a song from your favourite list.")
+@bot.slash_command(name="qfav", description="Music - Queue a song from your favourite list.", guild_ids = WHITELIST)
 async def Queuefavourite(ctx, song: discord.Option(str, "Song, must be one from the autocomplete options", required = True, autocomplete = GetfavouriteList)):
     # queue the song
     await ctx.defer()    
@@ -656,7 +658,7 @@ async def Queuefavourite(ctx, song: discord.Option(str, "Song, must be one from 
     embed.set_footer(text=f"Requested by {ctx.author.name}", icon_url = icon_url)
     await ctx.respond(embed = embed)
 
-@bot.slash_command(name="playlist", description="Music - See the queued play list.")
+@bot.slash_command(name="playlist", description="Music - See the queued play list.", guild_ids = WHITELIST)
 async def PlayList(ctx): 
     await ctx.defer()    
     guildid = 0
@@ -724,7 +726,7 @@ async def PlayList(ctx):
         embed.set_footer(text=f"Loop playback enbled.")
     await ctx.respond(embed = embed)
 
-@bot.slash_command(name="current", description="Music - Get current playing song.")
+@bot.slash_command(name="current", description="Music - Get current playing song.", guild_ids = WHITELIST)
 async def CurrentSong(ctx):
     await ctx.defer()    
     if ctx.guild is None:

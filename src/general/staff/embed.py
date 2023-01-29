@@ -104,7 +104,7 @@ class EmbedModal(Modal):
             await log(f"Embed", f"[Guild {interaction.guild} {guildid}] {interaction.user} ({interaction.user.id}) updated embed #{embedid}", guildid)
 
         else:
-            cur.execute(f"SELECT COUNT(*) FROM embed")
+            cur.execute(f"SELECT COUNT(*) FROM embed WHERE embedid >= 0")
             t = cur.fetchall()
             embedid = 0
             if len(t) > 0:
@@ -141,7 +141,7 @@ class ManageEmbed(commands.Cog):
 
         guildid = ctx.guild.id
 
-        cur.execute(f"SELECT COUNT(*) FROM embed WHERE guildid = {guildid} AND embedid > 0")
+        cur.execute(f"SELECT COUNT(*) FROM embed WHERE guildid = {guildid} AND embedid >= 0")
         c = cur.fetchall()
         if len(c) > 0:
             premium = GetPremium(ctx.guild)
@@ -371,7 +371,7 @@ class ManageEmbed(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
         
-        cur.execute(f"SELECT embedid, data FROM embed WHERE guildid = {ctx.guild.id}")
+        cur.execute(f"SELECT embedid, data FROM embed WHERE guildid = {ctx.guild.id} AND embedid >= 0")
         t = cur.fetchall()
         if len(t) == 0:
             await ctx.respond("There's no embed created in this guild. Use `/embed create` to create one.")

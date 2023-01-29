@@ -515,7 +515,7 @@ class ManageButton(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
 
-        cur.execute(f"SELECT COUNT(*) FROM button WHERE guildid = {guildid} AND buttonid > 0")
+        cur.execute(f"SELECT COUNT(*) FROM button WHERE guildid = {guildid} AND buttonid >= 0")
         c = cur.fetchall()
         if len(c) > 0:
             premium = GetPremium(ctx.guild)
@@ -973,7 +973,7 @@ class ManageButton(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
         
-        cur.execute(f"SELECT buttonid, data FROM button WHERE guildid = {ctx.guild.id}")
+        cur.execute(f"SELECT buttonid, data FROM button WHERE guildid = {ctx.guild.id} AND buttonid >= 0")
         t = cur.fetchall()
         if len(t) == 0:
             await ctx.respond("There's no button created in this guild. Use `/button create` to create one.")

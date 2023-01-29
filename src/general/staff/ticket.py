@@ -43,7 +43,7 @@ class ManageTicket(commands.Cog):
         cur = conn.cursor()
         guildid = ctx.guild.id
         
-        cur.execute(f"SELECT COUNT(*) FROM ticket WHERE guildid = {guildid} AND gticketid > 0")
+        cur.execute(f"SELECT COUNT(*) FROM ticket WHERE guildid = {guildid} AND gticketid >= 0")
         c = cur.fetchall()
         if len(c) > 0:
             premium = GetPremium(ctx.guild)
@@ -243,7 +243,7 @@ class ManageTicket(commands.Cog):
         conn = newconn()
         cur = conn.cursor()
         guildid = ctx.guild.id
-        cur.execute(f"SELECT gticketid, categoryid, channelformat, msg, moderator FROM ticket WHERE guildid = {guildid}")
+        cur.execute(f"SELECT gticketid, categoryid, channelformat, msg, moderator FROM ticket WHERE guildid = {guildid} AND gticketid >= 0")
         t = cur.fetchall()
         if len(t) == 0:
             await ctx.respond("No ticket categories found!", ephemeral = True)
