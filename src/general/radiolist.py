@@ -1,6 +1,7 @@
 from rapidfuzz import process
 
 radiolist = ["https://radio.truckers.fm/|TruckersFM|Sim radio|EN|320|1",
+"https://oreo.truckstopradio.co.uk/radio/8000/radio.mp3|TruckStopRadio|Sim radio|EN|128|1",
 "http://stream.simulatorradio.com:8002/stream.mp3|Simulator Radio|Sim radio|EN|128|0",
 "http://radio.trucksim.fm:8000/stream|TruckSimFM|Sim radio|EN|320|0",
 "http://stream.laut.fm/simliveradio|SimLiveRadio|Sim radio|DE|128|0",

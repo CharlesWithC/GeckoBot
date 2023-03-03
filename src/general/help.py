@@ -42,7 +42,7 @@ Find out more by `/help truckersmp`
 
 **Gecko Music**
 *Not only music, but also radio!*  
-274 radio stations are supported, and you can request your desired station to be added.  
+275 radio stations are supported, and you can request your desired station to be added.  
 
 **Gecko Poll**
 Polls can be sent across servers!
@@ -636,7 +636,7 @@ Use `/current` to see the current playing song, and `/playlist` to see the curre
 Staff can toggle whether the `current song` update will be sent in the music channel, decide where Gecko will play the music and pause / resume the music.
 Loopback (playlist) playing is supported. favourite (AKA `fav`) lists are also supported.
 
-For radio function, only staff can set which station Gecko will be playing, there's a list of 274 radio stations. They are shown in the autocomplete options, or you can use `/radiolist` to get a full list of them.
+For radio function, only staff can set which station Gecko will be playing, there's a list of 275 radio stations. They are shown in the autocomplete options, or you can use `/radiolist` to get a full list of them.
 Radio streams are endless and Gecko won't switch to the next song. Staff need to use `/play` or `/next` to switch back to music mode.
 
 Subcommands of `/music` group
@@ -732,7 +732,7 @@ Usage: `/current`""",
 
         "radio": """**Staff only command**
 Save the current playlist, and start playing radio.
-There are 274 radio stations supported. They are shown in the autocomplete options, or you can use `/radiolist` to get a full list of them.
+There are 275 radio stations supported. They are shown in the autocomplete options, or you can use `/radiolist` to get a full list of them.
 Radio streams are endless and Gecko won't switch to the next song. You need to use `/play` or `/next` to switch back to music mode.
 
 *If your desired radio station isn't in the list, you could join [Gecko Community](https://discord.gg/wNTaaBZ5qd) and submit the station name & stream link (There must be a stream link otherwise it will not be accepted.) If the radio station is accepted, it will be added to the radiolist very soon.*

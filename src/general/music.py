@@ -803,7 +803,7 @@ async def RadioSearcher(ctx: discord.AutocompleteContext):
     return res
 
 @bot.slash_command(name="radio", description="Staff - Music - Play radio.")
-async def Radio(ctx, station: discord.Option(str, "Radio station (274 stations available)", required = True, autocomplete = RadioSearcher)):
+async def Radio(ctx, station: discord.Option(str, "Radio station (275 stations available)", required = True, autocomplete = RadioSearcher)):
     await ctx.defer()    
     if ctx.guild is None:
         await ctx.respond("You can only run this command in guilds!")

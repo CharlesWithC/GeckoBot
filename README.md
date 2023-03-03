@@ -28,7 +28,7 @@ Find out more by `/help truckersmp`
 ## Gecko Music
 
 *Not only music, but also radio!*  
-274 radio stations are supported, and you can request your desired station to be added.  
+275 radio stations are supported, and you can request your desired station to be added.  
 
 ## Gecko Poll
 
