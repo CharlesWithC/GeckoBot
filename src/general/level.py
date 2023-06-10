@@ -171,8 +171,9 @@ async def rank(ctx, member: discord.Option(discord.User, "@member", required = F
     # username#discriminator
     fontB4 = ImageFont.truetype("../res/ComicSansMSBold.ttf", 40)
     draw.text((left + margin, top + margin), f"{user.name}", fill=txtclr, font=fontB4)
-    draw.text((left + margin + fontB4.getsize(f"{user.name}")[0], top + margin), f"#", fill=greyclr, font=fontB4)
-    draw.text((left + margin + fontB4.getsize(f"{user.name}#")[0], top + margin), f"{user.discriminator}", fill=txtclr, font=fontB4)
+    if user.discriminator != "0":
+        draw.text((left + margin + fontB4.getsize(f"{user.name}")[0], top + margin), f"#", fill=greyclr, font=fontB4)
+        draw.text((left + margin + fontB4.getsize(f"{user.name}#")[0], top + margin), f"{user.discriminator}", fill=txtclr, font=fontB4)
     # rank
     fontB5 = ImageFont.truetype("../res/ComicSansMSBold.ttf", 50)
     draw.text((right - margin - fontB5.getsize(f"#{rank}")[0], top + margin / 2), f"#{rank}", font=fontB5, fill=fgclr)
