@@ -299,7 +299,7 @@ async def ClearExpiredGame():
             cur.execute(f"SELECT state FROM connectfour WHERE ABS(gameid) = {gameid}")
             t = cur.fetchall()
             state = t[0][0]
-            p = stats.split("|")
+            p = state.split("|")
             if len(p) == 0:
                 state = "0|" + state
             else:
