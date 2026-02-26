@@ -1,0 +1,13 @@
+py-cord
+mysqlclient
+rapidfuzz
+pycryptodome
+validators
+pillow
+youtube_dl
+pyttsx3
+requests
+libretranslatepy
+langdetect
+chat_exporter
+minify_html
